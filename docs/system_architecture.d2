@@ -1,0 +1,41 @@
+direction: right
+
+microservices: {
+  shape: cloud
+  AuthService: "Auth Service"
+  UserRoleService: "User & Role Service"
+  WalletService: "Wallet Service"
+  TransactionService: "Transaction Service"
+  ProductService: "Product Service"
+  IntegrationService: "Integration Service (Digiflazz)"
+}
+
+MobileApp: "Mobile Application" { shape: rectangle }
+
+ExternalAPI: "Digiflazz API" { shape: cylinder }
+
+Database: "PostgreSQL Database" { shape: cylinder }
+
+Cache: "Redis Cache" { shape: hexagon }
+
+MobileApp -> AuthService
+MobileApp -> UserRoleService
+MobileApp -> WalletService
+MobileApp -> TransactionService
+MobileApp -> ProductService
+
+AuthService -> Database
+UserRoleService -> Database
+WalletService -> Database
+TransactionService -> Database
+ProductService -> Database
+
+TransactionService -> IntegrationService
+IntegrationService -> ExternalAPI
+ExternalAPI -> IntegrationService: Webhooks
+
+AuthService -> Cache
+UserRoleService -> Cache
+WalletService -> Cache
+TransactionService -> Cache
+ProductService -> Cache

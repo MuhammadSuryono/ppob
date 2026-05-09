@@ -1,0 +1,435 @@
+Overview
+This document compiles and organizes all the rules, constraints, validations, and business logic specifications from the PPOB application documentation. It serves as a centralized reference for all rules governing the system's behavior, data integrity, security, and business operations.
+Sources: All documents in v1/docs/ except AI_EXECUTION_TIMELINE.md
+Compiled Rules Categories:
+- Business Rules (pricing, margins, commissions)
+- Data Validation Rules (constraints, formats)
+- Security Rules (authentication, authorization)
+- Transaction Rules (state machine, workflows)
+- Integration Rules (Digiflazz API)
+- Observability Rules (monitoring, alerting)
+- Performance Rules (SLIs/SLOs)
+- Compliance Rules (legal, regulatory)
+---
+1. Business Rules
+1.1 Pricing & Margin Rules
+Rule BR-001: Platform Price Calculation
+Platform Price = Base Price × (1 + Platform Markup Percent)
+WHERE Platform Markup Percent = 0.05 (5% default)
+Rule BR-002: Mitra Selling Price Constraints
+Selling Price ≥ Platform Price
+Violation: Reject transaction with PRICE_BELOW_COST error
+Rule BR-003: Margin Calculation
+Margin = Selling Price - Platform Price
+Rule BR-004: Commission Calculation (Fixed Allowance)
+Staff Commission = Fixed Amount (configured per staff)
+Mitra Profit = Selling Price - Platform Price - Staff Commission
+Rule BR-005: Commission Calculation (Margin Share)
+Staff Commission = Margin × (Staff Percentage / 100)
+Mitra Profit = Margin × (100 - Staff Percentage) / 100
+WHERE Staff Percentage ≤ 100
+Rule BR-006: Daily Transaction Limits
+Staff Daily Transaction Count ≤ 50 (configurable default)
+Staff Daily Transaction Amount ≤ 5,000,000 IDR (configurable default)
+Violation: Reject transaction with DAILY_LIMIT_EXCEEDED error
+Rule BR-007: Daily Limit Reset
+Limits reset at 00:00 WIB (UTC+7) daily
+1.2 Wallet & Balance Rules
+Rule BR-008: Wallet Ownership
+Each user has exactly one wallet per role
+Mitra: Main wallet (is_main_wallet = true)
+Staff: Sub-wallet linked to Mitra (parent_wallet_id = mitra_wallet_id)
+Rule BR-009: Wallet Balance Constraints
+Available Balance ≥ 0
+Held Balance ≥ 0
+Total Balance = Available Balance + Held Balance
+Rule BR-010: Hold Lifecycle
+Initiate Transaction: Available → Held (reserve amount)
+Success/Failure: Held → Available (release)
+Success: Held → Debit (permanent deduction)
+Rule BR-011: Mitra Staff Top-Up
+Mitra Wallet Available ≥ Top-Up Amount
+Top-Up Amount > 0
+Staff belongs to Mitra (assigned_by = mitra_user_id)
+Rule BR-012: Insufficient Balance Handling
+IF Available Balance < Required Amount THEN Reject with INSUFFICIENT_BALANCE
+1.3 Role & Multi-Tenant Rules
+Rule BR-013: Role Assignment
+Staff must be assigned by Mitra (assigned_by IS NOT NULL)
+Mitra can have multiple roles
+Staff can be Staff under multiple Mitras
+Rule BR-014: Active Role Determination
+User has one active role at a time
+Active role determines wallet for transactions
+Role switch updates JWT claims
+Rule BR-015: Wallet Resolution by Role
+Transaction wallet = User's active role wallet
+Mitra: main_wallet
+Staff: staff_sub_wallet
+1.4 Transaction Rules
+Rule BR-016: Transaction Initiation Validation
+Customer Number format matches product regex
+Selling Price ≥ Platform Price
+Wallet balance sufficient
+Staff daily limits not exceeded
+Product is active
+Idempotency key not used before
+Rule BR-017: Postpaid Inquiry Validity
+Inquiry valid for 24 hours only
+After expiry: require new inquiry
+Rule BR-018: Transaction Amount
+Amount = Platform Price (snapshot at transaction time)
+Selling Price = user-provided price
+Rule BR-019: Commission Payout
+Commission credited immediately to staff wallet on transaction success
+No separate accrual/payout cycle
+1.5 Product Rules
+Rule BR-020: Product Sync Frequency
+Prepaid: Hourly (5th minute of each hour)
+Postpaid: Every 5 minutes
+Rule BR-021: Product Price Update
+Platform Price = Base Price × (1 + Platform Markup)
+Mitra Selling Price = Platform Price OR custom per-product
+Rule BR-022: Product Status
+Inactive products cannot be transacted
+Digiflazz inactive products marked inactive locally
+---
+2. Data Validation Rules
+2.1 User Data Rules
+Rule DV-001: Phone Number Format
+Phone Number ~ '^\+62[0-9]{8,12}$'
+Starts with +62, followed by 8-12 digits
+Rule DV-002: Name Validation
+Name length ≥ 2 characters
+Name NOT empty or whitespace-only
+Rule DV-003: Password Strength
+Minimum 8 characters
+Contains at least 1 uppercase letter
+Contains at least 1 lowercase letter
+Contains at least 1 digit
+Rule DV-004: PIN Format
+Exactly 6 digits
+Numeric only (0-9)
+NOT sequential (123456, 654321)
+NOT all same digits (111111)
+Rule DV-005: Email Format (if used)
+Standard RFC 5322 email regex
+2.2 Financial Data Rules
+Rule DV-006: Monetary Values
+Decimal(18,2) — up to 999,999,999,999,999.99 IDR
+All amounts > 0 (except negative commissions for refunds)
+Rule DV-007: Percentage Values
+0 ≤ Percentage ≤ 100 for Margin Share
+Fixed Allowance ≥ 0
+Rule DV-008: Transaction Ref ID
+Unique across all transactions
+Generated by system (UUID)
+2.3 Product Data Rules
+Rule DV-009: SKU Code
+Unique, VARCHAR(255)
+Matches Digiflazz buyer_sku_code
+Rule DV-010: Customer Number Formats
+Prepaid Mobile: Per-operator regex (stored in validation_rules)
+PLN: 8-12 digits
+PDAM: Region-specific (stored in product metadata)
+Postpaid: Inquiry response validates format
+Rule DV-011: Price Consistency
+Platform Price = Base Price × (1 + Platform Markup) within 1 IDR tolerance
+2.4 Audit Data Rules
+Rule DV-012: Trace ID Format
+32-character hexadecimal string (16 bytes)
+OpenTelemetry standard
+Rule DV-013: IP Address Storage
+INET type (IPv4/IPv6 support)
+Masked to /24 for geolocation (privacy)
+Rule DV-014: User Agent
+Stored as-is, up to 500 characters
+Used for device fingerprinting
+---
+3. Security Rules
+3.1 Authentication Rules
+Rule SR-001: JWT Token Structure
+Header: { "alg": "RS256", "typ": "JWT", "kid": "key-id" }
+Payload: { "sub": "user_id", "role": "active_role", "roles": [...], "wallet_id": "wallet_id", "device_id": "device_id", "iat": timestamp, "exp": timestamp, "jti": "unique_id" }
+Signature: RSA private key signed
+Rule SR-002: Token Expiration
+Access Token: 15 minutes
+Refresh Token: 7 days (Mitra), 1 day (Staff)
+Rule SR-003: Password Hashing
+bcrypt with cost=12
+Salt: 16-byte random per user
+Rule SR-004: PIN Hashing
+Argon2id with:
+- Memory: 64 MB
+- Iterations: 2
+- Parallelism: 1
+- Salt: 16-byte random per PIN change
+- Output: 32 bytes
+Rule SR-005: Device Trust Scoring
+Score 0-100 based on:
+- Device seen before (+30)
+- Same IP subnet (+20)  
+- App version current (+10)
+- Install age >7 days (+10)
+- Last login <24h ago (+20)
+- ≥3 successful logins (+10)
+Thresholds:
+- ≥70: Trusted (PIN only)
+- 30-69: Semi-trusted (password + OTP)
+- <30: Untrusted (full auth)
+3.2 Authorization Rules
+Rule SR-006: Rate Limiting
+Registration: 3/hour per phone
+OTP Verification: 5/15min per phone
+Login: 10/15min per phone
+Transaction Initiate: 30/min per user
+Staff Top-Up: 30/min per Mitra
+Rule SR-007: Role-Based Access
+Endpoint permissions mapped to roles
+Mitra can manage own staff
+Staff can only access own resources
+Rule SR-008: Ownership Verification
+All data access must filter by user_id or assigned_by
+No cross-tenant data leakage
+3.3 Input Validation Rules
+Rule SR-009: SQL Injection Prevention
+All queries use parameterized statements
+GORM ORM prevents injection
+Rule SR-010: XSS Prevention
+No HTML rendering in APIs
+Input sanitized if displayed
+Rule SR-011: File Upload Restrictions
+No file uploads allowed (no images/documents)
+3.4 Secrets Management Rules
+Rule SR-012: Secret Storage
+Digiflazz API Key: Vault/AWS Secrets Manager
+JWT Private Key: Vault/AWS Secrets Manager
+Database Passwords: Vault/AWS Secrets Manager
+Rotation: Quarterly or on compromise
+Rule SR-013: No Hardcoded Secrets
+All secrets injected at runtime
+No secrets in code, config files, or environment variables
+---
+4. Transaction State Machine Rules
+4.1 State Transition Rules
+Rule TSR-001: Valid Transitions
+Initiated → Pending | Success | Failed
+Pending → Success | Failed | Expired | Cancelled
+Success → Refunded
+Failed → (terminal)
+Expired → (terminal)
+Cancelled → (terminal)
+Refunded → (terminal)
+Rule TSR-002: State Guards
+Cannot transition to Success from Expired
+Cannot transition from Success to Failed
+Rule TSR-003: Timeout Rules
+Pending timeout: 15 minutes → Expired
+Initiated no response: 30 seconds → Failed
+Refund window: 24 hours after Success
+Rule TSR-004: Wallet Impact
+Initiated: No wallet change
+Pending: Hold amount (Available → Held)
+Success: Debit from Held (Held → Debit)
+Failed: Release Held (Held → Available)
+Expired: Release Held
+Cancelled: Release Held
+Refunded: Credit wallet
+4.2 Idempotency Rules
+Rule TSR-005: Transaction Deduplication
+Idempotency-Key header required
+Key stored in idempotency_keys table with 24h TTL
+Duplicate key returns existing transaction
+Rule TSR-006: Webhook Idempotency
+ref_id uniqueness enforced
+Duplicate webhook ignored if status already advanced
+4.3 Error Handling Rules
+Rule TSR-007: Retry Logic
+RC 01,70: Retry 3x with 2s,4s,8s backoff
+RC 85: Retry 1x after 60s
+RC 83: Retry after 240s (Digiflazz limit)
+Network errors: Retry 3x
+Other errors: No retry
+---
+5. Integration Rules
+5.1 Digiflazz API Rules
+Rule IR-001: Signature Generation
+sign = md5(username + apiKey + cmd)
+cmd varies by endpoint
+Rule IR-002: Request Timeouts
+Transaction request: 30 seconds
+Price list sync: 60 seconds
+Balance check: 10 seconds
+Rule IR-003: Rate Limiting
+Price list: 1 request per 5 minutes
+Transaction: No explicit limit, but respect RC 85
+Rule IR-004: Error Mapping
+RC 00 → Success
+RC 03 → Pending  
+RC 01,70 → Retry
+RC 44 → Alert admin (insufficient deposit)
+All other RC → Failed
+5.2 Webhook Processing Rules
+Rule IR-005: Signature Verification
+HMAC-SHA1(body, secret) matches X-Hub-Signature
+Secret stored in Vault
+Rule IR-006: Duplicate Prevention
+Redis lock: SET webhook:txn:{ref_id} EX 30 NX
+If locked, skip processing
+Process within lock, then delete
+Rule IR-007: Webhook Retry
+Digiflazz retries for 72 hours
+Our endpoint: Always return 200 OK after accepting
+Process async; failures logged but not retried
+---
+6. Observability Rules
+6.1 Logging Rules
+Rule OR-001: Log Format
+JSON format with fields: timestamp, level, service, trace_id, span_id, user_id, action, duration_ms, error, details, version
+Rule OR-002: PII Redaction
+Mask phone: +62 812-345-***-****
+Mask customer_no: last 4 digits visible
+Mask account_no: ****5678
+Rule OR-003: Log Levels
+DEBUG: Dev only
+INFO: Normal operations
+WARN: Recoverable issues
+ERROR: Failures
+FATAL: System crashes
+6.2 Metrics Rules
+Rule OR-004: Key Metrics
+http_requests_total{service,method,path,status}
+http_request_duration_seconds{service,method,path}
+transactions_total{service,status}
+wallet_debits_total{service,role}
+digiflazz_api_calls_total{service,endpoint,status}
+Rule OR-005: SLOs
+Availability: 99.5%
+Error Rate: <0.1%
+p95 Latency: <300ms (API), <30s (end-to-end)
+Transaction Success Rate: ≥99%
+6.3 Alerting Rules
+Rule OR-006: Critical Alerts
+High error rate >5% for 2min
+Digiflazz API error rate >10% for 3min
+Pending transactions >100 for 5min
+Wallet debit failures >0.01/min for 2min
+Rule OR-007: Warning Alerts
+Slow latency >2s for 5min
+High DB connections >80% for 2min
+Reconciliation drift >Rp10,000 for 1h
+---
+7. Performance Rules
+7.1 Response Time Rules
+Rule PR-001: API Latency
+p95 < 300ms for all endpoints (excluding Digiflazz calls)
+p99 < 500ms
+Rule PR-002: Database Query Rules
+No query > 100ms in production
+Indexes on all WHERE clauses
+Connection pool: max 100 connections
+Rule PR-003: Cache Rules
+Product catalog: TTL 1 hour
+Wallet balance: Cache 60s, invalidate on change
+Redis memory: <80% utilization
+7.2 Scalability Rules
+Rule PR-004: Horizontal Scaling
+All services stateless (except DB/Redis)
+HPA based on CPU >70% or custom metrics
+Min replicas: 3, Max: 15
+Rule PR-005: Load Balancing
+Round-robin across pods
+Session affinity not required (JWT stateless)
+---
+8. Compliance Rules
+8.1 Data Retention Rules
+Rule CR-001: Operational Data
+Transactions: 5 years (tax law)
+Audit logs: 5 years
+Wallet events: 5 years
+OTP codes: 24 hours
+Idempotency keys: 7 days
+Postpaid inquiries: 30 days after expiry
+Device fingerprints: 90 days
+8.2 Data Privacy Rules
+Rule CR-002: PII Handling
+Phone numbers: Stored encrypted or masked in logs
+Customer numbers: Stored plain (transactional necessity), masked in displays
+No unnecessary PII collection
+Right to be forgotten: Anonymize user data on request
+Rule CR-003: Data Residency
+All data stored in Jakarta region (ap-southeast-3)
+No cross-border data transfer without consent
+Backups encrypted and regionally restricted
+8.4 Financial Compliance Rules
+Rule CR-004: Transaction Integrity
+All financial operations logged immutably
+Balance reconciliation daily
+No negative balances allowed
+Audit trail for all money movements
+---
+9. Development Rules
+9.1 Code Quality Rules
+Rule DR-001: Testing
+Unit test coverage: ≥80%
+Integration test coverage: ≥50%
+All business logic tested
+Rule DR-002: Code Review
+All PRs require 2 approvals
+Security checklist must pass
+No secrets in code
+9.2 Deployment Rules
+Rule DR-003: Environment Separation
+dev, staging, prod separate clusters
+No direct prod access for developers
+CI/CD pipeline for all deployments
+Rule DR-004: Rollback Rules
+Blue-green deployment
+Canary rollout: 5% → 25% → 100%
+Rollback within 10 minutes if issues
+---
+10. Operational Rules
+10.1 Backup Rules
+Rule OP-001: Backup Schedule
+Database: Daily snapshots, retained 35 days
+Point-in-time recovery: WAL archived 15 minutes
+Redis: Daily RDB backup
+Files: Terraform state and configs to S3
+Rule OP-002: Recovery Rules
+RTO: 4 hours
+RPO: 15 minutes
+Test restoration quarterly
+10.2 Maintenance Rules
+Rule OP-003: Cron Jobs
+Reconcile pending transactions: Every minute
+Product sync prepaid: Hourly at :05
+Product sync postpaid: Every 5 minutes
+Balance reconciliation: Daily 02:00
+Clean expired data: Daily 01:00
+Rule OP-004: Monitoring Rules
+24/7 on-call rotation
+Alert response within 5 minutes for critical
+Post-mortem for all incidents
+---
+## Implementation Notes
+- **Enforcement:** These rules are enforced through code (validators, guards), database constraints (CHECK, UNIQUE, FOREIGN KEY), and configuration (alert thresholds)
+- **Testing:** Each rule should have corresponding unit tests and integration tests
+- **Documentation:** Rules must be kept in sync with implementation; changes require review
+- **Audit:** Regular audits to ensure compliance with all rules
+**Next Steps:**
+1. Implement rule validation functions in each service
+2. Create comprehensive test suites for each rule category  
+3. Set up monitoring dashboards for rule compliance
+4. Establish rule change management process
+---
+Owner: Business Rules Committee  
+Approval: Product, Security, Compliance teams  
+Effective Date: 2026-05-07  
+Version: 1.0
+Review Cycle: Quarterly
+▣  Code · xAI: Grok Code Fast 1 Optimized (free) · 1m 0s
+/agents                    
+Switch agent
+Code 
+·
+xAI: Grok Code Fast 1 Optimized (free)

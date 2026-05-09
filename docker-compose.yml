@@ -1,0 +1,305 @@
+version: "3.8"
+
+services:
+    # PostgreSQL Database
+    postgres:
+        image: postgres:15-alpine
+        container_name: ppob-postgres
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_DB: ppob
+        ports:
+            - "5432:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+            - ./migrations:/docker-entrypoint-initdb.d
+        networks:
+            - ppob-network
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    # Redis
+    redis:
+        image: redis:7-alpine
+        container_name: ppob-redis
+        ports:
+            - "6379:6379"
+        volumes:
+            - redis_data:/data
+        networks:
+            - ppob-network
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    # Jaeger for distributed tracing
+    jaeger:
+        image: jaegertracing/all-in-one:1.45
+        container_name: ppob-jaeger
+        ports:
+            - "16686:16686"
+            - "14268:14268"
+            - "14250:14250"
+        environment:
+            - COLLECTOR_OTLP_ENABLED=true
+        networks:
+            - ppob-network
+
+    # Prometheus
+    prometheus:
+        image: prom/prometheus:latest
+        container_name: ppob-prometheus
+        ports:
+            - "9090:9090"
+        volumes:
+            - ./prometheus.yml:/etc/prometheus/prometheus.yml
+        networks:
+            - ppob-network
+
+    # Grafana
+    grafana:
+        image: grafana/grafana:latest
+        container_name: ppob-grafana
+        ports:
+            - "3000:3000"
+        environment:
+            - GF_SECURITY_ADMIN_PASSWORD=admin
+        volumes:
+            - grafana_data:/var/lib/grafana
+        networks:
+            - ppob-network
+        depends_on:
+            - prometheus
+
+    # Auth Service
+    # auth-service:
+    #     build:
+    #         context: ./auth-service
+    #         dockerfile: Dockerfile
+    #     container_name: ppob-auth-service
+    #     ports:
+    #         - "8081:8080"
+    #     environment:
+    #         - SERVER_PORT=8080
+    #         - DB_HOST=postgres
+    #         - DB_PORT=5432
+    #         - DB_USER=postgres
+    #         - DB_PASSWORD=postgres
+    #         - DB_NAME=ppob
+    #         - REDIS_HOST=redis
+    #         - REDIS_PORT=6379
+    #         - GIN_MODE=debug
+    #     depends_on:
+    #         postgres:
+    #             condition: service_healthy
+    #         redis:
+    #             condition: service_healthy
+    #     networks:
+    #         - ppob-network
+    #     restart: unless-stopped
+
+    # # User Service
+    # user-service:
+    #     build:
+    #         context: ./user-service
+    #         dockerfile: Dockerfile
+    #     container_name: ppob-user-service
+    #     ports:
+    #         - "8082:8080"
+    #     environment:
+    #         - SERVER_PORT=8080
+    #         - DB_HOST=postgres
+    #         - DB_PORT=5432
+    #         - DB_USER=postgres
+    #         - DB_PASSWORD=postgres
+    #         - DB_NAME=ppob
+    #         - REDIS_HOST=redis
+    #         - REDIS_PORT=6379
+    #         - GIN_MODE=debug
+    #     depends_on:
+    #         postgres:
+    #             condition: service_healthy
+    #         redis:
+    #             condition: service_healthy
+    #     networks:
+    #         - ppob-network
+    #     restart: unless-stopped
+
+    # # Wallet Service
+    # wallet-service:
+    #     build:
+    #         context: ./wallet-service
+    #         dockerfile: Dockerfile
+    #     container_name: ppob-wallet-service
+    #     ports:
+    #         - "8083:8080"
+    #     environment:
+    #         - SERVER_PORT=8080
+    #         - DB_HOST=postgres
+    #         - DB_PORT=5432
+    #         - DB_USER=postgres
+    #         - DB_PASSWORD=postgres
+    #         - DB_NAME=ppob
+    #         - REDIS_HOST=redis
+    #         - REDIS_PORT=6379
+    #         - GIN_MODE=debug
+    #     depends_on:
+    #         postgres:
+    #             condition: service_healthy
+    #         redis:
+    #             condition: service_healthy
+    #     networks:
+    #         - ppob-network
+    #     restart: unless-stopped
+
+    # # Transaction Service
+    # transaction-service:
+    #     build:
+    #         context: ./transaction-service
+    #         dockerfile: Dockerfile
+    #     container_name: ppob-transaction-service
+    #     ports:
+    #         - "8084:8080"
+    #     environment:
+    #         - SERVER_PORT=8080
+    #         - DB_HOST=postgres
+    #         - DB_PORT=5432
+    #         - DB_USER=postgres
+    #         - DB_PASSWORD=postgres
+    #         - DB_NAME=ppob
+    #         - REDIS_HOST=redis
+    #         - REDIS_PORT=6379
+    #         - GIN_MODE=debug
+    #     depends_on:
+    #         postgres:
+    #             condition: service_healthy
+    #         redis:
+    #             condition: service_healthy
+    #     networks:
+    #         - ppob-network
+    #     restart: unless-stopped
+
+    # # Product Service
+    # product-service:
+    #     build:
+    #         context: ./product-service
+    #         dockerfile: Dockerfile
+    #     container_name: ppob-product-service
+    #     ports:
+    #         - "8085:8080"
+    #     environment:
+    #         - SERVER_PORT=8080
+    #         - DB_HOST=postgres
+    #         - DB_PORT=5432
+    #         - DB_USER=postgres
+    #         - DB_PASSWORD=postgres
+    #         - DB_NAME=ppob
+    #         - REDIS_HOST=redis
+    #         - REDIS_PORT=6379
+    #         - GIN_MODE=debug
+    #     depends_on:
+    #         postgres:
+    #             condition: service_healthy
+    #         redis:
+    #             condition: service_healthy
+    #     networks:
+    #         - ppob-network
+    #     restart: unless-stopped
+
+    # # Integration Service
+    # integration-service:
+    #     build:
+    #         context: ./integration-service
+    #         dockerfile: Dockerfile
+    #     container_name: ppob-integration-service
+    #     ports:
+    #         - "8086:8080"
+    #     environment:
+    #         - SERVER_PORT=8080
+    #         - DB_HOST=postgres
+    #         - DB_PORT=5432
+    #         - DB_USER=postgres
+    #         - DB_PASSWORD=postgres
+    #         - DB_NAME=ppob
+    #         - REDIS_HOST=redis
+    #         - REDIS_PORT=6379
+    #         - GIN_MODE=debug
+    #     depends_on:
+    #         postgres:
+    #             condition: service_healthy
+    #         redis:
+    #             condition: service_healthy
+    #     networks:
+    #         - ppob-network
+    #     restart: unless-stopped
+
+    # API Gateway (Kong)
+    kong-database:
+        image: postgres:15-alpine
+        container_name: ppob-kong-database
+        environment:
+            - POSTGRES_USER=kong
+            - POSTGRES_PASSWORD=kong
+            - POSTGRES_DB=kong
+        networks:
+            - ppob-network
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U kong"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    kong-migration:
+        image: kong:3.4
+        container_name: ppob-kong-migration
+        command: "kong migrations bootstrap"
+        depends_on:
+            kong-database:
+                condition: service_healthy
+        environment:
+            - KONG_DATABASE=postgres
+            - KONG_PG_HOST=kong-database
+            - KONG_PG_USER=kong
+            - KONG_PG_PASSWORD=kong
+        networks:
+            - ppob-network
+
+    kong:
+        image: kong:3.4
+        container_name: ppob-kong
+        ports:
+            - "8000:8000"
+            - "8443:8443"
+            - "8001:8001"
+            - "8444:8444"
+        depends_on:
+            kong-migration:
+                condition: service_completed_successfully
+        environment:
+            - KONG_DATABASE=postgres
+            - KONG_PG_HOST=kong-database
+            - KONG_PG_USER=kong
+            - KONG_PG_PASSWORD=kong
+            - KONG_PROXY_ACCESS_LOG=/dev/stdout
+            - KONG_ADMIN_ACCESS_LOG=/dev/stdout
+            - KONG_PROXY_ERROR_LOG=/dev/stderr
+            - KONG_ADMIN_ERROR_LOG=/dev/stderr
+            - KONG_ADMIN_LISTEN=0.0.0.0:8001, 0.0.0.0:8444 ssl
+        networks:
+            - ppob-network
+        restart: unless-stopped
+
+volumes:
+    postgres_data:
+    redis_data:
+    grafana_data:
+
+networks:
+    ppob-network:
+        driver: bridge

@@ -1,0 +1,67 @@
+-- Migration: 009_margin_and_commission_tables.sql
+-- Description: Add margin settings and commission tables for financial operations
+
+-- Staff Global Margin Settings Table
+CREATE TABLE IF NOT EXISTS staff_global_margin_settings (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    commission_type VARCHAR(20) NOT NULL DEFAULT 'MarginShare',
+    global_margin_percent DECIMAL(5,2) NOT NULL DEFAULT 0,
+    fixed_allowance DECIMAL(15,2) NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_staff_margin_settings UNIQUE (user_id)
+);
+
+CREATE INDEX idx_staff_margin_user_id ON staff_global_margin_settings(user_id);
+
+-- Staff Product Margin Overrides Table
+CREATE TABLE IF NOT EXISTS staff_product_margin_overrides (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    product_code VARCHAR(100) NOT NULL,
+    margin_percent DECIMAL(5,2) NOT NULL DEFAULT 0,
+    fixed_margin DECIMAL(15,2) NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_product_override UNIQUE (user_id, product_code)
+);
+
+CREATE INDEX idx_product_override_user ON staff_product_margin_overrides(user_id);
+CREATE INDEX idx_product_override_code ON staff_product_margin_overrides(product_code);
+
+-- Commissions Table (if not already in transaction service)
+-- CREATE TABLE IF NOT EXISTS commissions (
+--     id BIGSERIAL PRIMARY KEY,
+--     transaction_id VARCHAR(100) NOT NULL,
+--     user_id BIGINT NOT NULL,
+--     amount DECIMAL(15,2) NOT NULL,
+--     type VARCHAR(20) NOT NULL,
+--     level INTEGER NOT NULL DEFAULT 1,
+--     status VARCHAR(20) NOT NULL DEFAULT 'pending',
+--     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+-- );
+
+-- Daily Limit Table
+-- CREATE TABLE IF NOT EXISTS daily_limits (
+--     id BIGSERIAL PRIMARY KEY,
+--     user_id BIGINT NOT NULL,
+--     date VARCHAR(10) NOT NULL,
+--     count INTEGER NOT NULL DEFAULT 0,
+--     total_amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+--     max_count INTEGER NOT NULL DEFAULT 0,
+--     max_amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+--     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+-- );
+
+-- Insert default margin settings for testing
+-- INSERT INTO staff_global_margin_settings (user_id, commission_type, global_margin_percent, fixed_allowance, is_active)
+-- VALUES (1, 'MarginShare', 10.00, 0, true);
+
+-- Insert daily limit defaults
+-- INSERT INTO daily_limits (user_id, date, count, total_amount, max_count, max_amount)
+-- VALUES (1, '2026-01-01', 0, 0, 50, 5000000);

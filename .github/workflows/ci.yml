@@ -1,0 +1,295 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  GO_VERSION: '1.21'
+  NODE_VERSION: '18'
+
+jobs:
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ppob_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install dependencies - Auth Service
+        working-directory: auth-service
+        run: go mod download
+
+      - name: Install dependencies - User Service
+        working-directory: user-service
+        run: go mod download
+
+      - name: Install dependencies - Wallet Service
+        working-directory: wallet-service
+        run: go mod download
+
+      - name: Install dependencies - Transaction Service
+        working-directory: transaction-service
+        run: go mod download
+
+      - name: Install dependencies - Product Service
+        working-directory: product-service
+        run: go mod download
+
+      - name: Install dependencies - Integration Service
+        working-directory: integration-service
+        run: go mod download
+
+      - name: Run go vet
+        run: |
+          cd auth-service && go vet ./... || true
+          cd user-service && go vet ./... || true
+          cd wallet-service && go vet ./... || true
+          cd transaction-service && go vet ./... || true
+          cd product-service && go vet ./... || true
+          cd integration-service && go vet ./... || true
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ppob_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run Tests - Auth Service
+        working-directory: auth-service
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_NAME: ppob_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Run Tests - User Service
+        working-directory: user-service
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_NAME: ppob_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Run Tests - Wallet Service
+        working-directory: wallet-service
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_NAME: ppob_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Run Tests - Transaction Service
+        working-directory: transaction-service
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_NAME: ppob_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Run Tests - Product Service
+        working-directory: product-service
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_NAME: ppob_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Run Tests - Integration Service
+        working-directory: integration-service
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_NAME: ppob_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-reports
+          path: '**/coverage.out'
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build Auth Service
+        working-directory: auth-service
+        run: CGO_ENABLED=0 GOOS=linux go build -o bin/auth-service ./cmd
+
+      - name: Build User Service
+        working-directory: user-service
+        run: CGO_ENABLED=0 GOOS=linux go build -o bin/user-service ./cmd
+
+      - name: Build Wallet Service
+        working-directory: wallet-service
+        run: CGO_ENABLED=0 GOOS=linux go build -o bin/wallet-service ./cmd
+
+      - name: Build Transaction Service
+        working-directory: transaction-service
+        run: CGO_ENABLED=0 GOOS=linux go build -o bin/transaction-service ./cmd
+
+      - name: Build Product Service
+        working-directory: product-service
+        run: CGO_ENABLED=0 GOOS=linux go build -o bin/product-service ./cmd
+
+      - name: Build Integration Service
+        working-directory: integration-service
+        run: CGO_ENABLED=0 GOOS=linux go build -o bin/integration-service ./cmd
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [build]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Auth Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./auth-service
+          push: false
+          tags: ppob/auth-service:latest
+          cache-from: type=registry,ref=ppob/auth-service:buildcache
+          cache-to: type=registry,ref=ppob/auth-service:buildcache,mode=max
+
+      - name: Build User Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./user-service
+          push: false
+          tags: ppob/user-service:latest
+
+      - name: Build Wallet Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./wallet-service
+          push: false
+          tags: ppob/wallet-service:latest
+
+      - name: Build Transaction Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./transaction-service
+          push: false
+          tags: ppob/transaction-service:latest
+
+      - name: Build Product Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./product-service
+          push: false
+          tags: ppob/product-service:latest
+
+      - name: Build Integration Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./integration-service
+          push: false
+          tags: ppob/integration-service:latest

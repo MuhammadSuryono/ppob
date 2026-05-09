@@ -1,0 +1,68 @@
+package errors
+
+var DigiflazzRCMapping = map[string]string{
+	"00": "DIGIFLAZZ_SUCCESS",
+	"01": "DIGIFLAZZ_TIMEOUT",
+	"02": "DIGIFLAZZ_GENERAL_FAILURE",
+	"03": "DIGIFLAZZ_PENDING",
+	"40": "DIGIFLAZZ_PAYLOAD_ERROR",
+	"41": "DIGIFLAZZ_INVALID_SIGNATURE",
+	"42": "DIGIFLAZZ_SELLER_NOT_FOUND",
+	"43": "DIGIFLAZZ_SKU_NOT_FOUND",
+	"44": "DIGIFLAZZ_INSUFFICIENT_DEPOSIT",
+	"45": "DIGIFLAZZ_IP_BLOCKED",
+	"47": "DIGIFLAZZ_GENERAL_FAILURE",
+	"49": "DIGIFLAZZ_REF_ID_DUPLICATE",
+	"50": "DIGIFLAZZ_GENERAL_FAILURE",
+	"51": "DIGIFLAZZ_NUMBER_BLOCKED",
+	"52": "DIGIFLAZZ_PREFIX_MISMATCH",
+	"53": "DIGIFLAZZ_PRODUCT_UNAVAILABLE",
+	"54": "DIGIFLAZZ_INVALID_NUMBER",
+	"55": "DIGIFLAZZ_PRODUCT_DISRUPTION",
+	"58": "DIGIFLAZZ_CUT_OFF",
+	"60": "DIGIFLAZZ_BILL_NOT_AVAILABLE",
+	"67": "DIGIFLAZZ_SELLER_NOT_VERIFIED",
+	"68": "DIGIFLAZZ_OUT_OF_STOCK",
+	"69": "DIGIFLAZZ_PRICE_MISMATCH",
+	"70": "DIGIFLAZZ_BILLER_TIMEOUT",
+	"71": "DIGIFLAZZ_PRODUCT_UNSTABLE",
+	"80": "DIGIFLAZZ_ACCOUNT_BLOCKED",
+	"81": "DIGIFLAZZ_GENERAL_FAILURE",
+	"82": "DIGIFLAZZ_GENERAL_FAILURE",
+	"83": "DIGIFLAZZ_PRICELIST_LIMIT",
+	"85": "DIGIFLAZZ_RATE_LIMIT",
+	"86": "DIGIFLAZZ_PLN_INQUIRY_LIMIT",
+	"87": "DIGIFLAZZ_EMONEY_MULTIPLE",
+	"88": "DIGIFLAZZ_GENERAL_FAILURE",
+	"99": "DIGIFLAZZ_GENERAL_FAILURE",
+}
+
+func MapRCtoErrorCode(rc string) (string, bool) {
+	code, ok := DigiflazzRCMapping[rc]
+	if !ok {
+		return "DIGIFLAZZ_UNKNOWN_ERROR", false
+	}
+	return code, true
+}
+
+func IsRetryableRC(rc string) bool {
+	retryableRCs := map[string]bool{
+		"01": true,  // TIMEOUT
+		"70": true,  // BILLER_TIMEOUT
+		"71": true,  // PRODUCT_UNSTABLE
+		"83": true,  // PRICELIST_LIMIT
+		"85": true,  // RATE_LIMIT
+		"86": true,  // PLN_INQUIRY_LIMIT
+		"58": true,  // CUT_OFF
+		"69": true,  // PRICE_MISMATCH
+	}
+	return retryableRCs[rc]
+}
+
+func IsPendingRC(rc string) bool {
+	return rc == "03"
+}
+
+func IsSuccessRC(rc string) bool {
+	return rc == "00"
+}

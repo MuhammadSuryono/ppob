@@ -1,0 +1,49 @@
+-- +goose Up
+-- ============================================
+-- mitra_product_prices (Mitra Custom Pricing)
+-- ============================================
+CREATE TABLE IF NOT EXISTS mitra_product_prices (
+    mitra_price_id  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    mitra_id        UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    product_id      UUID NOT NULL REFERENCES products(product_id) ON DELETE CASCADE,
+    selling_price   DECIMAL(18,2) NOT NULL CHECK (selling_price >= 0),
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(mitra_id, product_id)
+);
+
+CREATE INDEX idx_mitra_product_prices_mitra ON mitra_product_prices(mitra_id);
+CREATE INDEX idx_mitra_product_prices_product ON mitra_product_prices(product_id);
+
+-- Trigger to validate mitra selling_price >= platform_price
+CREATE OR REPLACE FUNCTION validate_mitra_price()
+RETURNS TRIGGER AS $$
+DECLARE
+    platform_price_val DECIMAL(18,2);
+BEGIN
+    SELECT platform_price INTO platform_price_val 
+    FROM products 
+    WHERE product_id = NEW.product_id;
+    
+    IF platform_price_val IS NULL THEN
+        RAISE EXCEPTION 'Product not found: %', NEW.product_id;
+    END IF;
+    
+    IF NEW.selling_price < platform_price_val THEN
+        RAISE EXCEPTION 'selling_price (%) cannot be less than platform_price (%)', 
+            NEW.selling_price, platform_price_val;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_validate_mitra_price
+BEFORE INSERT OR UPDATE ON mitra_product_prices
+FOR EACH ROW EXECUTE FUNCTION validate_mitra_price();
+
+-- +goose Down
+DROP TRIGGER IF EXISTS trg_validate_mitra_price ON mitra_product_prices;
+DROP FUNCTION IF EXISTS validate_mitra_price();
+DROP TABLE IF EXISTS mitra_product_prices CASCADE;
