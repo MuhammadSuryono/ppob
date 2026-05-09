@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
 import 'login_screen.dart';
@@ -61,7 +62,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
 
       if (mounted) {
         // Navigate to home on success
-        Navigator.of(context).pushReplacementNamed('/home');
+        context.pushReplacement('/home');
       }
     }
   }
@@ -109,7 +110,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
 
     if (authState.isAuthenticated) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        context.pushReplacement('/home');
       });
     }
 
@@ -226,6 +227,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pop();
+                      context.pushReplacement('/login');
                     },
                     child: const Text('Ubah nomor HP'),
                   ),

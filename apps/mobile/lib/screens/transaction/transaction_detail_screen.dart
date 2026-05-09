@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../repositories/transaction_repository.dart';
 import '../../models/transaction.dart';
@@ -15,8 +16,7 @@ class TransactionDetailScreen extends ConsumerStatefulWidget {
 class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScreen> {
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)!.settings.arguments as String;
-    final txId = args;
+    final txId = GoRouterState.of(context).extra as String;
 
     return Scaffold(
       appBar: AppBar(

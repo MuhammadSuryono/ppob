@@ -112,3 +112,36 @@ type DigiflazzWebhookRequest struct {
 	Message    string `json:"message"`
 	Timestamp  string `json:"timestamp"`
 }
+
+// Report DTOs
+
+type ReportKPIResponse struct {
+	TotalSales          float64 `json:"total_sales"`
+	PlatformProfit      float64 `json:"platform_profit"`
+	StaffCount          int     `json:"staff_count"`
+	SuccessRate         float64 `json:"success_rate"`
+	TransactionCount    int     `json:"transaction_count"`
+	PeriodStart         string  `json:"period_start"`
+	PeriodEnd           string  `json:"period_end"`
+}
+
+type ReportSalesTrendItem struct {
+	Date  string  `json:"date"`
+	Sales float64 `json:"sales"`
+	Count int     `json:"count"`
+}
+
+type ReportStaffPerformanceItem struct {
+	StaffID            uint    `json:"staff_id"`
+	StaffName          string  `json:"staff_name"`
+	TransactionCount   int     `json:"transaction_count"`
+	TotalSales         float64 `json:"total_sales"`
+	TotalCommission    float64 `json:"total_commission"`
+	SuccessRate        float64 `json:"success_rate"`
+}
+
+type ReportsResponse struct {
+	KPIs               []ReportKPIResponse               `json:"kpis"`
+	SalesTrend        []ReportSalesTrendItem            `json:"sales_trend"`
+	StaffPerformance  []ReportStaffPerformanceItem      `json:"staff_performance"`
+}

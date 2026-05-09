@@ -145,6 +145,9 @@ func main() {
 	api.POST("/transactions/:id/status", middleware.AuthMiddleware(cfg), transactionHandler.UpdateTransactionStatus)
 	api.POST("/transactions/:id/cancel", middleware.AuthMiddleware(cfg), transactionHandler.CancelTransaction)
 
+	// Reports endpoints
+	api.GET("/reports", middleware.AuthMiddleware(cfg), transactionHandler.GetReports)
+
 	r.POST("/webhook/digiflazz", transactionHandler.ProcessWebhook)
 
 	srv := &http.Server{

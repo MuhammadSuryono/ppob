@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../repositories/product_repository.dart';
 import '../../models/product.dart';
@@ -45,19 +46,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.history),
             onPressed: () {
-              Navigator.of(context).pushNamed('/transactions');
+              context.push('/transactions');
             },
           ),
           IconButton(
             icon: const Icon(Icons.account_balance_wallet),
             onPressed: () {
-              Navigator.of(context).pushNamed('/wallet');
+              context.push('/wallet');
             },
           ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              Navigator.of(context).pushNamed('/settings');
+              context.push('/settings');
             },
           ),
         ],
@@ -152,18 +153,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     childAspectRatio: 0.75,
                   ),
                   itemCount: products.length,
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    return ProductCard(
-                      product: product,
-                      onTap: () {
-                        Navigator.of(context).pushNamed(
-                          '/transaction/initiate',
-                          arguments: product,
-                        );
-                      },
-                    );
-                  },
+                   itemBuilder: (context, index) {
+                     final product = products[index];
+                     return ProductCard(
+                       product: product,
+                       onTap: () {
+                         context.push('/transaction/initiate', extra: product);
+                       },
+                     );
+                   },
                 );
               },
             ),
@@ -267,39 +265,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Navigator.of(context).pop();
             },
           ),
-          if (authState.role == 'mitra')
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text('Kelola Staff'),
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pushNamed('/staff');
-              },
-            ),
-          ListTile(
-            leading: const Icon(Icons.account_balance_wallet),
-            title: const Text('Wallet'),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pushNamed('/wallet');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.history),
-            title: const Text('Riwayat Transaksi'),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pushNamed('/transactions');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Pengaturan'),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pushNamed('/settings');
-            },
-          ),
+           if (authState.role == 'mitra')
+             ListTile(
+               leading: const Icon(Icons.people),
+               title: const Text('Kelola Staff'),
+               onTap: () {
+                 Navigator.of(context).pop();
+                 context.push('/staff');
+               },
+             ),
+           ListTile(
+             leading: const Icon(Icons.account_balance_wallet),
+             title: const Text('Wallet'),
+             onTap: () {
+               Navigator.of(context).pop();
+               context.push('/wallet');
+             },
+           ),
+           ListTile(
+             leading: const Icon(Icons.history),
+             title: const Text('Riwayat Transaksi'),
+             onTap: () {
+               Navigator.of(context).pop();
+               context.push('/transactions');
+             },
+           ),
+           ListTile(
+             leading: const Icon(Icons.settings),
+             title: const Text('Pengaturan'),
+             onTap: () {
+               Navigator.of(context).pop();
+               context.push('/settings');
+             },
+           ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),

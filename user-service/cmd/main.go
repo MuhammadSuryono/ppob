@@ -14,11 +14,12 @@ import (
 	"github.com/yontech/ppob/user-service/config"
 	"github.com/yontech/ppob/user-service/internal/handlers"
 	"github.com/yontech/ppob/user-service/internal/middleware"
+	"github.com/yontech/ppob/user-service/internal/models"
 	"github.com/yontech/ppob/user-service/internal/repository"
 	"github.com/yontech/ppob/user-service/internal/services"
 
 	"go.opentelemetry.io/otel"
-	
+
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -77,14 +78,24 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
+	// Auto-migrate new models
+	db.AutoMigrate(&models.Notification{})
+
 	redisClient := config.InitRedis(cfg)
 	defer redisClient.Close()
 
 	userRepo := repository.NewUserRepository(db)
 	roleRepo := repository.NewRoleRepository(db)
 
-	userService := services.NewUserService(userRepo, roleRepo, redisClient, cfg)
+	marginService := services.NewMarginService(db)
+	notificationRepo := repository.NewNotificationRepository(db)
+	notificationService := services.NewNotificationService(notificationRepo)
+	notificationHandler := handlers.NewNotificationHandler(notificationService)
+
+	userService := services.NewUserService(userRepo, roleRepo, marginService, redisClient, cfg)
+	userService.SetDB(db)
 	userHandler := handlers.NewUserHandler(userService)
+	marginHandler := handlers.NewMarginHandler(marginService)
 
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware())
@@ -116,14 +127,42 @@ func main() {
 			users.PUT("/:id", middleware.AuthMiddleware(cfg), userHandler.UpdateUser)
 			users.GET("/:id/roles", middleware.AuthMiddleware(cfg), userHandler.GetUserRoles)
 			users.POST("/:id/roles", middleware.AuthMiddleware(cfg), middleware.RoleMiddleware("admin"), userHandler.AssignRole)
-
 			users.GET("", middleware.AuthMiddleware(cfg), middleware.RoleMiddleware("admin", "staff"), userHandler.ListUsers)
+
+			// Staff management endpoints (Mitra only)
+			staff := api.Group("/staff")
+			{
+				staff.GET("", middleware.AuthMiddleware(cfg), middleware.RoleMiddleware("mitra"), userHandler.ListStaff)
+				staff.POST("", middleware.AuthMiddleware(cfg), middleware.RoleMiddleware("mitra"), userHandler.CreateStaff)
+				staff.GET("/:id", middleware.AuthMiddleware(cfg), middleware.RoleMiddleware("mitra", "admin"), userHandler.GetStaff)
+				staff.PUT("/:id", middleware.AuthMiddleware(cfg), middleware.RoleMiddleware("mitra"), userHandler.UpdateStaff)
+				staff.GET("/:id/stats", middleware.AuthMiddleware(cfg), middleware.RoleMiddleware("mitra", "admin"), userHandler.GetStaffStats)
+				staff.GET("/pending-count", middleware.AuthMiddleware(cfg), middleware.RoleMiddleware("mitra"), userHandler.GetPendingStaffCount)
+			}
 		}
 
 		roles := api.Group("/roles")
 		{
 			roles.GET("", middleware.AuthMiddleware(cfg), middleware.RoleMiddleware("admin"), userHandler.ListRoles)
 			roles.POST("", middleware.AuthMiddleware(cfg), middleware.RoleMiddleware("admin"), userHandler.CreateRole)
+		}
+
+		// Margin settings endpoints
+		margin := api.Group("/margin")
+		{
+			margin.POST("/staff/:staff_id", middleware.AuthMiddleware(cfg), middleware.RoleMiddleware("mitra"), marginHandler.SetStaffMargin)
+			margin.GET("/staff/:staff_id", middleware.AuthMiddleware(cfg), middleware.RoleMiddleware("mitra", "admin"), marginHandler.GetStaffMargin)
+			margin.GET("/staff/:staff_id/overrides", middleware.AuthMiddleware(cfg), middleware.RoleMiddleware("mitra", "admin"), marginHandler.GetStaffProductOverrides)
+			margin.POST("/staff/:staff_id/overrides", middleware.AuthMiddleware(cfg), middleware.RoleMiddleware("mitra"), marginHandler.SetProductMarginOverride)
+		}
+
+		// Notification endpoints
+		notifications := api.Group("/notifications")
+		{
+			notifications.GET("", middleware.AuthMiddleware(cfg), notificationHandler.ListNotifications)
+			notifications.GET("/uncount", middleware.AuthMiddleware(cfg), notificationHandler.GetUnreadCount)
+			notifications.PATCH("/:id/read", middleware.AuthMiddleware(cfg), notificationHandler.MarkNotificationRead)
+			notifications.POST("/mark-all-read", middleware.AuthMiddleware(cfg), notificationHandler.MarkAllRead)
 		}
 	}
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../models/product.dart';
 import '../../models/wallet.dart';
 import '../../providers/auth_provider.dart';
@@ -357,9 +358,9 @@ class _TransactionInitiateScreenState extends ConsumerState<TransactionInitiateS
       if (!mounted) return;
 
       // Navigate to confirmation screen
-      Navigator.of(context).pushNamed(
+      context.push(
         '/transaction/confirm',
-        arguments: {
+        extra: {
           'product': widget.product,
           'customerNo': _customerNoController.text.trim(),
           'finalPrice': _finalPrice,

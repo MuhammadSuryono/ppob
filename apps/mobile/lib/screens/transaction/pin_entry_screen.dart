@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
@@ -105,7 +106,7 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final args = GoRouterState.of(context).extra as Map<String, dynamic>;
     final amount = args['amount'] as double;
     final product = args['product'] as dynamic;
     final customerNo = args['customerNo'] as String;

@@ -81,6 +81,7 @@ func main() {
 			wallets.POST("/:id/release-hold", walletHandler.ReleaseHold)
 			wallets.POST("/:id/debit", walletHandler.Debit)
 			wallets.POST("/:id/credit", walletHandler.Credit)
+			wallets.POST("/:id/topup", walletHandler.TopUp) // Mitra self top-up
 			wallets.POST("/transfer", walletHandler.Transfer)
 			wallets.POST("/staff/topup", walletHandler.TopUpStaff)
 			wallets.GET("/:id/events", walletHandler.GetEvents)

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
 
@@ -67,7 +68,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (updatedState.errorMessage != null) {
         _showErrorDialog(updatedState.errorMessage!);
       } else if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/otp');
+        context.pushReplacement('/otp');
       }
     }
   }
@@ -94,7 +95,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     if (authState.isAuthenticated) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        context.pushReplacement('/home');
       });
     }
 

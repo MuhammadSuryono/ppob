@@ -68,3 +68,25 @@ type StaffProductMarginOverride struct {
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at"`
 }
+
+type Notification struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	UserID    uint      `gorm:"index;not null" json:"user_id"` // recipient
+	Type      string    `gorm:"size:50" json:"type"` // e.g., "staff_invite", "transaction", "system"
+	Title     string    `gorm:"size:255" json:"title"`
+	Message   string    `gorm:"type:text" json:"message"`
+	IsRead    bool      `gorm:"default:false" json:"is_read"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type DailyLimit struct {
+	ID           uint      `gorm:"primaryKey" json:"id"`
+	UserID       uint      `gorm:"uniqueIndex;not null" json:"user_id"`
+	Date         string    `gorm:"size:10;not null" json:"date"`
+	Count        int       `gorm:"default:0" json:"count"`
+	MaxCount     int       `gorm:"default:100" json:"max_count"`
+	TotalAmount  float64   `gorm:"default:0" json:"total_amount"`
+	MaxAmount    float64   `gorm:"default:10000000" json:"max_amount"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}

@@ -200,3 +200,38 @@ func (h *TransactionHandler) CancelTransaction(c *gin.Context) {
 
 	c.JSON(http.StatusOK, resp)
 }
+
+// GetReports returns aggregated KPIs, sales trend, and staff performance
+func (h *TransactionHandler) GetReports(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+	role, _ := c.Get("role")
+
+	startDate := c.DefaultQuery("start_date", "")
+	endDate := c.DefaultQuery("end_date", "")
+
+	// Only Mitra or Admin can access reports
+	if role != "mitra" && role != "admin" {
+		errors.RespondWithError(c, errors.NewAppError("AUTH_INSUFFICIENT_PERMISSION", nil))
+		return
+	}
+
+	var reportUserID uint
+	if role == "mitra" {
+		reportUserID = userID.(uint)
+	} else {
+		// Admin can filter by user_id query param
+		if uid := c.Query("user_id"); uid != "" {
+			if parsed, err := strconv.ParseUint(uid, 10, 32); err == nil {
+				reportUserID = uint(parsed)
+			}
+		}
+	}
+
+	resp, err := h.transactionService.GetReports(c.Request.Context(), startDate, endDate, reportUserID)
+	if err != nil {
+		errors.RespondWithError(c, errors.NewAppError("SYSTEM_INTERNAL", nil))
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}

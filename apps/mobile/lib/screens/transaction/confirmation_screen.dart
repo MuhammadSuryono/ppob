@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../repositories/transaction_repository.dart';
 import '../../repositories/wallet_repository.dart';
@@ -18,13 +19,13 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    final product = args['product'] as Product;
-    final customerNo = args['customerNo'] as String;
-    final finalPrice = args['finalPrice'] as double;
-    final nominal = args['nominal'] as double?;
-    final provider = args['provider'] as String?;
-    final notes = args['notes'] as List<String>?;
+    final extra = GoRouterState.of(context).extra as Map<String, dynamic>;
+    final product = extra['product'] as Product;
+    final customerNo = extra['customerNo'] as String;
+    final finalPrice = extra['finalPrice'] as double;
+    final nominal = extra['nominal'] as double?;
+    final provider = extra['provider'] as String?;
+    final notes = extra['notes'] as List<String>?;
 
     final authState = ref.watch(authProvider);
 
@@ -112,26 +113,26 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
                   ),
                 ],
               ),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : () => _confirmTransaction(args),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _confirmTransaction,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                          )
+                        : const Text('BAYAR & PROSES', style: TextStyle(fontSize: 16)),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
-                        )
-                      : const Text('BAYAR & PROSES', style: TextStyle(fontSize: 16)),
                 ),
-              ),
             ),
           ],
         ),
@@ -168,15 +169,16 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
     );
   }
 
-  Future<void> _confirmTransaction(Map<String, dynamic> args) async {
+  Future<void> _confirmTransaction() async {
     setState(() => _isLoading = true);
 
     try {
-      final product = args['product'] as Product;
-      final customerNo = args['customerNo'] as String;
-      final finalPrice = args['finalPrice'] as double;
-      final nominal = args['nominal'] as double?;
-      final notes = args['notes'] as List<String>?;
+      final extra = GoRouterState.of(context).extra as Map<String, dynamic>;
+      final product = extra['product'] as Product;
+      final customerNo = extra['customerNo'] as String;
+      final finalPrice = extra['finalPrice'] as double;
+      final nominal = extra['nominal'] as double?;
+      final notes = extra['notes'] as List<String>?;
       final authState = ref.read(authProvider);
       final walletRepo = ref.read(walletRepositoryProvider);
       final txRepo = ref.read(transactionRepositoryProvider);
@@ -188,9 +190,9 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       if (!mounted) return;
 
       // Navigate to PIN screen
-      final result = await Navigator.of(context).pushNamed<bool>(
+      final result = await context.push<bool>(
         '/transaction/pin',
-        arguments: {
+        extra: {
           'amount': finalPrice,
           'product': product,
           'customerNo': customerNo,

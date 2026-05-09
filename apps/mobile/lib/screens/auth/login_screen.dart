@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
 import 'otp_screen.dart';
@@ -61,7 +62,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     // Navigate to home if authenticated
     if (authState.isAuthenticated) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        context.pushReplacement('/home');
       });
     }
 
@@ -176,7 +177,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // Register button
                   TextButton(
                     onPressed: () {
-                      Navigator.of(context).pushNamed('/register');
+                      context.push('/register');
                     },
                     child: const Text('Belum punya akun? Daftar'),
                   ),

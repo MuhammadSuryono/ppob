@@ -124,6 +124,109 @@ func (r *TransactionRepository) GetIdempotencyKey(ctx context.Context, key strin
 	return "", nil // Not implemented
 }
 
+// Report aggregations
+
+type SalesTrendResult struct {
+	Date  string  `json:"date"`
+	Sales float64 `json:"sales"`
+	Count int     `json:"count"`
+}
+
+func (r *TransactionRepository) GetSalesTrend(startDate, endDate string) ([]SalesTrendResult, error) {
+	var results []SalesTrendResult
+	err := r.db.Model(&models.Transaction{}).
+		Select("DATE(created_at) as date, SUM(amount) as sales, COUNT(*) as count").
+		Where("status = ?", "success").
+		Where("created_at BETWEEN ? AND ?", startDate, endDate).
+		Group("DATE(created_at)").
+		Order("date ASC").
+		Scan(&results).Error
+	return results, err
+}
+
+type StaffPerformanceResult struct {
+	StaffID          uint    `json:"staff_id"`
+	StaffName        string  `json:"staff_name"`
+	TransactionCount int     `json:"transaction_count"`
+	TotalSales       float64 `json:"total_sales"`
+	TotalCommission  float64 `json:"total_commission"`
+	SuccessRate      float64 `json:"success_rate"`
+}
+
+func (r *TransactionRepository) GetStaffPerformance(startDate, endDate string) ([]StaffPerformanceResult, error) {
+	var results []StaffPerformanceResult
+	// This query joins with users to get staff name, and aggregates commission and sales
+	err := r.db.Model(&models.Commission{}).
+		Select("commissions.user_id as staff_id, users.full_name as staff_name, COUNT(*) as transaction_count, SUM(commissions.amount) as total_commission, SUM(case when commissions.status = 'paid' then 1 else 0 end) as paid_count").
+		Joins("LEFT JOIN users ON commissions.user_id = users.id").
+		Where("commissions.created_at BETWEEN ? AND ?", startDate, endDate).
+		Group("commissions.user_id, users.full_name").
+		Order("total_commission DESC").
+		Scan(&results).Error
+	if err != nil {
+		return nil, err
+	}
+	// Compute success rate from transactions separately? For now return.
+	return results, err
+}
+
+type KPIResult struct {
+	TotalSales     float64 `json:"total_sales"`
+	PlatformProfit float64 `json:"platform_profit"`
+	SuccessCount   int     `json:"success_count"`
+	TotalCount     int     `json:"total_count"`
+	StaffCount     int64   `json:"staff_count"`
+}
+
+func (r *TransactionRepository) GetKPIs(startDate, endDate string, userID uint) (*KPIResult, error) {
+	var result KPIResult
+	base := r.db.Model(&models.Transaction{}).Where("created_at BETWEEN ? AND ?", startDate, endDate)
+	if userID > 0 {
+		base = base.Where("user_id = ?", userID)
+	}
+
+	// Total sales from successful transactions
+	err := base.Select("COALESCE(SUM(amount),0) as total_sales").
+		Where("status = ?", "success").
+		Scan(&result).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Platform profit (sum of margin)
+	err = base.Select("COALESCE(SUM(margin),0) as platform_profit").
+		Where("status = ?", "success").
+		Scan(&result).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Success count
+	err = base.Where("status = ?", "success").Count(&result.SuccessCount).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Total count (all statuses)
+	var total int64
+	err = base.Count(&total).Error
+	if err != nil {
+		return nil, err
+	}
+	result.TotalCount = int(total)
+
+	// Staff count (distinct user_ids)
+	var staffCount int64
+	err = base.Distinct("user_id").Count(&staffCount).Error
+	if err != nil {
+		return nil, err
+	}
+	result.StaffCount = staffCount
+
+	return &result, nil
+}
+
+
 type MarginRepository struct {
 	db *gorm.DB
 }

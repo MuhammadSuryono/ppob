@@ -2,13 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
+import '../models/product.dart';
+import '../models/staff.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/otp_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/transaction/transaction_history_screen.dart';
+import 'screens/transaction/transaction_initiate_screen.dart';
+import 'screens/transaction/confirmation_screen.dart';
+import 'screens/transaction/pin_entry_screen.dart';
+import 'screens/transaction/transaction_detail_screen.dart';
 import 'screens/wallet/wallet_screen.dart';
 import 'screens/staff/staff_list_screen.dart';
+import 'screens/staff/staff_add_edit_screen.dart';
+import 'screens/staff/staff_topup_screen.dart';
 import 'screens/settings/settings_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -57,12 +65,44 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const TransactionHistoryScreen(),
       ),
       GoRoute(
+        path: '/transaction/initiate',
+        builder: (context, state) => TransactionInitiateScreen(
+          product: state.extra as Product,
+        ),
+      ),
+      GoRoute(
+        path: '/transaction/confirm',
+        builder: (context, state) => const ConfirmationScreen(),
+      ),
+      GoRoute(
+        path: '/transaction/pin',
+        builder: (context, state) => const PinEntryScreen(),
+      ),
+      GoRoute(
+        path: '/transactions/detail',
+        builder: (context, state) => const TransactionDetailScreen(),
+      ),
+      GoRoute(
         path: '/wallet',
         builder: (context, state) => const WalletScreen(),
       ),
       GoRoute(
         path: '/staff',
         builder: (context, state) => const StaffListScreen(),
+      ),
+      GoRoute(
+        path: '/staff/add',
+        builder: (context, state) => const StaffAddEditScreen(),
+      ),
+      GoRoute(
+        path: '/staff/edit',
+        builder: (context, state) => StaffAddEditScreen(
+          staff: state.extra as Staff,
+        ),
+      ),
+      GoRoute(
+        path: '/staff/topup',
+        builder: (context, state) => const StaffTopUpScreen(),
       ),
       GoRoute(
         path: '/settings',

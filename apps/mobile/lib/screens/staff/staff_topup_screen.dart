@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../repositories/wallet_repository.dart';
 import '../../repositories/staff_repository.dart';
@@ -37,8 +38,7 @@ class _StaffTopUpScreenState extends ConsumerState<StaffTopUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)!.settings.arguments as String;
-    final staffId = args;
+    final staffId = GoRouterState.of(context).extra as String;
 
     final staffRepo = ref.watch(staffRepositoryProvider);
     final walletRepo = ref.watch(walletRepositoryProvider);

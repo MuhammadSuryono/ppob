@@ -58,3 +58,7 @@ type ErrorResponse struct {
 	Error   string `json:"error"`
 	Message string `json:"message"`
 }
+
+type TopUpRequest struct {
+	Amount float64 `json:"amount" binding:"required,gt=0"`
+}

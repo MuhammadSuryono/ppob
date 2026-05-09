@@ -579,3 +579,75 @@ func (v *TransitionValidator) CanTransition(from, to TransactionState, tx *Trans
 	}
 	return nil
 }
+
+// GetReports returns aggregated KPIs, sales trend, and staff performance for the given date range
+func (s *TransactionService) GetReports(ctx context.Context, startDate, endDate string, userID uint) (*dto.ReportsResponse, error) {
+	// Parse dates to ensure valid format
+	if startDate == "" {
+		startDate = time.Now().AddDate(0, 0, -30).Format("2006-01-02")
+	}
+	if endDate == "" {
+		endDate = time.Now().Format("2006-01-02")
+	}
+
+	// Get KPIs
+	kpiResult, err := s.transactionRepo.GetKPIs(startDate, endDate, reportUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	kpi := dto.ReportKPIResponse{
+		TotalSales:         kpiResult.TotalSales,
+		PlatformProfit:     kpiResult.PlatformProfit,
+		TransactionCount:   kpiResult.TotalCount,
+		SuccessRate:        s.calculateSuccessRate(kpiResult.SuccessCount, kpiResult.TotalCount),
+		PeriodStart:        startDate,
+		PeriodEnd:          endDate,
+	}
+	// Staff count from result
+	kpi.StaffCount = int(kpiResult.StaffCount)
+
+	// Sales Trend
+	salesTrend, err := s.transactionRepo.GetSalesTrend(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	salesTrendItems := make([]dto.ReportSalesTrendItem, len(salesTrend))
+	for i, item := range salesTrend {
+		salesTrendItems[i] = dto.ReportSalesTrendItem{
+			Date:  item.Date,
+			Sales: item.Sales,
+			Count: item.Count,
+		}
+	}
+
+	// Staff Performance
+	staffPerf, err := s.transactionRepo.GetStaffPerformance(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	staffPerfItems := make([]dto.ReportStaffPerformanceItem, len(staffPerf))
+	for i, item := range staffPerf {
+		staffPerfItems[i] = dto.ReportStaffPerformanceItem{
+			StaffID:          item.StaffID,
+			StaffName:        item.StaffName,
+			TransactionCount: item.TransactionCount,
+			TotalSales:       0, // can compute from transactions if needed
+			TotalCommission:   item.TotalCommission,
+			SuccessRate:       0, // could compute from commissions
+		}
+	}
+
+	return &dto.ReportsResponse{
+		KPIs:              []dto.ReportKPIResponse{kpi},
+		SalesTrend:        salesTrendItems,
+		StaffPerformance:  staffPerfItems,
+	}, nil
+}
+
+func (s *TransactionService) calculateSuccessRate(successCount, totalCount int) float64 {
+	if totalCount == 0 {
+		return 0
+	}
+	return float64(successCount) / float64(totalCount) * 100
+}

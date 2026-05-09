@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../repositories/staff_repository.dart';
 import '../../models/staff.dart';
@@ -128,29 +129,23 @@ class _StaffListScreenState extends ConsumerState<StaffListScreen> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       // Top-up button
-                      IconButton(
-                        icon: const Icon(Icons.add_circle, color: Colors.green),
-                        tooltip: 'Top Up',
-                        onPressed: () async {
-                          await Navigator.of(context).pushNamed(
-                            '/staff/topup',
-                            arguments: staff.id,
-                          );
-                          setState(() {});
-                        },
-                      ),
+                       IconButton(
+                         icon: const Icon(Icons.add_circle, color: Colors.green),
+                         tooltip: 'Top Up',
+                         onPressed: () async {
+                           await context.push('/staff/topup', extra: staff.id);
+                           setState(() {});
+                         },
+                       ),
                       // Edit button
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        tooltip: 'Edit',
-                        onPressed: () async {
-                          await Navigator.of(context).pushNamed(
-                            '/staff/edit',
-                            arguments: staff,
-                          );
-                          setState(() {});
-                        },
-                      ),
+                       IconButton(
+                         icon: const Icon(Icons.edit, color: Colors.blue),
+                         tooltip: 'Edit',
+                         onPressed: () async {
+                           await context.push('/staff/edit', extra: staff);
+                           setState(() {});
+                         },
+                       ),
                       // Delete button
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
@@ -159,12 +154,9 @@ class _StaffListScreenState extends ConsumerState<StaffListScreen> {
                       ),
                     ],
                   ),
-                  onTap: () {
-                    Navigator.of(context).pushNamed(
-                      '/staff/edit',
-                      arguments: staff,
-                    );
-                  },
+                   onTap: () {
+                     context.push('/staff/edit', extra: staff);
+                   },
                 ),
               );
             },
@@ -173,7 +165,7 @@ class _StaffListScreenState extends ConsumerState<StaffListScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          await Navigator.of(context).pushNamed('/staff/add');
+          await context.push('/staff/add');
           setState(() {});
         },
         icon: const Icon(Icons.add),

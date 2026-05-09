@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../repositories/transaction_repository.dart';
 import '../../models/transaction.dart';
@@ -91,15 +92,12 @@ class _TransactionHistoryScreenState extends ConsumerState<TransactionHistoryScr
                     itemCount: transactions.length,
                     itemBuilder: (context, index) {
                       final transaction = transactions[index];
-                      return TransactionItem(
-                        transaction: transaction,
-                        onTap: () {
-                          Navigator.of(context).pushNamed(
-                            '/transactions/detail',
-                            arguments: transaction.id,
-                          );
-                        },
-                      );
+                        return TransactionItem(
+                          transaction: transaction,
+                          onTap: () {
+                            context.push('/transactions/detail', extra: transaction.id);
+                          },
+                        );
                     },
                   ),
                 );

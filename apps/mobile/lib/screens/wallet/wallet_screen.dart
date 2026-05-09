@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../repositories/wallet_repository.dart';
 import '../../repositories/transaction_repository.dart';
@@ -28,14 +29,14 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       appBar: AppBar(
         title: const Text('Wallet'),
         actions: [
-          if (authState.role == 'mitra')
-            IconButton(
-              icon: const Icon(Icons.people),
-              onPressed: () {
-                Navigator.of(context).pushNamed('/staff');
-              },
-              tooltip: 'Kelola Staff',
-            ),
+           if (authState.role == 'mitra')
+             IconButton(
+               icon: const Icon(Icons.people),
+               onPressed: () {
+                 context.push('/staff');
+               },
+               tooltip: 'Kelola Staff',
+             ),
         ],
       ),
       body: FutureBuilder<Wallet>(
@@ -241,12 +242,12 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                       'Riwayat Transaksi',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pushNamed('/transactions');
-                      },
-                      child: const Text('Lihat Semua'),
-                    ),
+                     TextButton(
+                       onPressed: () {
+                         context.push('/transactions');
+                       },
+                       child: const Text('Lihat Semua'),
+                     ),
                   ],
                 ),
               ),
@@ -279,10 +280,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                         return TransactionItem(
                           transaction: tx,
                           onTap: () {
-                            Navigator.of(context).pushNamed(
-                              '/transactions/detail',
-                              arguments: tx.id,
-                            );
+                            context.push('/transactions/detail', extra: tx.id);
                           },
                         );
                       },

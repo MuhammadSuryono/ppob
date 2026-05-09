@@ -28,12 +28,12 @@ Handles user registration, authentication, OTP verification, and session managem
 **Port:** 8082  
 **Base Path:** `/api/v1`
 
-Manages user profiles, roles, and administrative lists.
+Manages user profiles, roles, staff management, and administrative lists.
 
 ### Endpoints
 
 | Method | Endpoint | Role | Description |
-|:---|:---|:---|:---|
+|:---|:---|:---|
 | `GET` | `/users/:id` | Owner/Admin | Get detailed profile information for a user. |
 | `PUT` | `/users/:id` | Owner/Admin | Update profile fields (name, phone, address, DOB). |
 | `GET` | `/users` | Admin/Staff | Paginated list of all users. |
@@ -41,6 +41,16 @@ Manages user profiles, roles, and administrative lists.
 | `POST` | `/users/:id/roles` | Admin | Assign a role (e.g., Mitra, Staff) to a user. |
 | `GET` | `/roles` | Admin | List available system roles. |
 | `POST` | `/roles` | Admin | Create a new role definition. |
+| `GET` | `/staff` | Mitra | List staff users with stats (transactions, wallet, limits). |
+| `POST` | `/staff` | Mitra | Create a new staff user. |
+| `GET` | `/staff/:id` | Mitra/Admin | Get detailed staff info including margin settings. |
+| `PUT` | `/staff/:id` | Mitra | Update staff details and limits. |
+| `GET` | `/staff/:id/stats` | Mitra/Admin | Get staff performance stats. |
+| `GET` | `/staff/pending-count` | Mitra | Count of pending staff invitations. |
+| `GET` | `/notifications` | Bearer | List user notifications (optional query: unread_only). |
+| `GET` | `/notifications/uncount` | Bearer | Get unread notifications count. |
+| `PATCH` | `/notifications/:id/read` | Bearer | Mark a notification as read. |
+| `POST` | `/notifications/mark-all-read` | Bearer | Mark all notifications as read. |
 
 ---
 
@@ -88,6 +98,7 @@ Financial ledger handling balance, holds, and transfers.
 | `POST` | `/:id/credit` | Bearer | Direct credit to wallet. |
 | `POST` | `/transfer` | Bearer | Internal transfer between users. |
 | `POST` | `/staff/topup` | Bearer | Mitra tops up linked Staff wallet. |
+| `POST` | `/:id/topup` | Bearer | Mitra tops up own wallet. |
 | `GET` | `/:id/events` | Bearer | Paginated transaction history of the wallet. |
 | `GET` | `/:id/reconcile` | Bearer | Check balance vs events drift. |
 
@@ -111,6 +122,7 @@ Orchestrates the lifecycle of a PPOB transaction.
 | `POST` | `/:id/status` | Bearer | Manually update transaction status (Admin). |
 | `POST` | `/:id/cancel` | Bearer | Cancel a pending transaction. |
 | `POST` | `/webhook/digiflazz` | None | Webhook endpoint for Digiflazz updates. |
+| `GET` | `/reports` | Bearer (Mitra/Admin) | Get aggregated reports: KPIs, sales trend, staff performance. |
 
 ---
 

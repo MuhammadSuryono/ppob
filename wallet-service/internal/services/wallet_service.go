@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/yontech/ppob/wallet-service/config"
 	"github.com/yontech/ppob/wallet-service/internal/dto"
@@ -193,6 +194,16 @@ func (s *WalletService) TopUpStaff(ctx context.Context, mitraUserID, staffUserID
 	}
 
 	return s.walletRepo.AtomicTransfer(mitraWallet.ID, staffWallet.ID, amount, referenceID)
+}
+
+// TopUp credits the Mitra's own wallet
+func (s *WalletService) TopUp(ctx context.Context, userID uint, amount float64) error {
+	wallet, err := s.walletRepo.FindByUserID(userID)
+	if err != nil {
+		return ErrWalletNotFound
+	}
+	refID := "topup_" + uuid.New().String()
+	return s.walletRepo.AtomicCredit(wallet.ID, amount, refID, "topup")
 }
 
 func (s *WalletService) GetEvents(ctx context.Context, userID uint, limit, offset int) ([]dto.TransactionResponse, error) {

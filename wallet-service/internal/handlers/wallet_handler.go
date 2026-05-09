@@ -179,6 +179,35 @@ func (h *WalletHandler) TopUpStaff(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Top-up successful"})
 }
 
+// TopUp allows Mitra to top up their own wallet
+func (h *WalletHandler) TopUp(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		errors.RespondWithError(c, errors.NewAppError("VALIDATION_MISSING_FIELD", map[string]interface{}{"field": "id"}))
+		return
+	}
+
+	userID, _ := c.Get("user_id")
+	if uint(id) != userID.(uint) {
+		errors.RespondWithError(c, errors.NewAppError("AUTH_INSUFFICIENT_PERMISSION", nil))
+		return
+	}
+
+	var req dto.TopUpRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errors.RespondWithError(c, errors.NewAppError("VALIDATION_JSON_INVALID", nil))
+		return
+	}
+
+	if err := h.walletService.TopUp(c.Request.Context(), userID.(uint), req.Amount); err != nil {
+		errors.RespondWithError(c, errors.NewAppError("SYSTEM_INTERNAL", nil))
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Top-up successful"})
+}
+
 func (h *WalletHandler) GetEvents(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
