@@ -8,7 +8,7 @@ import '../core/exceptions.dart';
 /// Port: 8081, Base Path: /api/v1/auth
 class AuthService {
   final Dio _dio;
-  final String _baseUrl = 'https://192.168.100.23:8081/api/v1/auth';
+  final String _baseUrl = 'https://fedora.sinauplatform.id/api/v1/auth';
 
   AuthService(this._dio);
 

@@ -1,24 +1,24 @@
 class AppConstants {
   static const String appName = 'PPOB';
-  static const String apiBaseUrl = 'https://192.168.100.23';
+  static const String apiBaseUrl = 'https://fedora.sinauplatform.id';
   static const String apiVersion = 'v1';
 
-  // Service base URLs (different ports)
-  static const String baseAuth = 'https://192.168.100.23:8081/api/v1';
-  static const String baseUsers = 'https://192.168.100.23:8082/api/v1';
-  static const String baseProducts = 'https://192.168.100.23:8085/api/v1';
-  static const String baseWallets = 'https://192.168.100.23:8083/api/v1/wallets';
-  static const String baseTransactions = 'https://192.168.100.23:8084/api/v1/transactions';
-  static const String baseIntegrations = 'https://192.168.100.23:8086/api/v1/integrations';
+  // Service base URLs (path-based routing)
+  static const String baseAuth = 'https://fedora.sinauplatform.id/api/v1/auth';
+  static const String baseUsers = 'https://fedora.sinauplatform.id/api/v1/user';
+  static const String baseProducts = 'https://fedora.sinauplatform.id/api/v1/product';
+  static const String baseWallets = 'https://fedora.sinauplatform.id/api/v1/wallet';
+  static const String baseTransactions = 'https://fedora.sinauplatform.id/api/v1/transaction';
+  static const String baseIntegrations = 'https://fedora.sinauplatform.id/api/v1/integration';
 
   // API endpoints
-  static const String endpointAuth = baseAuth + '/auth';
+  static const String endpointAuth = baseAuth;
   static const String endpointUsers = baseUsers;
   static const String endpointWallets = baseWallets;
   static const String endpointProducts = baseProducts;
   static const String endpointTransactions = baseTransactions;
-  static const String endpointStaff = baseUsers + '/users';
-  static const String endpointIntegration = baseIntegrations + '/integrations';
+  static const String endpointStaff = baseUsers + 's';
+  static const String endpointIntegration = baseIntegrations;
 
   // Hive box names
   static const String boxUser = 'user_box';
@@ -60,7 +60,7 @@ class AppConstants {
     return phone;
   }
 
-  // Microservice ports for development
+  // Service ports for legacy reference (no longer used)
   static const Map<String, int> servicePorts = {
     'auth': 8081,
     'users': 8082,
