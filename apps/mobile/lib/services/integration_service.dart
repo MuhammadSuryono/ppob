@@ -7,7 +7,7 @@ import '../core/exceptions.dart';
 /// Port: 8086, Base Path: /api/v1/integrations
 class IntegrationService {
   final Dio _dio;
-  final String _baseUrl = 'https://192.168.100.23:8086/api/v1/integrations';
+  final String _baseUrl = 'https://fedora.sinauplatform.id/api/v1/integration';
 
   IntegrationService(this._dio);
 

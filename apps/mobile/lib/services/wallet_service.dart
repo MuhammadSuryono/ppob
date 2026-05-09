@@ -8,7 +8,7 @@ import '../core/exceptions.dart';
 /// Port: 8083, Base Path: /api/v1/wallets
 class WalletService {
   final Dio _dio;
-  final String _baseUrl = 'https://192.168.100.23:8083/api/v1/wallets';
+  final String _baseUrl = 'https://fedora.sinauplatform.id/api/v1/wallet';
 
   WalletService(this._dio);
 

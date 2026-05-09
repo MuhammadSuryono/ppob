@@ -8,7 +8,7 @@ import '../core/exceptions.dart';
 /// Port: 8085, Base Path: /api/v1
 class ProductService {
   final Dio _dio;
-  final String _baseUrl = 'https://192.168.100.23:8085/api/v1';
+  final String _baseUrl = 'https://fedora.sinauplatform.id/api/v1/product';
 
   ProductService(this._dio);
 

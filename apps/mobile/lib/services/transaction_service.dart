@@ -9,7 +9,7 @@ import '../core/exceptions.dart';
 /// Port: 8084, Base Path: /api/v1/transactions
 class TransactionService {
   final Dio _dio;
-  final String _baseUrl = 'https://192.168.100.23:8084/api/v1/transactions';
+  final String _baseUrl = 'https://fedora.sinauplatform.id/api/v1/transaction';
 
   TransactionService(this._dio);
 
