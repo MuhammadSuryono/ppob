@@ -12,11 +12,22 @@ import androidx.navigation.navArgument
 import com.yonotech.ppob.presentation.auth.*
 import com.yonotech.ppob.presentation.components.EmptyStateScreen
 import com.yonotech.ppob.presentation.home.HomeScreen
+import com.yonotech.ppob.presentation.home.HomeViewModel
 import com.yonotech.ppob.presentation.profile.*
 import com.yonotech.ppob.presentation.staff.*
-import com.yonotech.ppob.presentation.transaction.*
-import com.yonotech.ppob.presentation.transactiondetail.TransactionDetailScreen
+import com.yonotech.ppob.presentation.transaction.CategorySelectionScreen
+import com.yonotech.ppob.presentation.transaction.CategoryViewModel
+import com.yonotech.ppob.presentation.transaction.PinAuthorizationScreen
+import com.yonotech.ppob.presentation.transaction.ProductCatalogViewModel
+import com.yonotech.ppob.presentation.transaction.ProductSelectionScreen
+import com.yonotech.ppob.presentation.transaction.TransactionConfirmationScreen
+import com.yonotech.ppob.presentation.transaction.TransactionInitViewModel
+import com.yonotech.ppob.presentation.transaction.TransactionListScreen
+import com.yonotech.ppob.presentation.transaction.TransactionResultScreen
+import com.yonotech.ppob.presentation.transactiondetail.TransactionDetailViewModel
+import com.yonotech.ppob.presentation.transactiondetail.TransactionHistoryViewModel
 import com.yonotech.ppob.presentation.wallet.WalletScreen
+import com.yonotech.ppob.presentation.wallet.WalletViewModel
 
 @Composable
 fun PPOBNavHost(
@@ -235,11 +246,7 @@ fun PPOBNavHost(
         ) { backStackEntry ->
             val transactionId = backStackEntry.arguments?.getString("transaction_id") ?: ""
             val viewModel: TransactionDetailViewModel = viewModel()
-            TransactionDetailScreen(
-                viewModel = viewModel,
-                transactionId = transactionId,
-                onBack = { navController.popBackStack() }
-            )
+            TransactionDetailViewModel(null)
         }
 
         // ========== STAFF MANAGEMENT (MITRA) ==========
