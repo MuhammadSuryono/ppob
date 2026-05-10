@@ -1,0 +1,46 @@
+// This is the baseline profile for PPOB Android Application
+// Baseline profiles improve app startup and interaction performance
+// Reference: https://developer.android.com/topic/performance/baselineprofiles
+
+packageFacade class androidx.compose.foundation.lazy.LazyColumn
+
+startup {
+    // App initialization
+    classLandStartup libcore.io.Memory
+    classLandStartup dalvik.system.DexFile
+
+    // Hilt / DI
+    classLandStartup dagger.hilt.internal.Preconditions
+    classLandStartup com.yonotech.ppob.PPOBApp
+
+    // Room database
+    classLandStartup androidx.room.Room
+    classLandStartup net.sqlcipher.database.SQLiteDatabase
+
+    // Retrofit
+    classLandStartup retrofit2.Retrofit
+
+    // Compose
+    classLandStartup androidx.compose.ui.platform.AndroidUiLoader
+
+    // Firebase
+    classLandStartup com.google.firebase.FirebaseApp
+}
+
+interactions {
+    // Scroll interactions
+    classInteraction androidx.compose.foundation.lazy.LazyListState
+    classInteraction androidx.compose.foundation.lazy.grid.LazyGridState
+
+    // Navigation
+    classInteraction androidx.navigation.compose.NavHostController
+
+    // Image loading
+    classInteraction coil.request.ImageRequest
+}
+
+// Common patterns to compile
+void layout(android.view.View)
+void draw(android.graphics.Canvas)
+void onMeasure(int, int)
+void onLayout(boolean, int, int, int, int)

@@ -4,6 +4,7 @@
 **Based on:** `v1/docs/` specifications (API contracts, business logic, architecture)  
 **Status:** Ready for Execution  
 **Created:** 2026-05-07  
+**Last Updated:** 2026-05-09  
 
 ---
 
@@ -26,7 +27,7 @@ This document provides a phased execution timeline for implementing the complete
 | **2** | Wallet & Financial Engine | 3 weeks | Wallet Service, wallet_events, accounting logic | Medium-High (business rules) |
 | **3** | Product & Transaction Service | 2 weeks | Product Service, Transaction state machine | Medium (business logic validation) |
 | **4** | Digiflazz Integration | 2 weeks | Integration Service, sync jobs, webhook handling | Medium (API mapping) |
-| **5** | Mobile App (Flutter) | 4 weeks | Auth flow, transaction UI, offline support | Very High (UI generation) |
+| **5** | Mobile App (Android Native) | 4 weeks | Auth flow, transaction UI, offline support | Very High (UI generation) |
 | **6** | Infrastructure & CI/CD | 2 weeks | EKS cluster, RDS, Redis, CI/CD pipelines | Low-Medium (Terraform IaC) |
 | **7** | Observability & Security | 2 weeks | Prometheus/Grafana, logging, security hardening | Low (config, rules) |
 | **8** | Testing & Go-Live | 2 weeks | E2E tests, load testing, deployment, cutover | Medium (test scenarios) |
@@ -41,9 +42,11 @@ This document provides a phased execution timeline for implementing the complete
 
 **Objective:** Establish authentication, user management, and database foundation.
 
+**API Reference:** All endpoint specifications are in `MICROSERVICES_API_DOC.md` (base URL: `https://fedora.sinauplatform.id/api/v1/{api_name}`).
+
 #### Week 1: Project Setup & Auth Service
 - **Task 1.1:** Initialize monorepo structure, CI/CD pipeline skeleton
-  - AI: Generate GitHub Actions workflows, Dockerfile templates, Makefile
+  - AI: Generate GitHub Actions workflows, Dockerfile templates, Makefile, Gradle build config
   - Deliverable: Working dev environment with lint/test/format commands
 - **Task 1.2:** Database schema migration setup (`golang-migrate`)
   - AI: Generate all migration files from existing schema docs (`DATA_MODEL_VALIDATION.md`)
@@ -51,7 +54,8 @@ This document provides a phased execution timeline for implementing the complete
 - **Task 1.3:** Implement Auth Service (registration, OTP, login)
   - AI: Generate JWT token service, bcrypt/argon2id utilities, rate limiting middleware
   - Human: Implement trust score calculation logic, device fingerprinting
-  - Deliverable: `/auth/v1` endpoints working with Postman collection
+  - Reference: `MICROSERVICES_API_DOC.md` → Auth Service (Base URL: `https://fedora.sinauplatform.id/api/v1/auth`)
+  - Deliverable: Auth endpoints working with Postman collection against `https://fedora.sinauplatform.id/api/v1/auth/*`
 - **Task 1.4:** Write unit tests for Auth Service (70%+ coverage)
   - AI: Generate test cases for all auth flows, edge cases, error scenarios
   - Deliverable: `auth_service_test.go` with mocked dependencies
@@ -60,7 +64,8 @@ This document provides a phased execution timeline for implementing the complete
 - **Task 2.1:** User CRUD with role assignment
   - AI: Generate service layer, repository interfaces, API handlers
   - Human: Implement role switching logic, wallet auto-creation trigger
-  - Deliverable: `/users/v1` endpoints (profile, switch-role, staff management)
+  - Reference: `MICROSERVICES_API_DOC.md` → User Service (Base URL: `https://fedora.sinauplatform.id/api/v1/user`)
+  - Deliverable: `/api/v1/user/*` endpoints working (Postman collection)
 - **Task 2.2:** Implement multi-role wallet linkage
   - AI: Generate SQL queries for wallet lookup by role, database trigger code
   - Deliverable: Wallet resolution working, role switching updates JWT claims
@@ -163,16 +168,19 @@ This document provides a phased execution timeline for implementing the complete
 
 ### **Phase 4: Digiflazz Integration (Weeks 9-10)**
 
-**Objective:** Real integration with Digiflazz API, webhook handling, error mapping.
+**Objective:** Real integration with Digiflazz API via the Integration Service, webhook handling, and error mapping.
+
+**API Reference:** All endpoint specifications are defined in `MICROSERVICES_API_DOC.md` under "Integration Service" (Base URL: `https://fedora.sinauplatform.id/api/v1/integration`).
 
 #### Week 9: Integration Service Setup
 - **Task 9.1:** Digiflazz API client with HMAC signature generation
   - AI: Generate signature generator (MD5 as required), HTTP client with retry
   - Human: Store credentials in Vault, implement circuit breaker (`gobreaker`)
-  - Deliverable: Connection to Digiflazz sandbox successful
+  - Reference: `MICROSERVICES_API_DOC.md` → `/integration/digiflazz/transaction` endpoint spec
+  - Deliverable: Connection to Digiflazz sandbox successful via `POST /integration/digiflazz/transaction`
 - **Task 9.2:** Product sync against real Digiflazz sandbox
   - AI: Generate sync job using real API, RC error handling
-  - Deliverable: Live product data flowing into DB, prices updated
+  - Deliverable: Live product data flowing into DB, prices updated (ref: `GET /integration/providers`, `GET /integration/errors`)
 - **Task 9.3:** Transaction initiation to Digiflazz
   - AI: Generate request builder, response parser, RC → internal status mapping
   - Deliverable: Successful transaction in sandbox (RC 00), pending handling (RC 03)
@@ -180,29 +188,30 @@ This document provides a phased execution timeline for implementing the complete
 #### Week 10: Webhook & Error Handling
 - **Task 10.1:** Webhook endpoint with HMAC verification
   - AI: Generate signature verification (SHA1), Redis lock to prevent duplicate processing
-  - Deliverable: Webhook endpoint `/integration/digiflazz/webhook` verified
-- **Task 10.2:** Complete error mapping from `ERROR_HANDLING.md`
+  - Reference: `MICROSERVICES_API_DOC.md` → `/integration/webhook/digiflazz` endpoint spec
+  - Deliverable: Webhook endpoint verified at `https://fedora.sinauplatform.id/api/v1/integration/webhook/digiflazz`
+- **Task 10.2:** Complete error mapping from `ERROR_HANDLING.md` + `MICROSERVICES_API_DOC.md` → `/integration/errors`
   - AI: Generate error code catalog, user-friendly Indonesian messages
   - Human: Validate error messages with native speaker
-  - Deliverable: All RC codes mapped, error response format standardized
+  - Deliverable: All RC codes mapped per `MICROSERVICES_API_DOC.md` error catalog, error response format standardized
 - **Task 10.3:** Retry policy & dead letter queue
   - AI: Generate compensation job table (`compensation_jobs`) and worker
-  - Deliverable: Failed multi-step operations auto-retry with exponential backoff
+  - Deliverable: Failed multi-step operations auto-retry with exponential backoff (monitor via `GET /integration/compensation/dead-letter`)
 
 **Phase 4 Milestone:** ✅ End-to-end transaction flow: Initiate → Digiflazz → Webhook → Wallet debit → Commission credited.
 
 ---
 
-### **Phase 5: Mobile App (Flutter) (Weeks 11-14)**
+### **Phase 5: Mobile App (Android Native) (Weeks 11-14)**
 
-**Objective:** Build complete Flutter app with offline-first architecture.
+**Objective:** Build complete native Android app with offline-first architecture using Kotlin, Jetpack Compose, Hilt, and Room.
 
 #### Week 11: Foundation & Auth Screens
-- **Task 11.1:** Project setup, state management (Riverpod), dependency injection
-  - AI: Generate project structure, provider boilerplate, Dio client config
+- **Task 11.1:** Project setup, dependency injection (Hilt), networking (Retrofit + OkHttp)
+  - AI: Generate project structure (modular Gradle setup), Hilt DI modules, OkHttp client with interceptors
   - Deliverable: App runs on emulator, API connectivity established
 - **Task 11.2:** Login/Register/OTP screens with form validation
-  - AI: Generate all auth UI screens with Indonesian copy, PIN pad widget
+  - AI: Generate all auth UI screens (Jetpack Compose) with Indonesian copy, custom PIN pad composable
   - Deliverable: User can register, verify OTP, set password/PIN, login
 - **Task 11.3:** Device fingerprint collection & trust logic UI
   - AI: Generate device info collection utility, trust score display
@@ -210,18 +219,18 @@ This document provides a phased execution timeline for implementing the complete
 
 #### Week 12: Core Transaction Flow
 - **Task 12.1:** Home screen, category grid, product listing
-  - AI: Generate product catalog UI with cached images, search functionality
+  - AI: Generate product catalog UI with Coil image loading, search functionality
   - Deliverable: Grid of PPOB categories, product list with Indonesian names
 - **Task 12.2:** Transaction initiation flow (customer input, confirmation, PIN entry)
-  - AI: Generate multi-step transaction wizard with validation
+  - AI: Generate multi-step transaction wizard with Compose Navigation
   - Deliverable: Full transaction flow from product selection to PIN confirmation
 - **Task 12.3:** Transaction history screen with filters
-  - AI: Generate paginated list, status tabs (All/Success/Pending/Failed)
-  - Deliverable: Transaction history with offline cache (Hive)
+  - AI: Generate paged list with Paging 3 library, status tabs (All/Success/Pending/Failed)
+  - Deliverable: Transaction history with offline cache (Room)
 
 #### Week 13: Wallet & Staff Management (Mitra)
 - **Task 13.1:** Wallet screen (balance display, held balance explanation)
-  - AI: Generate balance card, transaction list linked to wallet
+  - AI: Generate balance card UI, transaction list linked to wallet ViewModel
   - Deliverable: Real-time balance (with caching refresh)
 - **Task 13.2:** Staff list, add/edit staff screens
   - AI: Generate CRUD UI for staff management, margin scheme selector (Fixed/Share)
@@ -232,19 +241,20 @@ This document provides a phased execution timeline for implementing the complete
 
 #### Week 14: Offline, Push & Polish
 - **Task 14.1:** Offline queue & sync mechanism
-  - AI: Generate Hive boxes, `PendingSyncItem` model, background sync service
+  - AI: Generate Room entities for pending sync, `PendingSyncItem` model, `WorkManager` sync service
   - Deliverable: Transactions queue when offline, auto-sync on reconnect
 - **Task 14.2:** Push notifications (FCM) integration
-  - AI: Generate notification handlers for success/failure/low-balance events
-  - Deliverable: Transaction result push, deep linking to detail screen
+  - AI: Generate `FirebaseMessagingService`, notification handlers for success/failure/low-balance events, notification channel setup
+  - Steps: Add `google-services.json` (from Firebase project ppob-uat) to `app/` directory, apply `com.google.gms.google-services` plugin in `app/build.gradle.kts`, add Firebase BoM (`com.google.firebase:firebase-bom:34.13.0`) and `firebase-analytics` dependency
+  - Deliverable: Transaction result push, deep linking to detail screen, Firebase Analytics event tracking enabled
 - **Task 14.3:** Biometric authentication (optional)
-  - AI: Generate `local_auth` wrapper, settings toggle
+  - AI: Generate `BiometricPrompt` wrapper, settings toggle in Compose
   - Deliverable: Fingerprint/Face ID can replace PIN entry on trusted devices
 - **Task 14.4:** UI polish & performance optimization
-  - AI: Generate splash screen, error states, empty states, loading skeletons
-  - Deliverable: APK/IPA <50MB, cold start <2s, 60fps smooth scrolling
+  - AI: Generate splash screen, error states, empty states, loading skeletons, baseline profile
+  - Deliverable: APK <30MB (split per ABI), cold start <2s, 60fps scrollable lists
 
-**Phase 5 Milestone:** ✅ Complete Flutter app with auth, transaction flow, wallet/staff management, offline support, push notifications.
+**Phase 5 Milestone:** ✅ Complete native Android app with auth, transaction flow, wallet/staff management, offline support, push notifications.
 
 ---
 
@@ -266,7 +276,7 @@ This document provides a phased execution timeline for implementing the complete
 
 #### Week 16: CI/CD & Deployment
 - **Task 16.1:** Docker image builds + ECR repository
-  - AI: Generate Dockerfiles for all services, ECR repo creation scripts
+  - AI: Generate multi-stage Dockerfile (Gradle build → distroless), ECR repo creation scripts
   - Deliverable: Images pushed to ECR on every commit
 - **Task 16.2:** GitHub Actions workflows (build/test/deploy)
   - AI: Generate workflows for dev (auto-deploy) and prod (manual approval)
@@ -325,7 +335,7 @@ This document provides a phased execution timeline for implementing the complete
   - Human: Run tests, identify bottlenecks, tune DB/Redis connection pools
   - Deliverable: System handles 100 TPS with p99 < 1s, no errors
 - **Task 19.2:** End-to-end test automation
-  - AI: Generate Playwright or Cypress E2E tests for critical user journeys
+  - AI: Generate Maestro or Appium E2E tests for critical user journeys on Android
   - Deliverable: 90%+ E2E coverage, CI runs on every PR
 - **Task 19.3:** User Acceptance Testing (UAT) with pilot Mitra
   - Human: Onboard 3-5 pilot Mitras, collect feedback, fix bugs
@@ -361,11 +371,12 @@ This document provides a phased execution timeline for implementing the complete
 | **Unit Tests** | AI test generator | "Write unit tests for `CalculateCommission` function covering FixedAllowance and MarginShare schemes" |
 | **API Handlers** | AI code completion | "Create Gin handler for `POST /users/v1/staff` with validation, error handling, and audit logging" |
 | **Database Migrations** | AI SQL generation | "Write PostgreSQL migration to split `staff_margin_settings` into `staff_global_margin_settings` and `staff_product_margin_overrides` with data backfill" |
-| **Flutter UI** | AI UI generator | "Generate Flutter screen for transaction history with pull-to-refresh, pagination, and status tabs" |
+| **Android UI (Compose)** | AI UI generator | "Generate Jetpack Compose screen for transaction history with LazyColumn, pull-to-refresh, and status tabs" |
 | **Terraform IaC** | AI IaC generator | "Create Terraform for EKS cluster with 3 node groups (system, app, worker) in AWS Jakarta region" |
 | **Dockerfiles** | AI container config | "Write multi-stage Dockerfile for Go service with distroless final image" |
 | **Documentation** | AI doc writer | "Generate OpenAPI spec for Auth Service endpoints from Go code comments" |
 | **Test Data** | AI data factory | "Create factory functions for random Indonesian phone numbers and valid OTP codes" |
+| **Room DAO & Entities** | AI code generation | "Generate Room entity, DAO, and TypeConverter for Transaction data class with Parcelize" |
 
 ### Where Humans Must Lead (Critical)
 
@@ -375,6 +386,7 @@ This document provides a phased execution timeline for implementing the complete
 - Integration with external API (Digiflazz signature, webhook verification)
 - Compliance & legal (data retention, PDP anonymization)
 - Production deployment decisions & rollback plans
+- Android app store compliance review (Google Play policies)
 
 ---
 
@@ -390,7 +402,7 @@ Phase 1 (Auth/User) → Phase 2 (Wallet) → Phase 3 (Transaction) → Phase 4 (
 
 **Parallelizable Paths:**
 - Mobile UI development can start after Phase 1 (API contracts defined) using mock servers
-- Infrastructure (Phase 6) can start after Phase 1 (services defined)  
+- Infrastructure (Phase 6) can start after Phase 1 (services defined)
 - Observability (Phase 7) can start after Phase 3 (metrics instrumented)
 
 ---
@@ -400,10 +412,12 @@ Phase 1 (Auth/User) → Phase 2 (Wallet) → Phase 3 (Transaction) → Phase 4 (
 | Risk | Impact | Mitigation | Owner |
 |---|---|---|---|
 | **Digiflazz API unstable in sandbox** | High — integration delayed | Contact Digiflazz support early, request stable sandbox credentials, build API client with feature flags to toggle to mock mode | Integration Lead |
-| **Team lacks Golang/Flutter expertise** | Medium — velocity reduced | Allocate 1 week training per phase, use AI pair-programming, hire consultant for review | Tech Lead |
+| **Team lacks Golang/Android Native expertise** | Medium — velocity reduced | Allocate 1 week training per phase, use AI pair-programming, hire consultant for review | Tech Lead |
 | **Database performance at scale** | High — system bottlenecks | Load test early (Phase 2), add indexes proactively, partition `transactions` by month after 1M rows | DBA |
 | **Security audit findings** | Critical — may require rework | Conduct internal threat modeling (STRIDE) before Phase 7, fix issues pre-external audit | Security Architect |
-| **Mobile app store rejection** | Medium — launch delayed | Review app store guidelines early, ensure no policy violations (payments, data usage) | Product Manager |
+| **Google Play Store rejection** | Medium — launch delayed | Review Play Store guidelines early, ensure no policy violations (payments, data usage, SMS restrictions) | Product Manager |
+| **Android device fragmentation** | Medium — UI/compat issues | Use AndroidX libraries, test on multiple API levels (26, 28, 30, 33, 34), use Firebase Test Lab | Mobile Lead |
+| **Keystore compatibility issues** | High — security feature broken | Test Keystore on multiple OEMs (Samsung, Xiaomi, etc.), implement fallback to encrypted SharedPreferences | Security Lead |
 | **Team burnout from 6-month timeline** | Medium — quality degrades | Plan 1-week buffer between phases, rotate developers across services, celebrate milestones | Project Manager |
 
 ---
@@ -416,6 +430,9 @@ Phase 1 (Auth/User) → Phase 2 (Wallet) → Phase 3 (Transaction) → Phase 4 (
 - System availability: 99.5% (excluding Digiflazz downtime)
 - Transaction success rate: ≥99% (final status Success)
 - Pending-to-success latency: p95 < 30s
+- Android app startup time: <2s cold start
+- Crash-free rate: ≥99.5% (Firebase Crashlytics)
+- ANR rate: <0.5%
 
 **Business KPIs (Post-Launch):**
 - Daily active Mitra: Target 100 within 1 month
@@ -429,16 +446,29 @@ Phase 1 (Auth/User) → Phase 2 (Wallet) → Phase 3 (Transaction) → Phase 4 (
 
 **Recommended Stack for AI-Assisted Development:**
 - **Code Generation:** Claude Code, Cursor, GitHub Copilot X
+- **Android Development:** Android Studio with Gemini / Copilot integration
 - **Documentation:** AI markdown generator (for API specs, READMEs)
-- **Testing:** AI test case generator (TestGPT, Ponicode)
+- **Testing:** AI test case generator (TestGPT, Ponicode), Firebase Test Lab
 - **Review:** AI code reviewer (CodeRabbit, Sweep)
 - **Architecture:** AI diagram generator (from D2 or Mermaid text)
 
 **Prompt Templates:** Store in `docs/ai-prompts/` for reuse:
 ```
-PROMPT: Generate Go repository for wallet_events with event-sourcing pattern
-CONTEXT: wallet_events table schema from CONCURRENCY_CONTROL.md section 3.1
-OUTPUT: repository.go with Append(event), Reconstruct(walletID) methods
+PROMPT: Generate Room entity, DAO, and Repository for Transaction with offline sync queue
+CONTEXT: Transaction schema from DATA_MODEL_VALIDATION.md, sync pattern from MOBILE_APP_SPEC.md section 4.2
+OUTPUT: Transaction.kt, TransactionDao.kt, PendingSyncItem.kt, SyncWorker.kt
+```
+
+```
+PROMPT: Generate Retrofit service interface for {service} API with base URL https://fedora.sinauplatform.id/api/v1/{api_name}
+CONTEXT: Endpoint definitions from MICROSERVICES_API_DOC.md, API name mapping: auth, user, wallet, transaction, integration, product
+OUTPUT: {ServiceName}Service.kt with suspend functions, DTOs, error handling
+```
+
+```
+PROMPT: Add Google Services plugin and Firebase dependencies to app/build.gradle.kts
+CONTEXT: google-services.json located at app/google-services.json (Firebase project: ppob-uat)
+OUTPUT: Updated build.gradle.kts files (project-level and module-level) with google-services plugin and Firebase BoM dependencies
 ```
 
 ---
@@ -456,11 +486,13 @@ v1/docs/
 ├── Database Schema for PPOB.md         → Full table definitions
 ├── DIGIFLAZZ_INTEGRATION_GUIDE.md      → API mapping, RC codes
 ├── ERROR_HANDLING.md                   → Error responses, retry policy
-├── MOBILE_APP_SPEC.md                 → Flutter architecture, state management
+├── MICROSERVICES_API_DOC.md           → Full endpoint reference with base URL https://fedora.sinauplatform.id/api/v1/{api_name}
+├── MOBILE_APP_SPEC.md                 → Android Native architecture, state management
 ├── OBSERVABILITY_SPEC.md              → Metrics, logs, traces standards
 ├── SECURITY_ARCHITECTURE.md           → JWT, hashing, rate limiting
 ├── TRANSACTION_STATE_MACHINE.md       → State transitions, webhooks
-└── Product Requirement Document...md  → Feature requirements
+├── Product Requirement Document...md  → Feature requirements
+└── google-services.json               → Firebase config (project: ppob-uat, package: com.yonotech.ppob.mobile)
 ```
 
 ---
@@ -489,7 +521,7 @@ v1/docs/
 Before marking project complete:
 
 - [ ] All API endpoints functional with >80% test coverage
-- [ ] Mobile app published to Google Play Store & App Store (TestFlight)
+- [ ] Android app published to Google Play Store (internal → closed → production track)
 - [ ] Load test passed: 100 TPS sustained, p99 < 1s
 - [ ] Security audit completed, all critical issues resolved
 - [ ] Digiflazz production credentials obtained and tested
@@ -499,6 +531,7 @@ Before marking project complete:
 - [ ] Pilot Mitras onboarded and transacting successfully
 - [ ] Monitoring dashboards green, alerts routed correctly
 - [ ] Documentation complete: API spec, architecture diagrams, runbooks
+- [ ] Crash-free rate ≥99.5% over 72-hour period post-launch
 
 ---
 
@@ -520,10 +553,17 @@ Before marking project complete:
 
 This timeline provides a structured path from zero to production-ready PPOB application using AI-assisted development. The key to success is **iterative delivery** (2-week sprints), **continuous validation** (tests + load), and **early integration** (Phase 4 connects real Digiflazz, not mocks).
 
+**Technology shift:** This timeline has been updated to reflect the move from Flutter cross-platform to **Android Native (Kotlin + Jetpack Compose + Hilt + Room + Retrofit)**. Android Native offers:
+- ~50% smaller APK size (no Flutter engine overhead)
+- Direct access to Android platform APIs (Keystore, BiometricPrompt, FCM)
+- Better performance on low-end Indonesian devices
+- Native Material Design 3 compliance
+- Simplified dependency graph (no Dart/Flutter SDK dependencies)
+
 **Next Action:** Begin Phase 1, Task 1.1 — generate CI/CD pipeline skeleton with AI assistant.
 
 ---
 
 **Document Owner:** Project Manager / Tech Lead  
-**Last Updated:** 2026-05-07  
+**Last Updated:** 2026-05-09  
 **Next Review:** After Phase 1 completion (Week 3)

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/phoneInputFragment">
+
+    <fragment
+        android:id="@+id/phoneInputFragment"
+        android:name="com.yonotech.ppob.ui.PhoneInputFragment"
+        android:label="Masuk / Daftar" />
+
+    <fragment
+        android:id="@+id/otpVerifyFragment"
+        android:name="com.yonotech.ppob.ui.OtpVerifyFragment"
+        android:label="Verifikasi OTP">
+        <argument
+            android:name="phone"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/setCredentialsFragment"
+        android:name="com.yonotech.ppob.ui.SetCredentialsFragment"
+        android:label="Buat Akun" />
+
+    <fragment
+        android:id="@+id/pinLoginFragment"
+        android:name="com.yonotech.ppob.ui.PinLoginFragment"
+        android:label="Masuk dengan PIN" />
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.yonotech.ppob.ui.HomeFragment"
+        android:label="Beranda" />
+
+    <fragment
+        android:id="@+id/transactionsFragment"
+        android:name="com.yonotech.ppob.ui.TransactionsFragment"
+        android:label="Riwayat Transaksi" />
+
+    <fragment
+        android:id="@+id/transactionDetailFragment"
+        android:name="com.yonotech.ppob.ui.TransactionDetailFragment"
+        android:label="Detail Transaksi">
+        <argument
+            android:name="transactionId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/walletFragment"
+        android:name="com.yonotech.ppob.ui.WalletFragment"
+        android:label="Dompet" />
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.yonotech.ppob.ui.ProfileFragment"
+        android:label="Profil" />
+
+    <fragment
+        android:id="@+id/categorySelectionFragment"
+        android:name="com.yonotech.ppob.ui.CategorySelectionFragment"
+        android:label="Pilih Kategori" />
+
+    <fragment
+        android:id="@+id/productSelectionFragment"
+        android:name="com.yonotech.ppob.ui.ProductSelectionFragment"
+        android:label="Pilih Produk">
+        <argument
+            android:name="category_id"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/transactionConfirmationFragment"
+        android:name="com.yonotech.ppob.ui.TransactionConfirmationFragment"
+        android:label="Konfirmasi Transaksi">
+        <argument
+            android:name="product_id"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/pinAuthorizationFragment"
+        android:name="com.yonotech.ppob.ui.PinAuthorizationFragment"
+        android:label="Otorisasi PIN">
+        <argument
+            android:name="transaction_id"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/transactionResultFragment"
+        android:name="com.yonotech.ppob.ui.TransactionResultFragment"
+        android:label="Hasil Transaksi">
+        <argument
+            android:name="transaction_id"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/staffListFragment"
+        android:name="com.yonotech.ppob.ui.StaffListFragment"
+        android:label="Manajemen Staff" />
+
+    <fragment
+        android:id="@+id/addStaffFragment"
+        android:name="com.yonotech.ppob.ui.AddStaffFragment"
+        android:label="Tambah Staff" />
+
+    <fragment
+        android:id="@+id/staffDetailFragment"
+        android:name="com.yonotech.ppob.ui.StaffDetailFragment"
+        android:label="Detail Staff">
+        <argument
+            android:name="staff_id"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.yonotech.ppob.ui.SettingsFragment"
+        android:label="Pengaturan" />
+
+    <fragment
+        android:id="@+id/deviceManagementFragment"
+        android:name="com.yonotech.ppob.ui.DeviceManagementFragment"
+        android:label="Perangkat Terpercaya" />
+</navigation>
