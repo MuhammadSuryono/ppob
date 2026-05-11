@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.yonotech.ppob.mobile.ui.components.PinDots
+import com.yonotech.ppob.mobile.ui.components.PinPad
 import com.yonotech.ppob.mobile.ui.components.PpoButton
 import com.yonotech.ppob.mobile.utils.Resource
 import com.yonotech.ppob.mobile.viewmodels.transaction.TransactionViewModel
@@ -76,20 +78,10 @@ fun TransactionConfirmScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Text("Masukkan 6-Digit PIN", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-            
+
             Spacer(modifier = Modifier.height(16.dp))
 
-            // PIN Dots
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                repeat(6) { index ->
-                    val isFilled = index < pin.length
-                    Surface(
-                        modifier = Modifier.size(16.dp),
-                        shape = androidx.compose.foundation.shape.CircleShape,
-                        color = if (isFilled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                    ) {}
-                }
-            }
+            PinDots(pin = pin)
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -99,7 +91,6 @@ fun TransactionConfirmScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Custom PIN Pad
             PinPad(
                 onDigit = { digit -> if (pin.length < 6) pin += digit },
                 onBackspace = { if (pin.isNotEmpty()) pin = pin.dropLast(1) }
@@ -113,45 +104,6 @@ fun TransactionConfirmScreen(
                 isLoading = transactionState is Resource.Loading,
                 enabled = pin.length == 6
             )
-        }
-    }
-}
-
-@Composable
-fun PinPad(
-    onDigit: (String) -> Unit,
-    onBackspace: () -> Unit
-) {
-    val buttons = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "back")
-    
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        modifier = Modifier.width(280.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(buttons) { btn ->
-            when (btn) {
-                "" -> Spacer(modifier = Modifier.size(64.dp))
-                "back" -> {
-                    IconButton(
-                        onClick = onBackspace,
-                        modifier = Modifier.size(64.dp)
-                    ) {
-                        Icon(Icons.Default.Backspace, contentDescription = "backspace", modifier = Modifier.size(32.dp))
-                    }
-                }
-                else -> {
-                    TextButton(
-                        onClick = { onDigit(btn) },
-                        modifier = Modifier.size(64.dp),
-                        shape = androidx.compose.foundation.shape.CircleShape,
-                        colors = ButtonDefaults.textButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                    ) {
-                        Text(text = btn, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
         }
     }
 }

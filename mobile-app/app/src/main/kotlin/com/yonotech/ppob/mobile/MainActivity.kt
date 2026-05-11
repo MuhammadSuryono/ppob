@@ -56,6 +56,9 @@ class MainActivity : ComponentActivity() {
                             PhoneInputScreen(
                                 onNavigateToOtp = { identifier ->
                                     navController.navigate(Screen.Otp.createRoute(identifier, "login"))
+                                },
+                                onNavigateToPinLogin = {
+                                    navController.navigate(Screen.PinLogin.route)
                                 }
                             )
                         }

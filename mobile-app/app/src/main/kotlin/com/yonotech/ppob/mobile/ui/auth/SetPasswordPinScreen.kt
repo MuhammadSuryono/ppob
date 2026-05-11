@@ -48,16 +48,17 @@ fun SetPasswordPinScreen(
     ) {
         Spacer(modifier = Modifier.height(32.dp))
         Text(
-            text = "Buat Akun",
+            text = "Set Password & PIN",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Buat password dan PIN untuk melanjutkan",
+            text = "Buat password dan PIN untuk keamanan akun Anda",
             fontSize = 16.sp,
             color = Color.Gray,
-            modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
+            modifier = Modifier.padding(top = 8.dp, bottom = 32.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
 
         PpoTextField(
@@ -68,7 +69,7 @@ fun SetPasswordPinScreen(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
                 TextButton(onClick = { showPassword = !showPassword }) {
-                    Text(if (showPassword) "Sembunyikan" else "Lihat")
+                    Text(if (showPassword) "Lihat" else "Tutup")
                 }
             }
         )
@@ -83,30 +84,27 @@ fun SetPasswordPinScreen(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
                 TextButton(onClick = { showConfirmPassword = !showConfirmPassword }) {
-                    Text(if (showConfirmPassword) "Sembunyikan" else "Lihat")
+                    Text(if (showConfirmPassword) "Lihat" else "Tutup")
                 }
             }
         )
 
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(text = "Buat 6-Digit PIN", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+
         Spacer(modifier = Modifier.height(16.dp))
 
-        PpoTextField(
-            value = pin,
-            onValueChange = { if (it.length <= 6 && it.all { char -> char.isDigit() }) pin = it },
-            label = "6-Digit PIN",
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-            placeholder = "123456"
+        PinDots(pin = pin)
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        PinPad(
+            onDigit = { digit -> if (pin.length < 6) pin += digit },
+            onBackspace = { if (pin.isNotEmpty()) pin = pin.dropLast(1) }
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        if (authState is Resource.Error) {
-            Text(
-                text = (authState as Resource.Error).message,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-        }
+        Spacer(modifier = Modifier.height(24.dp))
 
         PpoButton(
             label = "Buat Akun",
@@ -119,6 +117,6 @@ fun SetPasswordPinScreen(
                      pin.length == 6
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(16.dp))
     }
-}
+    }

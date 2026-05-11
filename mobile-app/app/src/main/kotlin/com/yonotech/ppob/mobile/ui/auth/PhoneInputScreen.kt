@@ -22,6 +22,7 @@ import com.yonotech.ppob.mobile.viewmodels.auth.AuthViewModel
 @Composable
 fun PhoneInputScreen(
     onNavigateToOtp: (String) -> Unit,
+    onNavigateToPinLogin: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     var phone by remember { mutableStateOf("") }
@@ -93,7 +94,7 @@ fun PhoneInputScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        TextButton(onClick = { /* Handle existing account login */ }) {
+        TextButton(onClick = onNavigateToPinLogin) {
             Text(text = "Sudah punya akun? Masuk")
         }
     }
