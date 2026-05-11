@@ -23,7 +23,6 @@ class TransactionViewModel @Inject constructor(
     // State for the multi-step flow
     var selectedProductId: String = ""
     var customerNo: String = ""
-    var sellingPrice: Double = 0.0
 
     fun initiateTransaction(pin: String) {
         viewModelScope.launch {
@@ -32,7 +31,6 @@ class TransactionViewModel @Inject constructor(
                 val request = InitiateTransactionRequest(
                     productId = selectedProductId,
                     customerNo = customerNo,
-                    sellingPrice = sellingPrice,
                     pin = pin
                 )
                 val response = repository.initiate(request)

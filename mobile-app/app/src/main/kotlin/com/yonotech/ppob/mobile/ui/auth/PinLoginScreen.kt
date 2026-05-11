@@ -6,35 +6,35 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.yonotech.ppob.mobile.ui.components.PpoButton
 import com.yonotech.ppob.mobile.ui.components.PpoTextField
+import com.yonotech.ppob.mobile.utils.DeviceUtils
 import com.yonotech.ppob.mobile.utils.Resource
 import com.yonotech.ppob.mobile.viewmodels.auth.AuthViewModel
 
 @Composable
-fun OtpScreen(
-    identifier: String,
-    type: String, // "registration" or "login"
-    onOtpSuccess: () -> Unit,
-    onNewUserSetup: (String) -> Unit,
+fun PinLoginScreen(
+    onLoginSuccess: () -> Unit,
+    onPasswordLogin: () -> Unit,
+    onNavigateToPhoneInput: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
-    var otpCode by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var pin by remember { mutableStateOf("") }
     val authState by viewModel.authState.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(authState) {
         if (authState is Resource.Success) {
-            val data = (authState as Resource.Success).data
-            if (data.isNewUser == true && type == "registration") {
-                onNewUserSetup(identifier)
-            } else {
-                onOtpSuccess()
-            }
+            onLoginSuccess()
             viewModel.resetState()
         }
     }
@@ -47,24 +47,37 @@ fun OtpScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Verifikasi OTP",
+            text = "Masuk dengan PIN",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Masukkan kode OTP yang dikirim ke $identifier",
+            text = "Masukkan nomor telepon dan PIN Anda",
             fontSize = 16.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp, bottom = 32.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            color = Color.Gray,
+            modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
         )
 
         PpoTextField(
-            value = otpCode,
-            onValueChange = { if (it.length <= 6) otpCode = it },
-            label = "Kode OTP",
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            value = phone,
+            onValueChange = { 
+                if (it.length <= 15 && it.all { char -> char.isDigit() || char == '+' }) phone = it 
+            },
+            label = "Nomor Telepon",
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            placeholder = "+62xxxxxxxxxx"
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        PpoTextField(
+            value = pin,
+            onValueChange = { if (it.length <= 6 && it.all { char -> char.isDigit() }) pin = it },
+            label = "6-Digit PIN",
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            visualTransformation = PasswordVisualTransformation(),
+            placeholder = "123456"
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -78,16 +91,16 @@ fun OtpScreen(
         }
 
         PpoButton(
-            label = "Verifikasi",
-            onClick = { viewModel.verifyOtp(identifier, otpCode, type) },
+            label = "Masuk",
+            onClick = { viewModel.pinLogin(phone, pin, DeviceUtils.getDeviceId(context)) },
             isLoading = authState is Resource.Loading,
-            enabled = otpCode.length >= 4
+            enabled = phone.isNotEmpty() && pin.length == 6
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        TextButton(onClick = { /* Implement Resend OTP */ }) {
-            Text(text = "Tidak menerima kode? Kirim ulang")
+        TextButton(onClick = onPasswordLogin) {
+            Text(text = "Login dengan password")
         }
     }
 }

@@ -27,10 +27,31 @@ data class VerifyOtpRequest(
 )
 
 @JsonClass(generateAdapter = true)
+data class SendOtpRequest(
+    @Json(name = "phone") val phone: String,
+    @Json(name = "device_id") val deviceId: String
+)
+
+@JsonClass(generateAdapter = true)
+data class SetPasswordPinRequest(
+    @Json(name = "phone") val phone: String,
+    @Json(name = "password") val password: String,
+    @Json(name = "pin") val pin: String
+)
+
+@JsonClass(generateAdapter = true)
+data class PinLoginRequest(
+    @Json(name = "phone") val phone: String,
+    @Json(name = "pin") val pin: String,
+    @Json(name = "device_id") val deviceId: String
+)
+
+@JsonClass(generateAdapter = true)
 data class AuthResponse(
     @Json(name = "access_token") val accessToken: String?,
     @Json(name = "refresh_token") val refreshToken: String?,
     @Json(name = "requires_otp") val requiresOtp: Boolean = false,
+    @Json(name = "is_new_user") val isNewUser: Boolean = false,
     @Json(name = "user") val user: UserDto? = null
 )
 

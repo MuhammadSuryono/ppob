@@ -7,7 +7,7 @@ import com.squareup.moshi.JsonClass
 data class InitiateTransactionRequest(
     @Json(name = "product_id") val productId: String,
     @Json(name = "customer_no") val customerNo: String,
-    @Json(name = "selling_price") val sellingPrice: Double,
+    @Json(name = "selling_price") val sellingPrice: Double? = null,
     @Json(name = "pin") val pin: String
 )
 

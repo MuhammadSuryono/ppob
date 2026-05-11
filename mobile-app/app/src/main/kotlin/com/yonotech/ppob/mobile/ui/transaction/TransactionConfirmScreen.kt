@@ -29,7 +29,6 @@ fun TransactionConfirmScreen(
 ) {
     var pin by remember { mutableStateOf("") }
     val transactionState by viewModel.transactionState.collectAsState()
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("in", "ID")).apply { maximumFractionDigits = 0 }
 
     LaunchedEffect(transactionState) {
         if (transactionState is Resource.Success) {
@@ -70,11 +69,6 @@ fun TransactionConfirmScreen(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Pelanggan:")
                         Text(viewModel.customerNo, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Harga Jual:")
-                        Text(currencyFormat.format(viewModel.sellingPrice), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }

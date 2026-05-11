@@ -24,7 +24,6 @@ fun TransactionInitScreen(
     viewModel: TransactionViewModel
 ) {
     var customerNo by remember { mutableStateOf("") }
-    var sellingPrice by remember { mutableStateOf("") }
 
     viewModel.selectedProductId = productId
 
@@ -65,32 +64,15 @@ fun TransactionInitScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "Harga Jual",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            PpoTextField(
-                value = sellingPrice,
-                onValueChange = { sellingPrice = it },
-                label = "Harga Jual (Rp)",
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-
             Spacer(modifier = Modifier.weight(1f))
 
             PpoButton(
                 label = "Lanjutkan",
                 onClick = {
                     viewModel.customerNo = customerNo
-                    viewModel.sellingPrice = sellingPrice.toDoubleOrNull() ?: 0.0
                     onNext()
                 },
-                enabled = customerNo.isNotEmpty() && sellingPrice.isNotEmpty()
+                enabled = customerNo.isNotEmpty()
             )
         }
     }

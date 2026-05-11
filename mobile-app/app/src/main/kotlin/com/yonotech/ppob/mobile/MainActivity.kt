@@ -3,23 +3,23 @@ package com.yonotech.ppob.mobile
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import com.yonotech.ppob.mobile.ui.auth.LoginScreen
-import com.yonotech.ppob.mobile.ui.auth.OtpScreen
-import com.yonotech.ppob.mobile.ui.auth.RegisterScreen
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.compose.*
+import com.yonotech.ppob.mobile.ui.auth.*
 import com.yonotech.ppob.mobile.ui.history.TransactionHistoryScreen
 import com.yonotech.ppob.mobile.ui.home.HomeScreen
 import com.yonotech.ppob.mobile.ui.navigation.Screen
@@ -49,30 +49,13 @@ class MainActivity : ComponentActivity() {
                 ) {
                     NavHost(
                         navController = navController,
-                        startDestination = Screen.Login.route
+                        startDestination = Screen.PhoneInput.route
                     ) {
-                        composable(Screen.Login.route) {
-                            LoginScreen(
-                                onLoginSuccess = {
-                                    navController.navigate(Screen.Home.route) {
-                                        popUpTo(Screen.Login.route) { inclusive = true }
-                                    }
-                                },
-                                onRegisterClick = {
-                                    navController.navigate(Screen.Register.route)
-                                },
+                        // Auth Flow
+                        composable(Screen.PhoneInput.route) {
+                            PhoneInputScreen(
                                 onNavigateToOtp = { identifier ->
                                     navController.navigate(Screen.Otp.createRoute(identifier, "login"))
-                                }
-                            )
-                        }
-                        composable(Screen.Register.route) {
-                            RegisterScreen(
-                                onRegisterSuccess = { phone ->
-                                    navController.navigate(Screen.Otp.createRoute(phone, "registration"))
-                                },
-                                onLoginClick = {
-                                    navController.popBackStack()
                                 }
                             )
                         }
@@ -84,21 +67,93 @@ class MainActivity : ComponentActivity() {
                                 type = type,
                                 onOtpSuccess = {
                                     navController.navigate(Screen.Home.route) {
-                                        popUpTo(Screen.Login.route) { inclusive = true }
+                                        popUpTo(Screen.PhoneInput.route) { inclusive = true }
+                                    }
+                                },
+                                onNewUserSetup = { phone ->
+                                    navController.navigate(Screen.SetPasswordPin.createRoute(phone))
+                                }
+                            )
+                        }
+                        composable(Screen.SetPasswordPin.route) { backStackEntry ->
+                            val phone = backStackEntry.arguments?.getString("phone") ?: ""
+                            SetPasswordPinScreen(
+                                phone = phone,
+                                onAuthSuccess = {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(Screen.PhoneInput.route) { inclusive = true }
                                     }
                                 }
                             )
                         }
-                        composable(Screen.Home.route) {
-                            HomeScreen(
-                                onCategoryClick = { category ->
-                                    navController.navigate(Screen.ProductList.createRoute(category.id))
+                        composable(Screen.PinLogin.route) {
+                            PinLoginScreen(
+                                onLoginSuccess = {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(Screen.PhoneInput.route) { inclusive = true }
+                                    }
                                 },
-                                onWalletClick = {
-                                    navController.navigate(Screen.Wallet.route)
+                                onPasswordLogin = {
+                                    // Navigate to login screen (would need to be added)
+                                },
+                                onNavigateToPhoneInput = {
+                                    navController.popBackStack(Screen.PhoneInput.route, false)
                                 }
                             )
                         }
+
+                        // Main App with Bottom Navigation
+                        composable(Screen.Home.route) {
+                            MainScreen(navController) {
+                                HomeScreen(
+                                    onCategoryClick = { category ->
+                                        navController.navigate(Screen.ProductList.createRoute(category.id))
+                                    },
+                                    onWalletClick = {
+                                        navController.navigate(Screen.Wallet.route)
+                                    }
+                                )
+                            }
+                        }
+                        composable(Screen.Transactions.route) {
+                            MainScreen(navController) {
+                                TransactionHistoryScreen(
+                                    onBackClick = { navController.popBackStack() }
+                                )
+                            }
+                        }
+                        composable(Screen.Wallet.route) {
+                            MainScreen(navController) {
+                                WalletScreen(
+                                    onBackClick = { navController.popBackStack() },
+                                    onTransactionHistoryClick = {
+                                        navController.navigate(Screen.Transactions.route)
+                                    },
+                                    onStaffClick = {
+                                        navController.navigate(Screen.Staff.route)
+                                    }
+                                )
+                            }
+                        }
+                        composable(Screen.Staff.route) {
+                            MainScreen(navController) {
+                                StaffListScreen(
+                                    onBackClick = { navController.popBackStack() },
+                                    onTopUpClick = { staff ->
+                                        navController.navigate(Screen.StaffTopUp.createRoute(staff.id))
+                                    }
+                                )
+                            }
+                        }
+                        composable(Screen.Profile.route) {
+                            MainScreen(navController) {
+                                ProfileScreen(
+                                    onBackClick = { navController.popBackStack() }
+                                )
+                            }
+                        }
+
+                        // Other screens
                         composable(Screen.ProductList.route) { backStackEntry ->
                             val categoryId = backStackEntry.arguments?.getString("categoryId") ?: ""
                             ProductListScreen(
@@ -122,7 +177,6 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(Screen.TransactionConfirm.route) {
-                            // Find the TransactionInit backstack entry to get the same ViewModel
                             val parentEntry = remember(it) {
                                 navController.getBackStackEntry(Screen.TransactionInit.route)
                             }
@@ -148,33 +202,8 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        composable(Screen.Wallet.route) {
-                            WalletScreen(
-                                onBackClick = { navController.popBackStack() },
-                                onTransactionHistoryClick = {
-                                    navController.navigate(Screen.TransactionHistory.route)
-                                },
-                                onStaffClick = {
-                                    navController.navigate(Screen.StaffList.route)
-                                }
-                            )
-                        }
-                        composable(Screen.TransactionHistory.route) {
-                            TransactionHistoryScreen(
-                                onBackClick = { navController.popBackStack() }
-                            )
-                        }
-                        composable(Screen.StaffList.route) {
-                            StaffListScreen(
-                                onBackClick = { navController.popBackStack() },
-                                onTopUpClick = { staff ->
-                                    navController.navigate(Screen.StaffTopUp.createRoute(staff.id))
-                                }
-                            )
-                        }
                         composable(Screen.StaffTopUp.route) { backStackEntry ->
                             val staffId = backStackEntry.arguments?.getString("staffId") ?: ""
-                            // For now, using a placeholder staff - in real app, pass staff object via savedstatehandle
                             StaffTopUpScreen(
                                 staff = StaffDto(
                                     id = staffId,
@@ -199,17 +228,64 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
+fun MainScreen(navController: NavController, content: @Composable () -> Unit) {
+    val items = listOf(
+        BottomNavItem("Beranda", Icons.Default.Home, Screen.Home),
+        BottomNavItem("Transaksi", Icons.Default.ReceiptLong, Screen.Transactions),
+        BottomNavItem("Wallet", Icons.Default.AccountBalanceWallet, Screen.Wallet),
+        BottomNavItem("Staff", Icons.Default.People, Screen.Staff),
+        BottomNavItem("Profil", Icons.Default.Person, Screen.Profile)
+    )
+    
+    var selectedItem by remember { mutableStateOf(0) }
+    
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                items.forEachIndexed { index, item ->
+                    NavigationBarItem(
+                        icon = { Icon(item.icon, contentDescription = null) },
+                        label = { Text(item.label) },
+                        selected = selectedItem == index,
+                        onClick = {
+                            selectedItem = index
+                            navController.navigate(item.screen.route) {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    ) { padding ->
+        Box(modifier = Modifier.padding(padding)) {
+            content()
+        }
+    }
+}
+
+data class BottomNavItem(val label: String, val icon: ImageVector, val screen: Screen)
+
+@Composable
+fun ProfileScreen(onBackClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp)
+    ) {
+        Text("Profil", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        // Profile content would go here
+    }
+}
+
+@Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
         text = "Welcome to $name!",
         modifier = modifier
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    PpoMobileTheme {
-        Greeting("Android")
-    }
 }
