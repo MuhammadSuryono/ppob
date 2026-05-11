@@ -9,7 +9,9 @@ sealed class Screen(val route: String) {
     object SetPasswordPin : Screen("set_password_pin/{phone}") {
         fun createRoute(phone: String) = "set_password_pin/$phone"
     }
-    object PinLogin : Screen("pin_login")
+    object PinLogin : Screen("pin_login/{phone}") {
+        fun createRoute(phone: String) = "pin_login/$phone"
+    }
 
     // Main screens (bottom nav)
     object Home : Screen("home")

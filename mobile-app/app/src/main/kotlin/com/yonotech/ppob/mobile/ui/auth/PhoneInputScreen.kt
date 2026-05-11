@@ -21,8 +21,8 @@ import com.yonotech.ppob.mobile.viewmodels.auth.AuthViewModel
 
 @Composable
 fun PhoneInputScreen(
-    onNavigateToOtp: (String) -> Unit,
-    onNavigateToPinLogin: () -> Unit,
+    onNavigateToOtp: (String, Boolean) -> Unit, // phone, isNewUser
+    onNavigateToPinLogin: (String) -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     var phone by remember { mutableStateOf("") }
@@ -34,7 +34,9 @@ fun PhoneInputScreen(
             is Resource.Success -> {
                 val data = (authState as Resource.Success).data
                 if (data.requiresOtp) {
-                    onNavigateToOtp(phone)
+                    onNavigateToOtp(phone, data.isNewUser)
+                } else if (!data.isNewUser) {
+                    onNavigateToPinLogin(phone)
                 }
                 viewModel.resetState()
             }
@@ -50,22 +52,22 @@ fun PhoneInputScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Masuk / Daftar",
+            text = "Masuk",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Masukkan nomor telepon Anda",
+            text = "Masukkan nomor telepon Anda untuk melanjutkan",
             fontSize = 16.sp,
             color = Color.Gray,
-            modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
+            modifier = Modifier.padding(top = 8.dp, bottom = 32.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
 
         PpoTextField(
             value = phone,
             onValueChange = { 
-                // Only allow digits, limit to reasonable length
                 if (it.length <= 15 && it.all { char -> char.isDigit() || char == '+' }) phone = it 
             },
             label = "Nomor Telepon",
@@ -91,11 +93,5 @@ fun PhoneInputScreen(
             isLoading = authState is Resource.Loading,
             enabled = phone.length >= 10
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        TextButton(onClick = onNavigateToPinLogin) {
-            Text(text = "Sudah punya akun? Masuk")
-        }
     }
 }

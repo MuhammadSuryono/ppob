@@ -24,12 +24,13 @@ import com.yonotech.ppob.mobile.viewmodels.auth.AuthViewModel
 
 @Composable
 fun PinLoginScreen(
+    phoneArg: String = "",
     onLoginSuccess: () -> Unit,
     onPasswordLogin: () -> Unit,
     onNavigateToPhoneInput: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
-    var phone by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf(phoneArg) }
     var pin by remember { mutableStateOf("") }
     val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current
@@ -65,7 +66,7 @@ fun PinLoginScreen(
         PpoTextField(
             value = phone,
             onValueChange = { 
-                if (it.length <= 15 && it.all { char -> char.isDigit() || char == '+' }) phone = it 
+                if (phoneArg.isEmpty() && it.length <= 15 && it.all { char -> char.isDigit() || char == '+' }) phone = it 
             },
             label = "Nomor Telepon",
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),

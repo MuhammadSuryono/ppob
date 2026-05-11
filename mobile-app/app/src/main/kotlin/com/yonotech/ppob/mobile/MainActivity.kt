@@ -54,11 +54,12 @@ class MainActivity : ComponentActivity() {
                         // Auth Flow
                         composable(Screen.PhoneInput.route) {
                             PhoneInputScreen(
-                                onNavigateToOtp = { identifier ->
-                                    navController.navigate(Screen.Otp.createRoute(identifier, "login"))
+                                onNavigateToOtp = { phone, isNewUser ->
+                                    val type = if (isNewUser) "registration" else "login"
+                                    navController.navigate(Screen.Otp.createRoute(phone, type))
                                 },
-                                onNavigateToPinLogin = {
-                                    navController.navigate(Screen.PinLogin.route)
+                                onNavigateToPinLogin = { phone ->
+                                    navController.navigate(Screen.PinLogin.createRoute(phone))
                                 }
                             )
                         }
@@ -68,9 +69,15 @@ class MainActivity : ComponentActivity() {
                             OtpScreen(
                                 identifier = identifier,
                                 type = type,
-                                onOtpSuccess = {
-                                    navController.navigate(Screen.Home.route) {
-                                        popUpTo(Screen.PhoneInput.route) { inclusive = true }
+                                onOtpSuccess = { phone ->
+                                    if (type == "login") {
+                                        navController.navigate(Screen.PinLogin.createRoute(phone)) {
+                                            popUpTo(Screen.PhoneInput.route) { inclusive = false }
+                                        }
+                                    } else {
+                                        navController.navigate(Screen.Home.route) {
+                                            popUpTo(Screen.PhoneInput.route) { inclusive = true }
+                                        }
                                     }
                                 },
                                 onNewUserSetup = { phone ->
@@ -89,15 +96,17 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        composable(Screen.PinLogin.route) {
+                        composable(Screen.PinLogin.route) { backStackEntry ->
+                            val phone = backStackEntry.arguments?.getString("phone") ?: ""
                             PinLoginScreen(
+                                phoneArg = phone,
                                 onLoginSuccess = {
                                     navController.navigate(Screen.Home.route) {
                                         popUpTo(Screen.PhoneInput.route) { inclusive = true }
                                     }
                                 },
                                 onPasswordLogin = {
-                                    // Navigate to login screen (would need to be added)
+                                    // Handle password login if needed
                                 },
                                 onNavigateToPhoneInput = {
                                     navController.popBackStack(Screen.PhoneInput.route, false)

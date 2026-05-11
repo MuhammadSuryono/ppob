@@ -20,7 +20,7 @@ import com.yonotech.ppob.mobile.viewmodels.auth.AuthViewModel
 fun OtpScreen(
     identifier: String,
     type: String, // "registration" or "login"
-    onOtpSuccess: () -> Unit,
+    onOtpSuccess: (String) -> Unit,
     onNewUserSetup: (String) -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
@@ -33,7 +33,7 @@ fun OtpScreen(
             if (data.isNewUser == true && type == "registration") {
                 onNewUserSetup(identifier)
             } else {
-                onOtpSuccess()
+                onOtpSuccess(identifier)
             }
             viewModel.resetState()
         }
