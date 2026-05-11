@@ -1,58 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Internet permission for API calls -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- FCM foreground service -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- Biometric -->
-    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <application
-        android:name=".PPOBApp"
-        android:allowBackup="false"
-        android:icon="@mipmap/leak_canary_icon"
+        android:name=".PpoApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/leak_canary_icon"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.PPOB"
-        android:networkSecurityConfig="@xml/network_security_config"
-        tools:targetApi="34">
-
-        <!-- Activities -->
+        android:theme="@style/Theme.PpoMobile">
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.PPOB.Splash"
-            android:windowSoftInputMode="adjustResize">
+            android:theme="@style/Theme.PpoMobile">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Deep link handling for FCM notifications -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="ppob" android:host="transactions" />
-            </intent-filter>
         </activity>
-
-        <!-- FCM Messaging Service -->
-        <service
-            android:name=".services.FcmMessagingService"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT" />
-            </intent-filter>
-        </service>
-
-        <!-- Network Security Config -->
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="@string/notification_channel_transactions" />
     </application>
 
 </manifest>

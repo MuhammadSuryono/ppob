@@ -1,0 +1,20 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.yonotech.ppob.mobile.app-mergeDebugResources-95:/values-v25/values-v25.xml",
+            "map": [
+                {
+                    "source": "/home/yono/.gradle/caches/8.9/transforms/a5d4a47a8f4f85fd269ea8da7b4a44af/transformed/appcompat-1.6.1/res/values-v25/values-v25.xml",
+                    "from": {
+                        "startLines": "2,3,4,6",
+                        "startColumns": "4,4,4,4",
+                        "startOffsets": "55,126,209,308",
+                        "endLines": "2,3,5,7",
+                        "endColumns": "70,82,12,12",
+                        "endOffsets": "121,204,303,414"
+                    }
+                }
+            ]
+        }
+    ]
+}

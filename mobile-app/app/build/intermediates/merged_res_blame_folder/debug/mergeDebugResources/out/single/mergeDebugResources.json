@@ -1,0 +1,26 @@
+[
+    {
+        "merged": "com.yonotech.ppob.mobile.app-debug-97:/xml_backup_rules.xml.flat",
+        "source": "com.yonotech.ppob.mobile.app-main-99:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.yonotech.ppob.mobile.app-debug-97:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.yonotech.ppob.mobile.app-main-99:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.yonotech.ppob.mobile.app-debug-97:/xml_data_extraction_rules.xml.flat",
+        "source": "com.yonotech.ppob.mobile.app-main-99:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.yonotech.ppob.mobile.app-debug-97:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.yonotech.ppob.mobile.app-main-99:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.yonotech.ppob.mobile.app-debug-97:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.yonotech.ppob.mobile.app-main-99:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.yonotech.ppob.mobile.app-debug-97:/drawable_ic_notification.xml.flat",
+        "source": "com.yonotech.ppob.mobile.app-main-99:/drawable/ic_notification.xml"
+    }
+]

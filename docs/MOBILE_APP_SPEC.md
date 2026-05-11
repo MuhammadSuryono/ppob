@@ -1074,7 +1074,8 @@ In Compose, use a global `LaunchedEffect` in the root screen or a custom `Snackb
 ---
 
 **Related:**  
-- `API_CONTRACTS.md` — endpoints consumed  
+- `MICROSERVICES_API_DOC.md` — endpoints consumed  
 - `ERROR_HANDLING.md` — error mapping for UI  
 - `SECURITY_ARCHITECTURE.md` — PIN and token security  
 - `ANDROID_ARCHITECTURE_GUIDE.md` — Jetpack Compose + Hilt + Room patterns
+- `google-services.json` - Configures Firebase services

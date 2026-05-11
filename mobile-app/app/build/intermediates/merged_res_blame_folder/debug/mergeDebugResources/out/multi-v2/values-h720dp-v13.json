@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.yonotech.ppob.mobile.app-mergeDebugResources-95:/values-h720dp-v13/values-h720dp-v13.xml",
+            "map": [
+                {
+                    "source": "/home/yono/.gradle/caches/8.9/transforms/a5d4a47a8f4f85fd269ea8da7b4a44af/transformed/appcompat-1.6.1/res/values-h720dp-v13/values-h720dp-v13.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "66",
+                        "endOffsets": "117"
+                    }
+                }
+            ]
+        }
+    ]
+}

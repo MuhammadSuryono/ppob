@@ -1,0 +1,675 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.yonotech.ppob.mobile"
+4    android:versionCode="1"
+5    android:versionName="1.0.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="26"
+9        android:targetSdkVersion="35" />
+10
+11    <uses-permission android:name="android.permission.INTERNET" />
+11-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:4:5-67
+11-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:4:22-64
+12    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+12-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:5:5-79
+12-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:5:22-76
+13
+14    <queries>
+14-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:7:5-13:15
+15        <intent>
+15-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:8:9-12:18
+16            <action android:name="android.intent.action.CREATE_DOCUMENT" />
+16-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:9:13-76
+16-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:9:21-73
+17
+18            <data android:mimeType="*/*" />
+18-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:11:13-44
+18-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:11:19-41
+19        </intent>
+20    </queries>
+21
+22    <uses-permission
+22-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:15:5-17:38
+23        android:name="android.permission.WAKE_LOCK"
+23-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:16:9-52
+24        android:maxSdkVersion="25" />
+24-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:17:9-35
+25    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+25-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:18:5-77
+25-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:18:22-74
+26    <uses-permission android:name="android.permission.USE_BIOMETRIC" /> <!-- suppress DeprecatedClassUsageInspection -->
+26-->[androidx.biometric:biometric:1.1.0] /home/yono/.gradle/caches/8.9/transforms/c69606f26a91d418acde9377da86d7c6/transformed/biometric-1.1.0/AndroidManifest.xml:24:5-72
+26-->[androidx.biometric:biometric:1.1.0] /home/yono/.gradle/caches/8.9/transforms/c69606f26a91d418acde9377da86d7c6/transformed/biometric-1.1.0/AndroidManifest.xml:24:22-69
+27    <uses-permission android:name="android.permission.USE_FINGERPRINT" /> <!-- Required by older versions of Google Play services to create IID tokens -->
+27-->[androidx.biometric:biometric:1.1.0] /home/yono/.gradle/caches/8.9/transforms/c69606f26a91d418acde9377da86d7c6/transformed/biometric-1.1.0/AndroidManifest.xml:27:5-74
+27-->[androidx.biometric:biometric:1.1.0] /home/yono/.gradle/caches/8.9/transforms/c69606f26a91d418acde9377da86d7c6/transformed/biometric-1.1.0/AndroidManifest.xml:27:22-71
+28    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+28-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:26:5-82
+28-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:26:22-79
+29    <uses-permission android:name="com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE" />
+29-->[com.google.android.gms:play-services-measurement:22.2.0] /home/yono/.gradle/caches/8.9/transforms/52708afd299b1cc6ebade6cdd868de6f/transformed/play-services-measurement-22.2.0/AndroidManifest.xml:26:5-110
+29-->[com.google.android.gms:play-services-measurement:22.2.0] /home/yono/.gradle/caches/8.9/transforms/52708afd299b1cc6ebade6cdd868de6f/transformed/play-services-measurement-22.2.0/AndroidManifest.xml:26:22-107
+30    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+30-->[com.google.android.gms:play-services-measurement-api:22.2.0] /home/yono/.gradle/caches/8.9/transforms/38060e0b60416ae34e9299129ad7ff47/transformed/play-services-measurement-api-22.2.0/AndroidManifest.xml:25:5-79
+30-->[com.google.android.gms:play-services-measurement-api:22.2.0] /home/yono/.gradle/caches/8.9/transforms/38060e0b60416ae34e9299129ad7ff47/transformed/play-services-measurement-api-22.2.0/AndroidManifest.xml:25:22-76
+31    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION" />
+31-->[com.google.android.gms:play-services-measurement-api:22.2.0] /home/yono/.gradle/caches/8.9/transforms/38060e0b60416ae34e9299129ad7ff47/transformed/play-services-measurement-api-22.2.0/AndroidManifest.xml:26:5-88
+31-->[com.google.android.gms:play-services-measurement-api:22.2.0] /home/yono/.gradle/caches/8.9/transforms/38060e0b60416ae34e9299129ad7ff47/transformed/play-services-measurement-api-22.2.0/AndroidManifest.xml:26:22-85
+32    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_AD_ID" />
+32-->[com.google.android.gms:play-services-measurement-api:22.2.0] /home/yono/.gradle/caches/8.9/transforms/38060e0b60416ae34e9299129ad7ff47/transformed/play-services-measurement-api-22.2.0/AndroidManifest.xml:27:5-82
+32-->[com.google.android.gms:play-services-measurement-api:22.2.0] /home/yono/.gradle/caches/8.9/transforms/38060e0b60416ae34e9299129ad7ff47/transformed/play-services-measurement-api-22.2.0/AndroidManifest.xml:27:22-79
+33    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+33-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:25:5-81
+33-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:25:22-78
+34    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+34-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:26:5-77
+34-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:26:22-74
+35
+36    <permission
+36-->[androidx.core:core:1.15.0] /home/yono/.gradle/caches/8.9/transforms/d1bcae567ec027835e844b3bdb0c8961/transformed/core-1.15.0/AndroidManifest.xml:22:5-24:47
+37        android:name="com.yonotech.ppob.mobile.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+37-->[androidx.core:core:1.15.0] /home/yono/.gradle/caches/8.9/transforms/d1bcae567ec027835e844b3bdb0c8961/transformed/core-1.15.0/AndroidManifest.xml:23:9-81
+38        android:protectionLevel="signature" />
+38-->[androidx.core:core:1.15.0] /home/yono/.gradle/caches/8.9/transforms/d1bcae567ec027835e844b3bdb0c8961/transformed/core-1.15.0/AndroidManifest.xml:24:9-44
+39
+40    <uses-permission android:name="com.yonotech.ppob.mobile.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+40-->[androidx.core:core:1.15.0] /home/yono/.gradle/caches/8.9/transforms/d1bcae567ec027835e844b3bdb0c8961/transformed/core-1.15.0/AndroidManifest.xml:26:5-97
+40-->[androidx.core:core:1.15.0] /home/yono/.gradle/caches/8.9/transforms/d1bcae567ec027835e844b3bdb0c8961/transformed/core-1.15.0/AndroidManifest.xml:26:22-94
+41
+42    <application
+42-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:7:5-26:19
+43        android:name="com.yonotech.ppob.mobile.PpoApplication"
+43-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:8:9-39
+44        android:allowBackup="true"
+44-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:9:9-35
+45        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+45-->[androidx.core:core:1.15.0] /home/yono/.gradle/caches/8.9/transforms/d1bcae567ec027835e844b3bdb0c8961/transformed/core-1.15.0/AndroidManifest.xml:28:18-86
+46        android:dataExtractionRules="@xml/data_extraction_rules"
+46-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:10:9-65
+47        android:debuggable="true"
+48        android:extractNativeLibs="false"
+49        android:fullBackupContent="@xml/backup_rules"
+49-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:11:9-54
+50        android:icon="@mipmap/ic_launcher"
+50-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:12:9-43
+51        android:label="@string/app_name"
+51-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:13:9-41
+52        android:roundIcon="@mipmap/ic_launcher_round"
+52-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:14:9-54
+53        android:supportsRtl="true"
+53-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:15:9-35
+54        android:theme="@style/Theme.PpoMobile" >
+54-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:16:9-47
+55        <activity
+55-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:17:9-25:20
+56            android:name="com.yonotech.ppob.mobile.MainActivity"
+56-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:18:13-41
+57            android:exported="true"
+57-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:19:13-36
+58            android:theme="@style/Theme.PpoMobile" >
+58-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:20:13-51
+59            <intent-filter>
+59-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:21:13-24:29
+60                <action android:name="android.intent.action.MAIN" />
+60-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:22:17-69
+60-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:22:25-66
+61
+62                <category android:name="android.intent.category.LAUNCHER" />
+62-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:23:17-77
+62-->/home/yono/workspace/yontech/ppob/mobile-app/app/src/main/AndroidManifest.xml:23:27-74
+63            </intent-filter>
+64        </activity>
+65        <activity
+65-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:21:9-26:52
+66            android:name="com.chuckerteam.chucker.internal.ui.MainActivity"
+66-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:22:13-76
+67            android:label="@string/chucker_name"
+67-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:23:13-49
+68            android:launchMode="singleTask"
+68-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:24:13-44
+69            android:taskAffinity="com.chuckerteam.chucker.task"
+69-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:25:13-64
+70            android:theme="@style/Chucker.Theme" />
+70-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:26:13-49
+71        <activity
+71-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:27:9-30:52
+72            android:name="com.chuckerteam.chucker.internal.ui.transaction.TransactionActivity"
+72-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:28:13-95
+73            android:parentActivityName="com.chuckerteam.chucker.internal.ui.MainActivity"
+73-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:29:13-90
+74            android:theme="@style/Chucker.Theme" />
+74-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:30:13-49
+75
+76        <service
+76-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:32:9-35:72
+77            android:name="com.chuckerteam.chucker.internal.support.ClearDatabaseService"
+77-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:33:13-89
+78            android:exported="false"
+78-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:34:13-37
+79            android:permission="android.permission.BIND_JOB_SERVICE" />
+79-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:35:13-69
+80
+81        <receiver
+81-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:37:9-39:40
+82            android:name="com.chuckerteam.chucker.internal.support.ClearDatabaseJobIntentServiceReceiver"
+82-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:38:13-106
+83            android:exported="false" />
+83-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:39:13-37
+84
+85        <provider
+85-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:41:9-49:20
+86            android:name="com.chuckerteam.chucker.internal.support.ChuckerFileProvider"
+86-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:42:13-88
+87            android:authorities="com.yonotech.ppob.mobile.com.chuckerteam.chucker.provider"
+87-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:43:13-84
+88            android:exported="false"
+88-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:44:13-37
+89            android:grantUriPermissions="true" >
+89-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:45:13-47
+90            <meta-data
+90-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:46:13-48:66
+91                android:name="android.support.FILE_PROVIDER_PATHS"
+91-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:47:17-67
+92                android:resource="@xml/chucker_provider_paths" />
+92-->[com.github.chuckerteam.chucker:library:4.1.0] /home/yono/.gradle/caches/8.9/transforms/e60b7b1bf9526f795e5db8a5b55429a6/transformed/library-4.1.0/AndroidManifest.xml:48:17-63
+93        </provider>
+94
+95        <receiver
+95-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:29:9-40:20
+96            android:name="com.google.firebase.iid.FirebaseInstanceIdReceiver"
+96-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:30:13-78
+97            android:exported="true"
+97-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:31:13-36
+98            android:permission="com.google.android.c2dm.permission.SEND" >
+98-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:32:13-73
+99            <intent-filter>
+99-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:33:13-35:29
+100                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+100-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:34:17-81
+100-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:34:25-78
+101            </intent-filter>
+102
+103            <meta-data
+103-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:37:13-39:40
+104                android:name="com.google.android.gms.cloudmessaging.FINISHED_AFTER_HANDLED"
+104-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:38:17-92
+105                android:value="true" />
+105-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:39:17-37
+106        </receiver>
+107        <!--
+108             FirebaseMessagingService performs security checks at runtime,
+109             but set to not exported to explicitly avoid allowing another app to call it.
+110        -->
+111        <service
+111-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:46:9-53:19
+112            android:name="com.google.firebase.messaging.FirebaseMessagingService"
+112-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:47:13-82
+113            android:directBootAware="true"
+113-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:48:13-43
+114            android:exported="false" >
+114-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:49:13-37
+115            <intent-filter android:priority="-500" >
+115-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:50:13-52:29
+115-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:50:28-51
+116                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+116-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:51:17-78
+116-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:51:25-75
+117            </intent-filter>
+118        </service>
+119        <service
+119-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:54:9-63:19
+120            android:name="com.google.firebase.components.ComponentDiscoveryService"
+120-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:55:13-84
+121            android:directBootAware="true"
+121-->[com.google.firebase:firebase-common:21.0.0] /home/yono/.gradle/caches/8.9/transforms/a9d41c2cd92c2da1de88767a4ce67adb/transformed/firebase-common-21.0.0/AndroidManifest.xml:32:13-43
+122            android:exported="false" >
+122-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:56:13-37
+123            <meta-data
+123-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:57:13-59:85
+124                android:name="com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingKtxRegistrar"
+124-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:58:17-122
+125                android:value="com.google.firebase.components.ComponentRegistrar" />
+125-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:59:17-82
+126            <meta-data
+126-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:60:13-62:85
+127                android:name="com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingRegistrar"
+127-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:61:17-119
+128                android:value="com.google.firebase.components.ComponentRegistrar" />
+128-->[com.google.firebase:firebase-messaging:24.1.0] /home/yono/.gradle/caches/8.9/transforms/e9d9c9adf3d463841ee4d8020f4fbc51/transformed/firebase-messaging-24.1.0/AndroidManifest.xml:62:17-82
+129            <meta-data
+129-->[com.google.android.gms:play-services-measurement-api:22.2.0] /home/yono/.gradle/caches/8.9/transforms/38060e0b60416ae34e9299129ad7ff47/transformed/play-services-measurement-api-22.2.0/AndroidManifest.xml:33:13-35:85
+130                android:name="com.google.firebase.components:com.google.firebase.analytics.connector.internal.AnalyticsConnectorRegistrar"
+130-->[com.google.android.gms:play-services-measurement-api:22.2.0] /home/yono/.gradle/caches/8.9/transforms/38060e0b60416ae34e9299129ad7ff47/transformed/play-services-measurement-api-22.2.0/AndroidManifest.xml:34:17-139
+131                android:value="com.google.firebase.components.ComponentRegistrar" />
+131-->[com.google.android.gms:play-services-measurement-api:22.2.0] /home/yono/.gradle/caches/8.9/transforms/38060e0b60416ae34e9299129ad7ff47/transformed/play-services-measurement-api-22.2.0/AndroidManifest.xml:35:17-82
+132            <meta-data
+132-->[com.google.firebase:firebase-crashlytics:19.4.0] /home/yono/.gradle/caches/8.9/transforms/91e0133ab0ba92116fa8b32a7ccd3796/transformed/firebase-crashlytics-19.4.0/AndroidManifest.xml:15:13-17:85
+133                android:name="com.google.firebase.components:com.google.firebase.crashlytics.FirebaseCrashlyticsKtxRegistrar"
+133-->[com.google.firebase:firebase-crashlytics:19.4.0] /home/yono/.gradle/caches/8.9/transforms/91e0133ab0ba92116fa8b32a7ccd3796/transformed/firebase-crashlytics-19.4.0/AndroidManifest.xml:16:17-126
+134                android:value="com.google.firebase.components.ComponentRegistrar" />
+134-->[com.google.firebase:firebase-crashlytics:19.4.0] /home/yono/.gradle/caches/8.9/transforms/91e0133ab0ba92116fa8b32a7ccd3796/transformed/firebase-crashlytics-19.4.0/AndroidManifest.xml:17:17-82
+135            <meta-data
+135-->[com.google.firebase:firebase-crashlytics:19.4.0] /home/yono/.gradle/caches/8.9/transforms/91e0133ab0ba92116fa8b32a7ccd3796/transformed/firebase-crashlytics-19.4.0/AndroidManifest.xml:18:13-20:85
+136                android:name="com.google.firebase.components:com.google.firebase.crashlytics.CrashlyticsRegistrar"
+136-->[com.google.firebase:firebase-crashlytics:19.4.0] /home/yono/.gradle/caches/8.9/transforms/91e0133ab0ba92116fa8b32a7ccd3796/transformed/firebase-crashlytics-19.4.0/AndroidManifest.xml:19:17-115
+137                android:value="com.google.firebase.components.ComponentRegistrar" />
+137-->[com.google.firebase:firebase-crashlytics:19.4.0] /home/yono/.gradle/caches/8.9/transforms/91e0133ab0ba92116fa8b32a7ccd3796/transformed/firebase-crashlytics-19.4.0/AndroidManifest.xml:20:17-82
+138            <meta-data
+138-->[com.google.firebase:firebase-sessions:2.0.8] /home/yono/.gradle/caches/8.9/transforms/5fcb1ff5eef1bda119a1e1c9facd9347/transformed/firebase-sessions-2.0.8/AndroidManifest.xml:29:13-31:85
+139                android:name="com.google.firebase.components:com.google.firebase.sessions.FirebaseSessionsRegistrar"
+139-->[com.google.firebase:firebase-sessions:2.0.8] /home/yono/.gradle/caches/8.9/transforms/5fcb1ff5eef1bda119a1e1c9facd9347/transformed/firebase-sessions-2.0.8/AndroidManifest.xml:30:17-117
+140                android:value="com.google.firebase.components.ComponentRegistrar" />
+140-->[com.google.firebase:firebase-sessions:2.0.8] /home/yono/.gradle/caches/8.9/transforms/5fcb1ff5eef1bda119a1e1c9facd9347/transformed/firebase-sessions-2.0.8/AndroidManifest.xml:31:17-82
+141            <meta-data
+141-->[com.google.firebase:firebase-installations:18.0.0] /home/yono/.gradle/caches/8.9/transforms/30d410adf522f082866d1ef69e7a3be8/transformed/firebase-installations-18.0.0/AndroidManifest.xml:15:13-17:85
+142                android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsKtxRegistrar"
+142-->[com.google.firebase:firebase-installations:18.0.0] /home/yono/.gradle/caches/8.9/transforms/30d410adf522f082866d1ef69e7a3be8/transformed/firebase-installations-18.0.0/AndroidManifest.xml:16:17-130
+143                android:value="com.google.firebase.components.ComponentRegistrar" />
+143-->[com.google.firebase:firebase-installations:18.0.0] /home/yono/.gradle/caches/8.9/transforms/30d410adf522f082866d1ef69e7a3be8/transformed/firebase-installations-18.0.0/AndroidManifest.xml:17:17-82
+144            <meta-data
+144-->[com.google.firebase:firebase-installations:18.0.0] /home/yono/.gradle/caches/8.9/transforms/30d410adf522f082866d1ef69e7a3be8/transformed/firebase-installations-18.0.0/AndroidManifest.xml:18:13-20:85
+145                android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsRegistrar"
+145-->[com.google.firebase:firebase-installations:18.0.0] /home/yono/.gradle/caches/8.9/transforms/30d410adf522f082866d1ef69e7a3be8/transformed/firebase-installations-18.0.0/AndroidManifest.xml:19:17-127
+146                android:value="com.google.firebase.components.ComponentRegistrar" />
+146-->[com.google.firebase:firebase-installations:18.0.0] /home/yono/.gradle/caches/8.9/transforms/30d410adf522f082866d1ef69e7a3be8/transformed/firebase-installations-18.0.0/AndroidManifest.xml:20:17-82
+147            <meta-data
+147-->[com.google.firebase:firebase-common-ktx:21.0.0] /home/yono/.gradle/caches/8.9/transforms/33d6953e4d718a402dba3316e9301c2e/transformed/firebase-common-ktx-21.0.0/AndroidManifest.xml:12:13-14:85
+148                android:name="com.google.firebase.components:com.google.firebase.ktx.FirebaseCommonLegacyRegistrar"
+148-->[com.google.firebase:firebase-common-ktx:21.0.0] /home/yono/.gradle/caches/8.9/transforms/33d6953e4d718a402dba3316e9301c2e/transformed/firebase-common-ktx-21.0.0/AndroidManifest.xml:13:17-116
+149                android:value="com.google.firebase.components.ComponentRegistrar" />
+149-->[com.google.firebase:firebase-common-ktx:21.0.0] /home/yono/.gradle/caches/8.9/transforms/33d6953e4d718a402dba3316e9301c2e/transformed/firebase-common-ktx-21.0.0/AndroidManifest.xml:14:17-82
+150            <meta-data
+150-->[com.google.firebase:firebase-common:21.0.0] /home/yono/.gradle/caches/8.9/transforms/a9d41c2cd92c2da1de88767a4ce67adb/transformed/firebase-common-21.0.0/AndroidManifest.xml:35:13-37:85
+151                android:name="com.google.firebase.components:com.google.firebase.FirebaseCommonKtxRegistrar"
+151-->[com.google.firebase:firebase-common:21.0.0] /home/yono/.gradle/caches/8.9/transforms/a9d41c2cd92c2da1de88767a4ce67adb/transformed/firebase-common-21.0.0/AndroidManifest.xml:36:17-109
+152                android:value="com.google.firebase.components.ComponentRegistrar" />
+152-->[com.google.firebase:firebase-common:21.0.0] /home/yono/.gradle/caches/8.9/transforms/a9d41c2cd92c2da1de88767a4ce67adb/transformed/firebase-common-21.0.0/AndroidManifest.xml:37:17-82
+153            <meta-data
+153-->[com.google.firebase:firebase-datatransport:19.0.0] /home/yono/.gradle/caches/8.9/transforms/86550a92d6099e4f2e9395ae9d127f34/transformed/firebase-datatransport-19.0.0/AndroidManifest.xml:25:13-27:85
+154                android:name="com.google.firebase.components:com.google.firebase.datatransport.TransportRegistrar"
+154-->[com.google.firebase:firebase-datatransport:19.0.0] /home/yono/.gradle/caches/8.9/transforms/86550a92d6099e4f2e9395ae9d127f34/transformed/firebase-datatransport-19.0.0/AndroidManifest.xml:26:17-115
+155                android:value="com.google.firebase.components.ComponentRegistrar" />
+155-->[com.google.firebase:firebase-datatransport:19.0.0] /home/yono/.gradle/caches/8.9/transforms/86550a92d6099e4f2e9395ae9d127f34/transformed/firebase-datatransport-19.0.0/AndroidManifest.xml:27:17-82
+156        </service>
+157
+158        <receiver
+158-->[com.google.android.gms:play-services-measurement:22.2.0] /home/yono/.gradle/caches/8.9/transforms/52708afd299b1cc6ebade6cdd868de6f/transformed/play-services-measurement-22.2.0/AndroidManifest.xml:29:9-33:20
+159            android:name="com.google.android.gms.measurement.AppMeasurementReceiver"
+159-->[com.google.android.gms:play-services-measurement:22.2.0] /home/yono/.gradle/caches/8.9/transforms/52708afd299b1cc6ebade6cdd868de6f/transformed/play-services-measurement-22.2.0/AndroidManifest.xml:30:13-85
+160            android:enabled="true"
+160-->[com.google.android.gms:play-services-measurement:22.2.0] /home/yono/.gradle/caches/8.9/transforms/52708afd299b1cc6ebade6cdd868de6f/transformed/play-services-measurement-22.2.0/AndroidManifest.xml:31:13-35
+161            android:exported="false" >
+161-->[com.google.android.gms:play-services-measurement:22.2.0] /home/yono/.gradle/caches/8.9/transforms/52708afd299b1cc6ebade6cdd868de6f/transformed/play-services-measurement-22.2.0/AndroidManifest.xml:32:13-37
+162        </receiver>
+163
+164        <service
+164-->[com.google.android.gms:play-services-measurement:22.2.0] /home/yono/.gradle/caches/8.9/transforms/52708afd299b1cc6ebade6cdd868de6f/transformed/play-services-measurement-22.2.0/AndroidManifest.xml:35:9-38:40
+165            android:name="com.google.android.gms.measurement.AppMeasurementService"
+165-->[com.google.android.gms:play-services-measurement:22.2.0] /home/yono/.gradle/caches/8.9/transforms/52708afd299b1cc6ebade6cdd868de6f/transformed/play-services-measurement-22.2.0/AndroidManifest.xml:36:13-84
+166            android:enabled="true"
+166-->[com.google.android.gms:play-services-measurement:22.2.0] /home/yono/.gradle/caches/8.9/transforms/52708afd299b1cc6ebade6cdd868de6f/transformed/play-services-measurement-22.2.0/AndroidManifest.xml:37:13-35
+167            android:exported="false" />
+167-->[com.google.android.gms:play-services-measurement:22.2.0] /home/yono/.gradle/caches/8.9/transforms/52708afd299b1cc6ebade6cdd868de6f/transformed/play-services-measurement-22.2.0/AndroidManifest.xml:38:13-37
+168        <service
+168-->[com.google.android.gms:play-services-measurement:22.2.0] /home/yono/.gradle/caches/8.9/transforms/52708afd299b1cc6ebade6cdd868de6f/transformed/play-services-measurement-22.2.0/AndroidManifest.xml:39:9-43:72
+169            android:name="com.google.android.gms.measurement.AppMeasurementJobService"
+169-->[com.google.android.gms:play-services-measurement:22.2.0] /home/yono/.gradle/caches/8.9/transforms/52708afd299b1cc6ebade6cdd868de6f/transformed/play-services-measurement-22.2.0/AndroidManifest.xml:40:13-87
+170            android:enabled="true"
+170-->[com.google.android.gms:play-services-measurement:22.2.0] /home/yono/.gradle/caches/8.9/transforms/52708afd299b1cc6ebade6cdd868de6f/transformed/play-services-measurement-22.2.0/AndroidManifest.xml:41:13-35
+171            android:exported="false"
+171-->[com.google.android.gms:play-services-measurement:22.2.0] /home/yono/.gradle/caches/8.9/transforms/52708afd299b1cc6ebade6cdd868de6f/transformed/play-services-measurement-22.2.0/AndroidManifest.xml:42:13-37
+172            android:permission="android.permission.BIND_JOB_SERVICE" />
+172-->[com.google.android.gms:play-services-measurement:22.2.0] /home/yono/.gradle/caches/8.9/transforms/52708afd299b1cc6ebade6cdd868de6f/transformed/play-services-measurement-22.2.0/AndroidManifest.xml:43:13-69
+173        <service
+173-->[com.google.firebase:firebase-sessions:2.0.8] /home/yono/.gradle/caches/8.9/transforms/5fcb1ff5eef1bda119a1e1c9facd9347/transformed/firebase-sessions-2.0.8/AndroidManifest.xml:22:9-25:40
+174            android:name="com.google.firebase.sessions.SessionLifecycleService"
+174-->[com.google.firebase:firebase-sessions:2.0.8] /home/yono/.gradle/caches/8.9/transforms/5fcb1ff5eef1bda119a1e1c9facd9347/transformed/firebase-sessions-2.0.8/AndroidManifest.xml:23:13-80
+175            android:enabled="true"
+175-->[com.google.firebase:firebase-sessions:2.0.8] /home/yono/.gradle/caches/8.9/transforms/5fcb1ff5eef1bda119a1e1c9facd9347/transformed/firebase-sessions-2.0.8/AndroidManifest.xml:24:13-35
+176            android:exported="false" />
+176-->[com.google.firebase:firebase-sessions:2.0.8] /home/yono/.gradle/caches/8.9/transforms/5fcb1ff5eef1bda119a1e1c9facd9347/transformed/firebase-sessions-2.0.8/AndroidManifest.xml:25:13-37
+177
+178        <provider
+178-->[com.google.firebase:firebase-common:21.0.0] /home/yono/.gradle/caches/8.9/transforms/a9d41c2cd92c2da1de88767a4ce67adb/transformed/firebase-common-21.0.0/AndroidManifest.xml:23:9-28:39
+179            android:name="com.google.firebase.provider.FirebaseInitProvider"
+179-->[com.google.firebase:firebase-common:21.0.0] /home/yono/.gradle/caches/8.9/transforms/a9d41c2cd92c2da1de88767a4ce67adb/transformed/firebase-common-21.0.0/AndroidManifest.xml:24:13-77
+180            android:authorities="com.yonotech.ppob.mobile.firebaseinitprovider"
+180-->[com.google.firebase:firebase-common:21.0.0] /home/yono/.gradle/caches/8.9/transforms/a9d41c2cd92c2da1de88767a4ce67adb/transformed/firebase-common-21.0.0/AndroidManifest.xml:25:13-72
+181            android:directBootAware="true"
+181-->[com.google.firebase:firebase-common:21.0.0] /home/yono/.gradle/caches/8.9/transforms/a9d41c2cd92c2da1de88767a4ce67adb/transformed/firebase-common-21.0.0/AndroidManifest.xml:26:13-43
+182            android:exported="false"
+182-->[com.google.firebase:firebase-common:21.0.0] /home/yono/.gradle/caches/8.9/transforms/a9d41c2cd92c2da1de88767a4ce67adb/transformed/firebase-common-21.0.0/AndroidManifest.xml:27:13-37
+183            android:initOrder="100" />
+183-->[com.google.firebase:firebase-common:21.0.0] /home/yono/.gradle/caches/8.9/transforms/a9d41c2cd92c2da1de88767a4ce67adb/transformed/firebase-common-21.0.0/AndroidManifest.xml:28:13-36
+184
+185        <service
+185-->[androidx.room:room-runtime-android:2.7.1] /home/yono/.gradle/caches/8.9/transforms/038aefb6cb3506e143122aa663f8e543/transformed/room-runtime-release/AndroidManifest.xml:24:9-28:63
+186            android:name="androidx.room.MultiInstanceInvalidationService"
+186-->[androidx.room:room-runtime-android:2.7.1] /home/yono/.gradle/caches/8.9/transforms/038aefb6cb3506e143122aa663f8e543/transformed/room-runtime-release/AndroidManifest.xml:25:13-74
+187            android:directBootAware="true"
+187-->[androidx.room:room-runtime-android:2.7.1] /home/yono/.gradle/caches/8.9/transforms/038aefb6cb3506e143122aa663f8e543/transformed/room-runtime-release/AndroidManifest.xml:26:13-43
+188            android:exported="false" />
+188-->[androidx.room:room-runtime-android:2.7.1] /home/yono/.gradle/caches/8.9/transforms/038aefb6cb3506e143122aa663f8e543/transformed/room-runtime-release/AndroidManifest.xml:27:13-37
+189
+190        <provider
+190-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:29:9-37:20
+191            android:name="androidx.startup.InitializationProvider"
+191-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:30:13-67
+192            android:authorities="com.yonotech.ppob.mobile.androidx-startup"
+192-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:31:13-68
+193            android:exported="false" >
+193-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:32:13-37
+194            <meta-data
+194-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:34:13-36:52
+195                android:name="androidx.work.WorkManagerInitializer"
+195-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:35:17-68
+196                android:value="androidx.startup" />
+196-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:36:17-49
+197            <meta-data
+197-->[androidx.emoji2:emoji2:1.4.0] /home/yono/.gradle/caches/8.9/transforms/a12e97d4a5975f062bf8848aaa641537/transformed/emoji2-1.4.0/AndroidManifest.xml:29:13-31:52
+198                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+198-->[androidx.emoji2:emoji2:1.4.0] /home/yono/.gradle/caches/8.9/transforms/a12e97d4a5975f062bf8848aaa641537/transformed/emoji2-1.4.0/AndroidManifest.xml:30:17-75
+199                android:value="androidx.startup" />
+199-->[androidx.emoji2:emoji2:1.4.0] /home/yono/.gradle/caches/8.9/transforms/a12e97d4a5975f062bf8848aaa641537/transformed/emoji2-1.4.0/AndroidManifest.xml:31:17-49
+200            <meta-data
+200-->[androidx.lifecycle:lifecycle-process:2.8.7] /home/yono/.gradle/caches/8.9/transforms/423fefc211f5c4850f1cf840390ef0dd/transformed/lifecycle-process-2.8.7/AndroidManifest.xml:29:13-31:52
+201                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+201-->[androidx.lifecycle:lifecycle-process:2.8.7] /home/yono/.gradle/caches/8.9/transforms/423fefc211f5c4850f1cf840390ef0dd/transformed/lifecycle-process-2.8.7/AndroidManifest.xml:30:17-78
+202                android:value="androidx.startup" />
+202-->[androidx.lifecycle:lifecycle-process:2.8.7] /home/yono/.gradle/caches/8.9/transforms/423fefc211f5c4850f1cf840390ef0dd/transformed/lifecycle-process-2.8.7/AndroidManifest.xml:31:17-49
+203            <meta-data
+203-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:29:13-31:52
+204                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+204-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:30:17-85
+205                android:value="androidx.startup" />
+205-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:31:17-49
+206        </provider>
+207
+208        <service
+208-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:39:9-45:35
+209            android:name="androidx.work.impl.background.systemalarm.SystemAlarmService"
+209-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:40:13-88
+210            android:directBootAware="false"
+210-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:41:13-44
+211            android:enabled="@bool/enable_system_alarm_service_default"
+211-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:42:13-72
+212            android:exported="false" />
+212-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:43:13-37
+213        <service
+213-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:46:9-52:35
+214            android:name="androidx.work.impl.background.systemjob.SystemJobService"
+214-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:47:13-84
+215            android:directBootAware="false"
+215-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:48:13-44
+216            android:enabled="@bool/enable_system_job_service_default"
+216-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:49:13-70
+217            android:exported="true"
+217-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:50:13-36
+218            android:permission="android.permission.BIND_JOB_SERVICE" />
+218-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:51:13-69
+219        <service
+219-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:53:9-59:35
+220            android:name="androidx.work.impl.foreground.SystemForegroundService"
+220-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:54:13-81
+221            android:directBootAware="false"
+221-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:55:13-44
+222            android:enabled="@bool/enable_system_foreground_service_default"
+222-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:56:13-77
+223            android:exported="false" />
+223-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:57:13-37
+224
+225        <receiver
+225-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:61:9-66:35
+226            android:name="androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver"
+226-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:62:13-88
+227            android:directBootAware="false"
+227-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:63:13-44
+228            android:enabled="true"
+228-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:64:13-35
+229            android:exported="false" />
+229-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:65:13-37
+230        <receiver
+230-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:67:9-77:20
+231            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy"
+231-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:68:13-106
+232            android:directBootAware="false"
+232-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:69:13-44
+233            android:enabled="false"
+233-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:70:13-36
+234            android:exported="false" >
+234-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:71:13-37
+235            <intent-filter>
+235-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:73:13-76:29
+236                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+236-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:74:17-87
+236-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:74:25-84
+237                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+237-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:75:17-90
+237-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:75:25-87
+238            </intent-filter>
+239        </receiver>
+240        <receiver
+240-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:78:9-88:20
+241            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy"
+241-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:79:13-104
+242            android:directBootAware="false"
+242-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:80:13-44
+243            android:enabled="false"
+243-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:81:13-36
+244            android:exported="false" >
+244-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:82:13-37
+245            <intent-filter>
+245-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:84:13-87:29
+246                <action android:name="android.intent.action.BATTERY_OKAY" />
+246-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:85:17-77
+246-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:85:25-74
+247                <action android:name="android.intent.action.BATTERY_LOW" />
+247-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:86:17-76
+247-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:86:25-73
+248            </intent-filter>
+249        </receiver>
+250        <receiver
+250-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:89:9-99:20
+251            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$StorageNotLowProxy"
+251-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:90:13-104
+252            android:directBootAware="false"
+252-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:91:13-44
+253            android:enabled="false"
+253-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:92:13-36
+254            android:exported="false" >
+254-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:93:13-37
+255            <intent-filter>
+255-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:95:13-98:29
+256                <action android:name="android.intent.action.DEVICE_STORAGE_LOW" />
+256-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:96:17-83
+256-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:96:25-80
+257                <action android:name="android.intent.action.DEVICE_STORAGE_OK" />
+257-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:97:17-82
+257-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:97:25-79
+258            </intent-filter>
+259        </receiver>
+260        <receiver
+260-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:100:9-109:20
+261            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$NetworkStateProxy"
+261-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:101:13-103
+262            android:directBootAware="false"
+262-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:102:13-44
+263            android:enabled="false"
+263-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:103:13-36
+264            android:exported="false" >
+264-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:104:13-37
+265            <intent-filter>
+265-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:106:13-108:29
+266                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+266-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:107:17-79
+266-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:107:25-76
+267            </intent-filter>
+268        </receiver>
+269        <receiver
+269-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:110:9-121:20
+270            android:name="androidx.work.impl.background.systemalarm.RescheduleReceiver"
+270-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:111:13-88
+271            android:directBootAware="false"
+271-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:112:13-44
+272            android:enabled="false"
+272-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:113:13-36
+273            android:exported="false" >
+273-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:114:13-37
+274            <intent-filter>
+274-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:116:13-120:29
+275                <action android:name="android.intent.action.BOOT_COMPLETED" />
+275-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:117:17-79
+275-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:117:25-76
+276                <action android:name="android.intent.action.TIME_SET" />
+276-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:118:17-73
+276-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:118:25-70
+277                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+277-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:119:17-81
+277-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:119:25-78
+278            </intent-filter>
+279        </receiver>
+280        <receiver
+280-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:122:9-131:20
+281            android:name="androidx.work.impl.background.systemalarm.ConstraintProxyUpdateReceiver"
+281-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:123:13-99
+282            android:directBootAware="false"
+282-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:124:13-44
+283            android:enabled="@bool/enable_system_alarm_service_default"
+283-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:125:13-72
+284            android:exported="false" >
+284-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:126:13-37
+285            <intent-filter>
+285-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:128:13-130:29
+286                <action android:name="androidx.work.impl.background.systemalarm.UpdateProxies" />
+286-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:129:17-98
+286-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:129:25-95
+287            </intent-filter>
+288        </receiver>
+289        <receiver
+289-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:132:9-142:20
+290            android:name="androidx.work.impl.diagnostics.DiagnosticsReceiver"
+290-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:133:13-78
+291            android:directBootAware="false"
+291-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:134:13-44
+292            android:enabled="true"
+292-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:135:13-35
+293            android:exported="true"
+293-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:136:13-36
+294            android:permission="android.permission.DUMP" >
+294-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:137:13-57
+295            <intent-filter>
+295-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:139:13-141:29
+296                <action android:name="androidx.work.diagnostics.REQUEST_DIAGNOSTICS" />
+296-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:140:17-88
+296-->[androidx.work:work-runtime:2.10.1] /home/yono/.gradle/caches/8.9/transforms/3f59ee41f2fe364f16efd6abf202c646/transformed/work-runtime-2.10.1/AndroidManifest.xml:140:25-85
+297            </intent-filter>
+298        </receiver>
+299
+300        <activity
+300-->[androidx.compose.ui:ui-tooling-android:1.8.2] /home/yono/.gradle/caches/8.9/transforms/09e9e38bd376dbca659bd612460d6310/transformed/ui-tooling-release/AndroidManifest.xml:23:9-25:39
+301            android:name="androidx.compose.ui.tooling.PreviewActivity"
+301-->[androidx.compose.ui:ui-tooling-android:1.8.2] /home/yono/.gradle/caches/8.9/transforms/09e9e38bd376dbca659bd612460d6310/transformed/ui-tooling-release/AndroidManifest.xml:24:13-71
+302            android:exported="true" />
+302-->[androidx.compose.ui:ui-tooling-android:1.8.2] /home/yono/.gradle/caches/8.9/transforms/09e9e38bd376dbca659bd612460d6310/transformed/ui-tooling-release/AndroidManifest.xml:25:13-36
+303        <activity
+303-->[androidx.compose.ui:ui-test-manifest:1.8.2] /home/yono/.gradle/caches/8.9/transforms/6d304c8cd32b61da88c70cff511fd705/transformed/ui-test-manifest-1.8.2/AndroidManifest.xml:23:9-26:79
+304            android:name="androidx.activity.ComponentActivity"
+304-->[androidx.compose.ui:ui-test-manifest:1.8.2] /home/yono/.gradle/caches/8.9/transforms/6d304c8cd32b61da88c70cff511fd705/transformed/ui-test-manifest-1.8.2/AndroidManifest.xml:24:13-63
+305            android:exported="true"
+305-->[androidx.compose.ui:ui-test-manifest:1.8.2] /home/yono/.gradle/caches/8.9/transforms/6d304c8cd32b61da88c70cff511fd705/transformed/ui-test-manifest-1.8.2/AndroidManifest.xml:25:13-36
+306            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+306-->[androidx.compose.ui:ui-test-manifest:1.8.2] /home/yono/.gradle/caches/8.9/transforms/6d304c8cd32b61da88c70cff511fd705/transformed/ui-test-manifest-1.8.2/AndroidManifest.xml:26:13-76
+307        <activity
+307-->[com.google.android.gms:play-services-base:18.5.0] /home/yono/.gradle/caches/8.9/transforms/b59f0364b4c41336f7664ab9f8e7ca6e/transformed/play-services-base-18.5.0/AndroidManifest.xml:5:9-173
+308            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+308-->[com.google.android.gms:play-services-base:18.5.0] /home/yono/.gradle/caches/8.9/transforms/b59f0364b4c41336f7664ab9f8e7ca6e/transformed/play-services-base-18.5.0/AndroidManifest.xml:5:19-85
+309            android:exported="false"
+309-->[com.google.android.gms:play-services-base:18.5.0] /home/yono/.gradle/caches/8.9/transforms/b59f0364b4c41336f7664ab9f8e7ca6e/transformed/play-services-base-18.5.0/AndroidManifest.xml:5:146-170
+310            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+310-->[com.google.android.gms:play-services-base:18.5.0] /home/yono/.gradle/caches/8.9/transforms/b59f0364b4c41336f7664ab9f8e7ca6e/transformed/play-services-base-18.5.0/AndroidManifest.xml:5:86-145
+311
+312        <uses-library
+312-->[androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] /home/yono/.gradle/caches/8.9/transforms/7326833ecad3ca8bb651b09634e6d5b5/transformed/ads-adservices-1.0.0-beta05/AndroidManifest.xml:23:9-25:40
+313            android:name="android.ext.adservices"
+313-->[androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] /home/yono/.gradle/caches/8.9/transforms/7326833ecad3ca8bb651b09634e6d5b5/transformed/ads-adservices-1.0.0-beta05/AndroidManifest.xml:24:13-50
+314            android:required="false" />
+314-->[androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] /home/yono/.gradle/caches/8.9/transforms/7326833ecad3ca8bb651b09634e6d5b5/transformed/ads-adservices-1.0.0-beta05/AndroidManifest.xml:25:13-37
+315
+316        <meta-data
+316-->[com.google.android.gms:play-services-basement:18.5.0] /home/yono/.gradle/caches/8.9/transforms/a6c817210d7f3e1baff8b596c5ddd518/transformed/play-services-basement-18.5.0/AndroidManifest.xml:21:9-23:69
+317            android:name="com.google.android.gms.version"
+317-->[com.google.android.gms:play-services-basement:18.5.0] /home/yono/.gradle/caches/8.9/transforms/a6c817210d7f3e1baff8b596c5ddd518/transformed/play-services-basement-18.5.0/AndroidManifest.xml:22:13-58
+318            android:value="@integer/google_play_services_version" />
+318-->[com.google.android.gms:play-services-basement:18.5.0] /home/yono/.gradle/caches/8.9/transforms/a6c817210d7f3e1baff8b596c5ddd518/transformed/play-services-basement-18.5.0/AndroidManifest.xml:23:13-66
+319
+320        <receiver
+320-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:34:9-52:20
+321            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+321-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:35:13-76
+322            android:directBootAware="false"
+322-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:36:13-44
+323            android:enabled="true"
+323-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:37:13-35
+324            android:exported="true"
+324-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:38:13-36
+325            android:permission="android.permission.DUMP" >
+325-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:39:13-57
+326            <intent-filter>
+326-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:40:13-42:29
+327                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+327-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:41:17-91
+327-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:41:25-88
+328            </intent-filter>
+329            <intent-filter>
+329-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:43:13-45:29
+330                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+330-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:44:17-85
+330-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:44:25-82
+331            </intent-filter>
+332            <intent-filter>
+332-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:46:13-48:29
+333                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+333-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:47:17-88
+333-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:47:25-85
+334            </intent-filter>
+335            <intent-filter>
+335-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:49:13-51:29
+336                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+336-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:50:17-95
+336-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/yono/.gradle/caches/8.9/transforms/c49fb1e1bf9fe856abc179731cd2b909/transformed/profileinstaller-1.4.0/AndroidManifest.xml:50:25-92
+337            </intent-filter>
+338        </receiver>
+339
+340        <service
+340-->[com.google.android.datatransport:transport-backend-cct:3.3.0] /home/yono/.gradle/caches/8.9/transforms/88c294bc519a52bd11f09bd17dbd3af4/transformed/transport-backend-cct-3.3.0/AndroidManifest.xml:26:9-32:19
+341            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+341-->[com.google.android.datatransport:transport-backend-cct:3.3.0] /home/yono/.gradle/caches/8.9/transforms/88c294bc519a52bd11f09bd17dbd3af4/transformed/transport-backend-cct-3.3.0/AndroidManifest.xml:27:13-103
+342            android:exported="false" >
+342-->[com.google.android.datatransport:transport-backend-cct:3.3.0] /home/yono/.gradle/caches/8.9/transforms/88c294bc519a52bd11f09bd17dbd3af4/transformed/transport-backend-cct-3.3.0/AndroidManifest.xml:28:13-37
+343            <meta-data
+343-->[com.google.android.datatransport:transport-backend-cct:3.3.0] /home/yono/.gradle/caches/8.9/transforms/88c294bc519a52bd11f09bd17dbd3af4/transformed/transport-backend-cct-3.3.0/AndroidManifest.xml:29:13-31:39
+344                android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+344-->[com.google.android.datatransport:transport-backend-cct:3.3.0] /home/yono/.gradle/caches/8.9/transforms/88c294bc519a52bd11f09bd17dbd3af4/transformed/transport-backend-cct-3.3.0/AndroidManifest.xml:30:17-94
+345                android:value="cct" />
+345-->[com.google.android.datatransport:transport-backend-cct:3.3.0] /home/yono/.gradle/caches/8.9/transforms/88c294bc519a52bd11f09bd17dbd3af4/transformed/transport-backend-cct-3.3.0/AndroidManifest.xml:31:17-36
+346        </service>
+347        <service
+347-->[com.google.android.datatransport:transport-runtime:3.3.0] /home/yono/.gradle/caches/8.9/transforms/03b40ec967f702e647239035df21d5e9/transformed/transport-runtime-3.3.0/AndroidManifest.xml:24:9-28:19
+348            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+348-->[com.google.android.datatransport:transport-runtime:3.3.0] /home/yono/.gradle/caches/8.9/transforms/03b40ec967f702e647239035df21d5e9/transformed/transport-runtime-3.3.0/AndroidManifest.xml:25:13-117
+349            android:exported="false"
+349-->[com.google.android.datatransport:transport-runtime:3.3.0] /home/yono/.gradle/caches/8.9/transforms/03b40ec967f702e647239035df21d5e9/transformed/transport-runtime-3.3.0/AndroidManifest.xml:26:13-37
+350            android:permission="android.permission.BIND_JOB_SERVICE" >
+350-->[com.google.android.datatransport:transport-runtime:3.3.0] /home/yono/.gradle/caches/8.9/transforms/03b40ec967f702e647239035df21d5e9/transformed/transport-runtime-3.3.0/AndroidManifest.xml:27:13-69
+351        </service>
+352
+353        <receiver
+353-->[com.google.android.datatransport:transport-runtime:3.3.0] /home/yono/.gradle/caches/8.9/transforms/03b40ec967f702e647239035df21d5e9/transformed/transport-runtime-3.3.0/AndroidManifest.xml:30:9-32:40
+354            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+354-->[com.google.android.datatransport:transport-runtime:3.3.0] /home/yono/.gradle/caches/8.9/transforms/03b40ec967f702e647239035df21d5e9/transformed/transport-runtime-3.3.0/AndroidManifest.xml:31:13-132
+355            android:exported="false" />
+355-->[com.google.android.datatransport:transport-runtime:3.3.0] /home/yono/.gradle/caches/8.9/transforms/03b40ec967f702e647239035df21d5e9/transformed/transport-runtime-3.3.0/AndroidManifest.xml:32:13-37
+356    </application>
+357
+358</manifest>

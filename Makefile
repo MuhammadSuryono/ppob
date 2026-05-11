@@ -15,6 +15,7 @@ help:
 	@echo "  make docker-down     - Stop Docker Compose services"
 
 SERVICES = auth-service user-service wallet-service transaction-service product-service integration-service
+MOBILE_DIR = mobile-app
 
 install:
 	@echo "Installing dependencies..."
@@ -22,6 +23,8 @@ install:
 		echo "Installing dependencies for $$service..."; \
 		cd $$service && go mod tidy && cd ..; \
 	done
+	@echo "Installing mobile dependencies..."
+	# cd $(MOBILE_DIR) && ./gradlew help
 
 test:
 	@echo "Running tests..."
@@ -29,6 +32,8 @@ test:
 		echo "Testing $$service..."; \
 		cd $$service && go test -v -coverprofile=coverage.out ./... && cd ..; \
 	done
+	@echo "Running mobile tests..."
+	# cd $(MOBILE_DIR) && ./gradlew test
 
 test-coverage:
 	@echo "Running tests with coverage..."
@@ -50,6 +55,8 @@ build:
 		echo "Building $$service..."; \
 		cd $$service && CGO_ENABLED=0 GOOS=linux go build -o bin/$$service ./cmd && cd ..; \
 	done
+	@echo "Building mobile app..."
+	# cd $(MOBILE_DIR) && ./gradlew assembleDebug
 
 run:
 	@echo "Starting all services..."
