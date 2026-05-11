@@ -7,34 +7,35 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.yonotech.ppob.mobile.data.remote.dto.VerifyOtpResponse
 import com.yonotech.ppob.mobile.ui.components.PpoButton
 import com.yonotech.ppob.mobile.ui.components.PpoTextField
+import com.yonotech.ppob.mobile.utils.DeviceUtils
 import com.yonotech.ppob.mobile.utils.Resource
 import com.yonotech.ppob.mobile.viewmodels.auth.AuthViewModel
 
 @Composable
-fun OtpScreen(
-    requestId: String,
+fun PasswordLoginScreen(
     phone: String,
-    type: String, // "register" or "login"
-    onOtpSuccess: (String) -> Unit,
+    requestId: String,
+    onLoginSuccess: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
-    var otpCode by remember { mutableStateOf("") }
-    val verifyOtpState by viewModel.verifyOtpState.collectAsState()
+    var password by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    val authState by viewModel.authState.collectAsState()
+    val context = LocalContext.current
 
-    LaunchedEffect(verifyOtpState) {
-        if (verifyOtpState is Resource.Success) {
-            val success = verifyOtpState as Resource.Success<VerifyOtpResponse>
-            if (success.data.isVerified) {
-                onOtpSuccess(phone)
-            }
+    LaunchedEffect(authState) {
+        if (authState is Resource.Success) {
+            onLoginSuccess()
             viewModel.resetState()
         }
     }
@@ -47,47 +48,49 @@ fun OtpScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Verifikasi OTP",
+            text = "Masukkan Password",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Masukkan kode OTP yang dikirim ke $phone",
+            text = "Silakan masukkan password untuk nomor $phone",
             fontSize = 16.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = Color.Gray,
             modifier = Modifier.padding(top = 8.dp, bottom = 32.dp),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
 
         PpoTextField(
-            value = otpCode,
-            onValueChange = { if (it.length <= 6) otpCode = it },
-            label = "Kode OTP",
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            value = password,
+            onValueChange = { password = it },
+            label = "Password",
+            visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            trailingIcon = {
+                TextButton(onClick = { showPassword = !showPassword }) {
+                    Text(if (showPassword) "Lihat" else "Tutup")
+                }
+            }
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        if (verifyOtpState is Resource.Error) {
+        if (authState is Resource.Error) {
             Text(
-                text = (verifyOtpState as Resource.Error).message,
+                text = (authState as Resource.Error).message,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
         }
 
         PpoButton(
-            label = "Verifikasi",
-            onClick = { viewModel.verifyOtp(requestId, phone, otpCode, type) },
-            isLoading = verifyOtpState is Resource.Loading,
-            enabled = otpCode.length >= 4
+            label = "Masuk",
+            onClick = { 
+                viewModel.verifyPassword(phone, password, DeviceUtils.getDeviceId(context), requestId) 
+            },
+            isLoading = authState is Resource.Loading,
+            enabled = password.isNotEmpty()
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        TextButton(onClick = { /* Implement Resend OTP */ }) {
-            Text(text = "Tidak menerima kode? Kirim ulang")
-        }
     }
 }

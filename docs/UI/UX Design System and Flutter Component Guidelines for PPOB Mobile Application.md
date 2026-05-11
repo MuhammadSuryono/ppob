@@ -383,28 +383,73 @@ showDialog(
 
 ### 12.1 Login / Register Flow
 
+**Adaptive Auth Flow Overview:**
+
+| Screen | Condition | Navigation |
+|---|---|---|
+| Screen 1: Phone Input | Always first | → Screen 2 or Screen 4 |
+| Screen 2: OTP | `requires_otp == true` | → Screen 3a (new) or Screen 3b (existing) |
+| Screen 3a: Create PIN & Password | `is_new_user == true` (after OTP) | → Home |
+| Screen 3b: Input PIN/Password | `is_new_user == false` (after OTP) | → Home |
+| Screen 4: PIN Login | `is_trusted == true` (skip OTP) | → Home |
+
+---
+
 **Screen 1 — Phone Input:**
 - Large heading "Masuk / Daftar"
 - Phone field with country code picker (pre-set +62)
 - "Lanjutkan" button (primary)
 - Link: "Sudah punya akun? Masuk"
+- **API Call:** `POST /api/v1/auth/initiate`
+  - Request: `{ phone, device_id, fingerprint }`
+  - Response: `{ is_registered, is_trusted, requires_otp, user_id }`
+  - If `is_trusted=true` → jump to **Screen 4 (PIN Login)**
+  - If `requires_otp=true` → go to **Screen 2 (OTP)**
 
 **Screen 2 — OTP:**
 - "Masukkan kode OTP"
 - 6-digit OTP input (auto-focus, auto-submit on 6th digit)
-- Timer: "Kirim ulang dalam 01:45"
+- Timer: "Kirim ulang dalam MM:SS" (calculated from `expires_at` in SendOTP response)
 - "Kirim ulang" link (after timer)
+- **API Call (request OTP):** `POST /api/v1/auth/send-otp`
+  - Request: `{ phone, type: "login" or "register" }`
+  - Response: `{ request_id, expires_at }`
+- **API Call (verify OTP):** `POST /api/v1/auth/verify-otp`
+  - Request: `{ request_id, phone, code, type }`
+  - Response: `{ request_id, is_verified, is_new_user }`
+  - If `is_new_user=true` → go to **Screen 3a (Create PIN & Password)**
+  - If `is_new_user=false` → go to **Screen 3b (Input PIN or Password)**
 
-**Screen 3 — Set Password & PIN (new user):**
+**Screen 3a — Set PIN & Password (new user — after OTP verified):**
 - Password field (show/hide toggle)
 - Confirm Password
 - 6-digit PIN pad (numeric grid 3×3)
 - Confirm PIN
-- "Buat Akun" button
+- "Buat Akun" button (CTA)
+- **API Call:** `POST /api/v1/auth/register`
+  - Request: `{ email, phone, full_name, password, pin, device_id, request_id }`
+  - Response: `{ user_id, email, phone, full_name, token, refresh_token, expires_at, refresh_expires_at }`
+  - Device automatically marked as trusted
+  - Verified flag consumed (single-use)
 
-**Screen 4 — PIN Login (trusted):**
+**Screen 3b — Input PIN or Password (existing user — after OTP verified):**
+- Default view: 6-digit PIN pad
+- Switch toggle: "Gunakan password" / "Gunakan PIN"
+- PIN input: 6-digit PIN pad (numeric grid 3×3)
+- Password input: password field with show/hide toggle
+- "Masuk" button (CTA)
+- **API Call:** `POST /api/v1/auth/verify-credential`
+  - Request: `{ phone, device_id, request_id, auth_method: "pin" or "password", value }`
+  - Response: `{ user_id, email, phone, full_name, token, refresh_token, expires_at }`
+  - Device automatically marked as trusted after success
+  - Verified flag consumed (single-use)
+
+**Screen 4 — PIN Login (trusted device — skip OTP):**
 - Large 6-digit PIN pad
-- Option: "Login dengan password" below (for untrusted)
+- Option: "Login dengan password" below (redirects to full password+OTP flow)
+- **API Call:** `POST /api/v1/auth/verify-pin`
+  - Request: `{ phone, pin, device_id }`
+  - Response: `{ user_id, email, phone, full_name, token, refresh_token, expires_at }`
 
 ---
 

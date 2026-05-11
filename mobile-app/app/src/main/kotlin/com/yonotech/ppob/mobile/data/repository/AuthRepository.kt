@@ -10,27 +10,31 @@ import javax.inject.Singleton
 class AuthRepository @Inject constructor(
     private val authService: AuthService
 ) {
-    suspend fun sendOtp(request: SendOtpRequest): Response<AuthResponse> {
+    suspend fun initiateAuth(request: InitiateAuthRequest): Response<InitiateAuthResponse> {
+        return authService.initiateAuth(request)
+    }
+
+    suspend fun sendOtp(request: SendOtpRequest): Response<SendOtpResponse> {
         return authService.sendOtp(request)
     }
 
-    suspend fun login(request: LoginRequest): Response<AuthResponse> {
-        return authService.login(request)
+    suspend fun verifyOtp(request: VerifyOtpRequest): Response<VerifyOtpResponse> {
+        return authService.verifyOtp(request)
     }
 
     suspend fun register(request: RegisterRequest): Response<AuthResponse> {
         return authService.register(request)
     }
 
-    suspend fun verifyOtp(request: VerifyOtpRequest): Response<AuthResponse> {
-        return authService.verifyOtp(request)
+    suspend fun login(request: LoginRequest): Response<AuthResponse> {
+        return authService.login(request)
     }
 
-    suspend fun setPasswordPin(request: SetPasswordPinRequest): Response<AuthResponse> {
-        return authService.setPasswordPin(request)
+    suspend fun verifyPassword(request: VerifyPasswordRequest): Response<AuthResponse> {
+        return authService.verifyPassword(request)
     }
 
-    suspend fun pinLogin(request: PinLoginRequest): Response<AuthResponse> {
-        return authService.pinLogin(request)
+    suspend fun verifyPin(request: LoginRequest): Response<AuthResponse> {
+        return authService.verifyPin(request)
     }
 }

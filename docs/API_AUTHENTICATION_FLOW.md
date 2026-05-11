@@ -8,15 +8,16 @@
 
 ## 1. Overview
 
-This document details all authentication and authorization flows, including login/registration, device trust scoring, token management, role switching, PIN changes, and session security.
+This document details all authentication and authorization flows, including login/registration, device trust, token management, and session security.
 
 **Key Endpoints:**
-- `POST /auth/register` — new user registration (OTP → password + PIN)
-- `POST /auth/verify-otp` — verify OTP and create account
-- `POST /auth/login` — unified login endpoint (adaptive based on device trust)
-- `POST /auth/refresh` — refresh access token
-- `POST /users/switch-role` — change active role (Mitra ↔ Staff)
-- `POST /auth/change-pin` — update transaction PIN
+- `POST /auth/initiate` — Check phone status and device trust.
+- `POST /auth/register` — New user registration (sets password + PIN).
+- `POST /auth/verify-otp` — Verify OTP for registration or login.
+- `POST /auth/verify-password` — Validate password for untrusted devices.
+- `POST /auth/verify-pin` — Fast login for trusted devices.
+- `POST /auth/refresh` — Refresh access token.
+- `POST /auth/change-pin` — Update transaction PIN.
 
 ---
 

@@ -34,8 +34,7 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 
 		tokenString := parts[1]
 
-		authService := services.NewAuthService(nil, nil, nil, nil, cfg)
-		claims, err := authService.ValidateToken(tokenString)
+		claims, err := services.ValidateTokenStatic(tokenString, cfg.JWTSecret)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
 				Error:   "unauthorized",
@@ -78,8 +77,7 @@ func AuthMiddlewareWithBlacklist(cfg *config.Config, blacklistService *services.
 
 		tokenString := parts[1]
 
-		authService := services.NewAuthService(nil, nil, nil, nil, cfg)
-		claims, err := authService.ValidateToken(tokenString)
+		claims, err := services.ValidateTokenStatic(tokenString, cfg.JWTSecret)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
 				Error:   "unauthorized",

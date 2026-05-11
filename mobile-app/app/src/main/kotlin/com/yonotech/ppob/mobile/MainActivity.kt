@@ -54,9 +54,8 @@ class MainActivity : ComponentActivity() {
                         // Auth Flow
                         composable(Screen.PhoneInput.route) {
                             PhoneInputScreen(
-                                onNavigateToOtp = { phone, isNewUser ->
-                                    val type = if (isNewUser) "registration" else "login"
-                                    navController.navigate(Screen.Otp.createRoute(phone, type))
+                                onNavigateToOtp = { requestId, phone, type ->
+                                    navController.navigate(Screen.Otp.createRoute(requestId, phone, type))
                                 },
                                 onNavigateToPinLogin = { phone ->
                                     navController.navigate(Screen.PinLogin.createRoute(phone))
@@ -64,32 +63,48 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(Screen.Otp.route) { backStackEntry ->
-                            val identifier = backStackEntry.arguments?.getString("identifier") ?: ""
+                            val requestId = backStackEntry.arguments?.getString("requestId") ?: ""
+                            val phone = backStackEntry.arguments?.getString("phone") ?: ""
                             val type = backStackEntry.arguments?.getString("type") ?: ""
                             OtpScreen(
-                                identifier = identifier,
+                                requestId = requestId,
+                                phone = phone,
                                 type = type,
                                 onOtpSuccess = { phone ->
                                     if (type == "login") {
-                                        navController.navigate(Screen.PinLogin.createRoute(phone)) {
+                                        navController.navigate(Screen.PasswordLogin.createRoute(phone, requestId)) {
                                             popUpTo(Screen.PhoneInput.route) { inclusive = false }
                                         }
                                     } else {
-                                        navController.navigate(Screen.Home.route) {
-                                            popUpTo(Screen.PhoneInput.route) { inclusive = true }
+                                        // Registration flow: proceed to set password/pin
+                                        navController.navigate(Screen.SetPasswordPin.createRoute(phone, requestId)) {
+                                            popUpTo(Screen.PhoneInput.route) { inclusive = false }
                                         }
                                     }
-                                },
-                                onNewUserSetup = { phone ->
-                                    navController.navigate(Screen.SetPasswordPin.createRoute(phone))
+                                }
+                            )
+                        }
+                        composable(Screen.PasswordLogin.route) { backStackEntry ->
+                            val phone = backStackEntry.arguments?.getString("phone") ?: ""
+                            val requestId = backStackEntry.arguments?.getString("requestId") ?: ""
+                            PasswordLoginScreen(
+                                phone = phone,
+                                requestId = requestId,
+                                onLoginSuccess = {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(Screen.PhoneInput.route) { inclusive = true }
+                                    }
                                 }
                             )
                         }
                         composable(Screen.SetPasswordPin.route) { backStackEntry ->
                             val phone = backStackEntry.arguments?.getString("phone") ?: ""
+                            val requestId = backStackEntry.arguments?.getString("requestId") ?: ""
                             SetPasswordPinScreen(
                                 phone = phone,
-                                onAuthSuccess = {
+                                requestId = requestId,
+                                onRegisterSuccess = { userId ->
+                                    // After registration, user is already logged in, go to home
                                     navController.navigate(Screen.Home.route) {
                                         popUpTo(Screen.PhoneInput.route) { inclusive = true }
                                     }

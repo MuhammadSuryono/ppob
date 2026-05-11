@@ -32,8 +32,9 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	otpRepo := repository.NewOTPRepository(db)
 	walletRepo := repository.NewWalletRepository(db)
+	deviceRepo := repository.NewDeviceRepository(db)
 
-	authService := services.NewAuthService(userRepo, otpRepo, walletRepo, redisClient, cfg)
+	authService := services.NewAuthService(userRepo, otpRepo, walletRepo, deviceRepo, redisClient, cfg)
 	authHandler := handlers.NewAuthHandler(authService)
 
 	r := gin.Default()
@@ -80,14 +81,19 @@ func main() {
 
 	api := r.Group("/api/v1")
 	{
-		auth := api.Group("/auth")
-		{
-			auth.POST("/register", authHandler.Register)
-			auth.POST("/login", authHandler.Login)
-			auth.POST("/verify-otp", authHandler.VerifyOTP)
-			auth.POST("/refresh", authHandler.RefreshToken)
-			auth.POST("/logout", middleware.AuthMiddleware(cfg), authHandler.Logout)
-		}
+	auth := api.Group("/auth")
+	{
+		auth.POST("/initiate", authHandler.Initiate)
+		auth.POST("/register", authHandler.Register)
+		auth.POST("/login", authHandler.Login)
+		auth.POST("/send-otp", middleware.RateLimitMiddleware(5), authHandler.SendOTP)
+		auth.POST("/verify-otp", authHandler.VerifyOTP)
+		auth.POST("/verify-password", authHandler.VerifyPassword)
+		auth.POST("/verify-pin", authHandler.VerifyPINLogin)
+		auth.POST("/verify-credential", authHandler.VerifyCredential)
+		auth.POST("/refresh", authHandler.RefreshToken)
+		auth.POST("/logout", middleware.AuthMiddleware(cfg), authHandler.Logout)
+	}
 
 		protected := api.Group("")
 		protected.Use(middleware.AuthMiddleware(cfg))

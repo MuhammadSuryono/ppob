@@ -3,11 +3,14 @@ package com.yonotech.ppob.mobile.ui.navigation
 sealed class Screen(val route: String) {
     // Auth screens
     object PhoneInput : Screen("phone_input")
-    object Otp : Screen("otp/{identifier}/{type}") {
-        fun createRoute(identifier: String, type: String) = "otp/$identifier/$type"
+    object Otp : Screen("otp/{requestId}/{phone}/{type}") {
+        fun createRoute(requestId: String, phone: String, type: String) = "otp/$requestId/$phone/$type"
     }
-    object SetPasswordPin : Screen("set_password_pin/{phone}") {
-        fun createRoute(phone: String) = "set_password_pin/$phone"
+    object PasswordLogin : Screen("password_login/{phone}/{requestId}") {
+        fun createRoute(phone: String, requestId: String) = "password_login/$phone/$requestId"
+    }
+    object SetPasswordPin : Screen("set_password_pin/{phone}/{requestId}") {
+        fun createRoute(phone: String, requestId: String) = "set_password_pin/$phone/$requestId"
     }
     object PinLogin : Screen("pin_login/{phone}") {
         fun createRoute(phone: String) = "pin_login/$phone"

@@ -34,13 +34,15 @@ type OTP struct {
 }
 
 type DeviceFingerprint struct {
-	ID            uint      `gorm:"primaryKey" json:"id"`
-	UserID        uint      `gorm:"index;not null" json:"user_id"`
-	Fingerprint   string    `gorm:"size:255;not null" json:"fingerprint"`
-	DeviceInfo    string    `gorm:"type:text" json:"device_info"`
-	IPAddress     string    `gorm:"size:50" json:"ip_address"`
-	LastUsedAt    time.Time `json:"last_used_at"`
-	CreatedAt     time.Time `json:"created_at"`
+	ID              uint      `gorm:"primaryKey" json:"id"`
+	UserID          uint      `gorm:"index;not null" json:"user_id"`
+	FingerprintHash string    `gorm:"size:64;not null" json:"fingerprint_hash"`
+	UserAgent       string    `gorm:"type:text" json:"user_agent"`
+	IPAddress       string    `gorm:"size:50" json:"ip_address"`
+	TrustScore      int       `gorm:"default:0" json:"trust_score"`
+	IsTrusted       bool      `gorm:"default:false" json:"is_trusted"`
+	FirstSeen       time.Time `json:"first_seen"`
+	LastSeen        time.Time `json:"last_seen"`
 }
 
 type Wallet struct {

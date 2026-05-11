@@ -50,13 +50,264 @@ Handles user registration, authentication, OTP verification, and session managem
 
 | Method | Endpoint | Full URL | Auth | Description |
 |:---|:---|:---|:---|:---|
-| `POST` | `/register` | `.../auth/register` | None | Register a new user with email, phone, name, password, and PIN. |
-| `POST` | `/login` | `.../auth/login` | None | Login using Email or Phone + Password. |
-| `POST` | `/verify-otp` | `.../auth/verify-otp` | None | Verify OTP code for login or registration. |
+| `POST` | `/initiate` | `.../auth/initiate` | None | Check phone registration and device trust status. |
+| `POST` | `/register` | `.../auth/register` | None | Register a new user (OTP must be verified first). |
+| `POST` | `/login` | `.../auth/login` | None | Classic login using Email/Phone + Password. |
+| `POST` | `/send-otp` | `.../auth/send-otp` | None | Request OTP for registration or login (returns `request_id`). |
+| `POST` | `/verify-otp` | `.../auth/verify-otp` | None | Verify OTP code and obtain verified `request_id`. |
+| `POST` | `/verify-credential` | `.../auth/verify-credential` | None | Verify PIN or Password after OTP (unified post-OTP auth for existing users on untrusted devices). |
+| `POST` | `/verify-password` | `.../auth/verify-password` | None | Validate password for existing users on untrusted devices (requires verified `request_id`). **Consider using `/verify-credential` instead.** |
+| `POST` | `/verify-pin` | `.../auth/verify-pin` | None | Final auth step for trusted devices using PIN. |
 | `POST` | `/refresh` | `.../auth/refresh` | None | Refresh access token using a valid refresh token. |
 | `POST` | `/logout` | `.../auth/logout` | Bearer | Logout and invalidate session. |
 | `POST` | `/change-password` | `.../auth/change-password` | Bearer | Update account password. |
 | `POST` | `/change-pin` | `.../auth/change-pin` | Bearer | Update 6-digit transaction PIN. |
+
+---
+
+### Detailed Endpoint Specifications
+
+---
+
+#### `POST /auth/initiate`
+
+**Description:** Checks whether the phone number belongs to a registered user, and whether the device is trusted. This is the **entry point** for the adaptive auth flow.
+
+**Request Body:**
+```json
+{
+  "phone": "+6281234567890",
+  "device_id": "550e8400-e29b-41d4-a716-446655440000",
+  "fingerprint": "(optional) additional device fingerprint data"
+}
+```
+
+**Response Body:**
+```json
+{
+  "user_id": 1,
+  "is_registered": true,
+  "is_trusted": false,
+  "requires_otp": true
+}
+```
+
+**Field Explanation:**
+| Field | Description |
+|---|---|
+| `is_registered` | Whether the phone number is already registered in the system |
+| `is_trusted` | Whether the device fingerprint is already marked as trusted for this user |
+| `requires_otp` | Whether OTP verification is required before proceeding (true for new users or untrusted devices) |
+
+**Flow Decision:**
+- `is_trusted=true` → Navigate directly to **PIN Login** (Screen 4)
+- `requires_otp=true` → Navigate to **OTP Input** (Screen 2)
+- `is_registered=false` → After OTP, navigate to **Registration** (Screen 3: Create PIN + Password)
+- `is_registered=true` + `requires_otp=true` → After OTP, navigate to **Credential Input** (Screen 3: PIN or Password)
+
+**Errors:**
+- `500`: System error
+
+---
+
+#### `POST /auth/send-otp`
+
+**Description:** Triggers OTP delivery via SMS/WhatsApp for either registration or login flow. Returns a unique `request_id` that must be used in subsequent OTP verification and final auth steps.
+
+**Security:** Rate limited to 5 requests per minute per IP address to prevent abuse.
+
+**Request Body:**
+```json
+{
+  "phone": "+6281234567890",
+  "type": "login"
+}
+```
+
+**Request Body:**
+```json
+{
+  "request_id": "550e8400-e29b-41d4-a716-446655440000",
+  "expires_at": 1746975300
+}
+```
+
+**Errors:**
+- `400`: Invalid phone format or missing type
+- `429`: Rate limit exceeded
+- `500`: OTP delivery failed or system error
+
+**Note:** In development, OTP codes are printed to server logs. Production deployments should integrate with SMS/WhatsApp gateway provider.
+
+---
+
+#### `POST /auth/verify-otp`
+
+**Description:** Validates the 6-digit OTP code. Upon success, marks the `request_id` as verified for 10 minutes. **No token is returned** — client must proceed to `/register` (new user) or `/verify-credential` (existing user) with the verified `request_id`.
+
+**Request Body:**
+```json
+{
+  "request_id": "550e8400-e29b-41d4-a716-446655440000",
+  "phone": "+6281234567890",
+  "code": "123456",
+  "type": "login"
+}
+```
+
+**Response Body:**
+```json
+{
+  "request_id": "550e8400-e29b-41d4-a716-446655440000",
+  "is_verified": true,
+  "is_new_user": false
+}
+```
+
+**Field Explanation:**
+| Field | Description |
+|---|---|
+| `is_verified` | Whether OTP verification succeeded |
+| `is_new_user` | `true` if the phone number is **not** registered yet (→ navigate to Registration); `false` if the phone number exists (→ navigate to Credential Input) |
+
+**Usage:** Mobile app uses `is_new_user` to decide the next screen:
+- `is_new_user=true` → Show **Create PIN + Create Password** screen, then call `/register`
+- `is_new_user=false` → Show **Input PIN or Password** screen, then call `/verify-credential`
+
+**Errors:**
+- `400`: Invalid or expired OTP
+- `500`: System error
+
+---
+
+#### `POST /auth/register`
+
+**Description:** Completes registration for a **new user**. **Requires a verified `request_id`** from a prior OTP verification.
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com",
+  "phone": "+6281234567890",
+  "full_name": "John Doe",
+  "password": "SecurePass123!",
+  "pin": "123456",
+  "device_id": "device-fingerprint-hash",
+  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+**Response Body:**
+```json
+{
+  "user_id": 1,
+  "email": "user@example.com",
+  "phone": "+6281234567890",
+  "full_name": "John Doe",
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
+  "expires_at": 1746975300,
+  "refresh_expires_at": 1747575300
+}
+```
+
+**Notes:**
+- The `request_id` must exist under Redis key `verified:{request_id}` and match the phone number.
+- OTP verification must have been completed within the last 10 minutes.
+- On success, creates the user, wallet, and marks the device as trusted.
+- **Both access and refresh tokens are returned** — unlike `/verify-password` and `/login`, this endpoint previously only returned an access token.
+
+**Errors:**
+- `400`: `request_id` not verified, phone mismatch, or user already exists (`AUTH_OTP_NOT_VERIFIED`, `AUTH_USER_EXISTS`)
+- `500`: System error
+
+---
+
+#### `POST /auth/verify-credential`
+
+**Description:** **NEW** — Verifies credentials (PIN or Password) for an **existing user** on an untrusted device after OTP verification. This is the unified endpoint for the post-OTP credential step, replacing the need to call `/verify-password` or `/verify-pin` separately in the OTP flow.
+
+**Request Body:**
+```json
+{
+  "phone": "+6281234567890",
+  "device_id": "550e8400-e29b-41d4-a716-446655440000",
+  "request_id": "550e8400-e29b-41d4-a716-446655440000",
+  "auth_method": "pin",
+  "value": "123456"
+}
+```
+
+**Field Explanation:**
+| Field | Required | Description |
+|---|---|---|
+| `phone` | Yes | User phone number (must start with `+62`) |
+| `device_id` | Yes | Device fingerprint hash |
+| `request_id` | Yes | Verified request ID from OTP step |
+| `auth_method` | Yes | `"pin"` or `"password"` — determines which credential is being verified |
+| `value` | Yes | The PIN (6-digit) or password (8+ char) value |
+
+**Response Body:** Same as `/auth/login` and `/auth/verify-password`:
+```json
+{
+  "user_id": 1,
+  "email": "user@example.com",
+  "phone": "+6281234567890",
+  "full_name": "John Doe",
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
+  "expires_at": 1746975300
+}
+```
+
+**Behavior:**
+- Validates the `request_id` verification flag (must exist and match phone)
+- Verifies the credential against the stored hash (bcrypt)
+- **Automatically marks the device as trusted** for future PIN-only logins
+- Consumes (deletes) the `verified:{request_id}` flag — single use
+
+**Errors:**
+- `400`: `request_id` not verified (`AUTH_OTP_NOT_VERIFIED`)
+- `401`: Invalid credential (`AUTH_INVALID_CREDENTIALS`)
+- `500`: System error
+
+---
+
+#### `POST /auth/verify-password`
+
+**Description:** Validates password for an existing user on an untrusted device. **Requires a verified `request_id`**. On success, returns tokens and marks the device as trusted. **NOTE:** Consider using `/verify-credential` (with `auth_method: "password"`) for a unified flow instead.
+
+**Request Body:**
+```json
+{
+  "phone": "+6281234567890",
+  "password": "UserPassword123!",
+  "device_id": "device-fingerprint-hash",
+  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+**Response Body:**
+```json
+{
+  "user_id": 1,
+  "email": "user@example.com",
+  "phone": "+6281234567890",
+  "full_name": "John Doe",
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
+  "expires_at": 1746975300
+}
+```
+
+**Notes:**
+- The `request_id` verification flag is consumed (deleted) after successful verification.
+- The device is marked as trusted upon successful password validation.
+
+**Errors:**
+- `400`: `request_id` not verified
+- `401`: Invalid password
+- `500`: System error
 
 ---
 

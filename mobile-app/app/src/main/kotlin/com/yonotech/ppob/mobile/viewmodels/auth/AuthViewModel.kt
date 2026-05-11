@@ -21,23 +21,53 @@ class AuthViewModel @Inject constructor(
     private val _authState = MutableStateFlow<Resource<AuthResponse>>(Resource.Idle)
     val authState = _authState.asStateFlow()
 
-    fun sendOtp(phone: String, deviceId: String) {
+    private val _initiateState = MutableStateFlow<Resource<InitiateAuthResponse>>(Resource.Idle)
+    val initiateState = _initiateState.asStateFlow()
+
+    private val _sendOtpState = MutableStateFlow<Resource<SendOtpResponse>>(Resource.Idle)
+    val sendOtpState = _sendOtpState.asStateFlow()
+
+    private val _verifyOtpState = MutableStateFlow<Resource<VerifyOtpResponse>>(Resource.Idle)
+    val verifyOtpState = _verifyOtpState.asStateFlow()
+
+    fun initiateAuth(phone: String, deviceId: String) {
         viewModelScope.launch {
-            _authState.value = Resource.Loading
+            _initiateState.value = Resource.Loading
             try {
-                val response = repository.sendOtp(SendOtpRequest(phone, deviceId))
+                val response = repository.initiateAuth(InitiateAuthRequest(phone, deviceId))
                 if (response.isSuccessful) {
-                    val authData = response.body()
-                    if (authData != null) {
-                        _authState.value = Resource.Success(authData)
+                    val data = response.body()
+                    if (data != null) {
+                        _initiateState.value = Resource.Success(data)
                     } else {
-                        _authState.value = Resource.Error("Response body is empty")
+                        _initiateState.value = Resource.Error("Response body is empty")
                     }
                 } else {
-                    _authState.value = Resource.Error("Failed to send OTP: ${response.message()}")
+                    _initiateState.value = Resource.Error("Failed to initiate auth: ${response.message()}")
                 }
             } catch (e: Exception) {
-                _authState.value = Resource.Error(e.message ?: "An unknown error occurred")
+                _initiateState.value = Resource.Error(e.message ?: "An unknown error occurred")
+            }
+        }
+    }
+
+    fun sendOtp(phone: String, type: String) {
+        viewModelScope.launch {
+            _sendOtpState.value = Resource.Loading
+            try {
+                val response = repository.sendOtp(SendOtpRequest(phone, type))
+                if (response.isSuccessful) {
+                    val data = response.body()
+                    if (data != null) {
+                        _sendOtpState.value = Resource.Success(data)
+                    } else {
+                        _sendOtpState.value = Resource.Error("Response body is empty")
+                    }
+                } else {
+                    _sendOtpState.value = Resource.Error("Failed to send OTP: ${response.message()}")
+                }
+            } catch (e: Exception) {
+                _sendOtpState.value = Resource.Error(e.message ?: "An unknown error occurred")
             }
         }
     }
@@ -46,11 +76,11 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _authState.value = Resource.Loading
             try {
-                val response = repository.login(LoginRequest(identifier, password, deviceId))
+                val response = repository.login(LoginRequest(phone = identifier, password = password, deviceId = deviceId))
                 if (response.isSuccessful) {
                     val authData = response.body()
                     if (authData != null) {
-                        if (!authData.requiresOtp && authData.accessToken != null && authData.refreshToken != null) {
+                        if (authData.accessToken != null && authData.refreshToken != null) {
                             tokenManager.saveTokens(authData.accessToken, authData.refreshToken)
                         }
                         _authState.value = Resource.Success(authData)
@@ -66,11 +96,11 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun pinLogin(phone: String, pin: String, deviceId: String) {
+    fun verifyPin(phone: String, pin: String, deviceId: String) {
         viewModelScope.launch {
             _authState.value = Resource.Loading
             try {
-                val response = repository.pinLogin(PinLoginRequest(phone, pin, deviceId))
+                val response = repository.verifyPin(LoginRequest(phone = phone, pin = pin, deviceId = deviceId))
                 if (response.isSuccessful) {
                     val authData = response.body()
                     if (authData != null && authData.accessToken != null && authData.refreshToken != null) {
@@ -90,14 +120,17 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun register(email: String, phone: String, name: String, password: String, pin: String) {
+    fun register(email: String, phone: String, fullName: String, password: String, pin: String, deviceId: String, requestId: String) {
         viewModelScope.launch {
             _authState.value = Resource.Loading
             try {
-                val response = repository.register(RegisterRequest(email, phone, name, password, pin))
+                val response = repository.register(RegisterRequest(email, phone, fullName, password, pin, deviceId, requestId))
                 if (response.isSuccessful) {
                     val authData = response.body()
                     if (authData != null) {
+                        if (authData.accessToken != null && authData.refreshToken != null) {
+                            tokenManager.saveTokens(authData.accessToken, authData.refreshToken)
+                        }
                         _authState.value = Resource.Success(authData)
                     } else {
                         _authState.value = Resource.Error("Response body is empty")
@@ -111,35 +144,32 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun verifyOtp(identifier: String, otpCode: String, type: String) {
+    fun verifyOtp(requestId: String, phone: String, code: String, type: String) {
         viewModelScope.launch {
-            _authState.value = Resource.Loading
+            _verifyOtpState.value = Resource.Loading
             try {
-                val response = repository.verifyOtp(VerifyOtpRequest(identifier, otpCode, type))
+                val response = repository.verifyOtp(VerifyOtpRequest(requestId, phone, code, type))
                 if (response.isSuccessful) {
-                    val authData = response.body()
-                    if (authData != null) {
-                        if (authData.accessToken != null && authData.refreshToken != null) {
-                            tokenManager.saveTokens(authData.accessToken, authData.refreshToken)
-                        }
-                        _authState.value = Resource.Success(authData)
+                    val data = response.body()
+                    if (data != null && data.isVerified) {
+                        _verifyOtpState.value = Resource.Success(data)
                     } else {
-                        _authState.value = Resource.Error("Response body is empty")
+                        _verifyOtpState.value = Resource.Error("OTP verification failed")
                     }
                 } else {
-                    _authState.value = Resource.Error("OTP verification failed: ${response.message()}")
+                    _verifyOtpState.value = Resource.Error("OTP verification failed: ${response.message()}")
                 }
             } catch (e: Exception) {
-                _authState.value = Resource.Error(e.message ?: "An unknown error occurred")
+                _verifyOtpState.value = Resource.Error(e.message ?: "An unknown error occurred")
             }
         }
     }
 
-    fun setPasswordPin(phone: String, password: String, pin: String) {
+    fun verifyPassword(phone: String, password: String, deviceId: String, requestId: String) {
         viewModelScope.launch {
             _authState.value = Resource.Loading
             try {
-                val response = repository.setPasswordPin(SetPasswordPinRequest(phone, password, pin))
+                val response = repository.verifyPassword(VerifyPasswordRequest(phone, password, deviceId, requestId))
                 if (response.isSuccessful) {
                     val authData = response.body()
                     if (authData != null) {
@@ -151,7 +181,7 @@ class AuthViewModel @Inject constructor(
                         _authState.value = Resource.Error("Response body is empty")
                     }
                 } else {
-                    _authState.value = Resource.Error("Failed to set password: ${response.message()}")
+                    _authState.value = Resource.Error("Password verification failed: ${response.message()}")
                 }
             } catch (e: Exception) {
                 _authState.value = Resource.Error(e.message ?: "An unknown error occurred")
@@ -161,5 +191,8 @@ class AuthViewModel @Inject constructor(
 
     fun resetState() {
         _authState.value = Resource.Idle
+        _initiateState.value = Resource.Idle
+        _sendOtpState.value = Resource.Idle
+        _verifyOtpState.value = Resource.Idle
     }
 }

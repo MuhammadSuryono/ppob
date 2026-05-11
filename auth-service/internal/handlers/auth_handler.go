@@ -19,6 +19,91 @@ func NewAuthHandler(authService *services.AuthService) *AuthHandler {
 	return &AuthHandler{authService: authService}
 }
 
+func (h *AuthHandler) Initiate(c *gin.Context) {
+	var req dto.InitiateAuthRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errors.BadRequest(c, "VALIDATION_ERROR", err.Error())
+		return
+	}
+
+	resp, err := h.authService.InitiateAuth(c.Request.Context(), &req)
+	if err != nil {
+		errors.InternalError(c, "SYSTEM_INTERNAL", err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+func (h *AuthHandler) VerifyPassword(c *gin.Context) {
+	var req dto.VerifyPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errors.BadRequest(c, "VALIDATION_ERROR", err.Error())
+		return
+	}
+
+	resp, err := h.authService.VerifyPassword(c.Request.Context(), &req)
+	if err != nil {
+		switch err {
+		case services.ErrInvalidCredentials:
+			errors.Unauthorized(c, "AUTH_INVALID_CREDENTIALS", "Invalid password")
+		case services.ErrVerificationRequired:
+			errors.BadRequest(c, "AUTH_OTP_NOT_VERIFIED", "OTP belum diverifikasi atau tidak valid")
+		default:
+			errors.InternalError(c, "SYSTEM_INTERNAL", err.Error())
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+func (h *AuthHandler) VerifyPINLogin(c *gin.Context) {
+	var req dto.PINLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errors.BadRequest(c, "VALIDATION_ERROR", err.Error())
+		return
+	}
+
+	resp, err := h.authService.VerifyPINLogin(c.Request.Context(), req.Phone, req.PIN, req.DeviceID)
+	if err != nil {
+		switch {
+		case err == services.ErrInvalidCredentials:
+			errors.Unauthorized(c, "AUTH_INVALID_CREDENTIALS", "Invalid PIN")
+		case err == services.ErrDeviceNotTrusted:
+			errors.Forbidden(c, "AUTH_DEVICE_NOT_TRUSTED", "Device not trusted for PIN login")
+		default:
+			errors.InternalError(c, "SYSTEM_INTERNAL", err.Error())
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+func (h *AuthHandler) VerifyCredential(c *gin.Context) {
+	var req dto.VerifyCredentialRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errors.BadRequest(c, "VALIDATION_ERROR", err.Error())
+		return
+	}
+
+	resp, err := h.authService.VerifyCredential(c.Request.Context(), &req)
+	if err != nil {
+		switch {
+		case err == services.ErrInvalidCredentials:
+			errors.Unauthorized(c, "AUTH_INVALID_CREDENTIALS", "Invalid credentials")
+		case err == services.ErrVerificationRequired:
+			errors.BadRequest(c, "AUTH_OTP_NOT_VERIFIED", "OTP belum diverifikasi atau tidak valid")
+		default:
+			errors.InternalError(c, "SYSTEM_INTERNAL", err.Error())
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -31,6 +116,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		switch err {
 		case services.ErrUserExists:
 			errors.BadRequest(c, "AUTH_USER_EXISTS", "User dengan nomor HP ini sudah terdaftar")
+		case services.ErrVerificationRequired:
+			errors.BadRequest(c, "AUTH_OTP_NOT_VERIFIED", "OTP belum diverifikasi atau tidak valid")
 		default:
 			errors.InternalError(c, "SYSTEM_INTERNAL", errors.GetErrorMessage("SYSTEM_INTERNAL"))
 		}
@@ -64,6 +151,22 @@ func (h *AuthHandler) Login(c *gin.Context) {
 				Message: err.Error(),
 			})
 		}
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+func (h *AuthHandler) SendOTP(c *gin.Context) {
+	var req dto.SendOTPRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errors.BadRequest(c, "VALIDATION_ERROR", err.Error())
+		return
+	}
+
+	resp, err := h.authService.SendOTP(c.Request.Context(), &req)
+	if err != nil {
+		errors.InternalError(c, "SYSTEM_INTERNAL", err.Error())
 		return
 	}
 

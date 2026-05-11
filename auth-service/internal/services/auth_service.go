@@ -7,9 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/yontech/ppob/auth-service/config"
 	"github.com/yontech/ppob/auth-service/internal/dto"
@@ -26,20 +28,24 @@ var (
 	ErrOTPExpired        = errors.New("OTP expired")
 	ErrInvalidToken      = errors.New("invalid token")
 	ErrTokenExpired      = errors.New("token expired")
+	ErrVerificationRequired = errors.New("OTP verification required")
+	ErrDeviceNotTrusted  = errors.New("device not trusted for PIN login")
 )
 
 type AuthService struct {
-	userRepo  *repository.UserRepository
-	otpRepo   *repository.OTPRepository
+	userRepo   *repository.UserRepository
+	otpRepo    *repository.OTPRepository
 	walletRepo *repository.WalletRepository
-	redis     *redis.Client
-	cfg       *config.Config
+	deviceRepo *repository.DeviceRepository
+	redis      *redis.Client
+	cfg        *config.Config
 }
 
 func NewAuthService(
 	userRepo *repository.UserRepository,
 	otpRepo *repository.OTPRepository,
 	walletRepo *repository.WalletRepository,
+	deviceRepo *repository.DeviceRepository,
 	redis *redis.Client,
 	cfg *config.Config,
 ) *AuthService {
@@ -47,12 +53,178 @@ func NewAuthService(
 		userRepo:   userRepo,
 		otpRepo:    otpRepo,
 		walletRepo: walletRepo,
+		deviceRepo: deviceRepo,
 		redis:      redis,
 		cfg:        cfg,
 	}
 }
 
+func (s *AuthService) InitiateAuth(ctx context.Context, req *dto.InitiateAuthRequest) (*dto.InitiateAuthResponse, error) {
+	user, err := s.userRepo.FindByPhone(req.Phone)
+	if err != nil {
+		return &dto.InitiateAuthResponse{
+			IsRegistered: false,
+			IsTrusted:    false,
+			RequiresOTP:  true,
+		}, nil
+	}
+
+	device, err := s.deviceRepo.FindByFingerprint(user.ID, req.DeviceID)
+	isTrusted := false
+	if err == nil && device != nil && device.IsTrusted {
+		isTrusted = true
+	}
+
+	return &dto.InitiateAuthResponse{
+		UserID:       user.ID,
+		IsRegistered: true,
+		IsTrusted:    isTrusted,
+		RequiresOTP:  !isTrusted,
+	}, nil
+}
+
+func (s *AuthService) VerifyPassword(ctx context.Context, req *dto.VerifyPasswordRequest) (*dto.LoginResponse, error) {
+	// Check if phone matches requestID verification
+	verifiedPhone, err := s.redis.Get(ctx, "verified:"+req.RequestID).Result()
+	if err != nil || verifiedPhone != req.Phone {
+		return nil, ErrVerificationRequired
+	}
+
+	user, err := s.userRepo.FindByPhone(req.Phone)
+	if err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	// Mark device as trusted after successful password validation
+	s.upsertDeviceTrust(ctx, user.ID, req.DeviceID)
+
+	// Consume verification flag
+	s.redis.Del(ctx, "verified:"+req.RequestID)
+
+	return s.completeAuth(ctx, user)
+}
+
+func (s *AuthService) VerifyPINLogin(ctx context.Context, phone, pin, deviceID string) (*dto.LoginResponse, error) {
+	user, err := s.userRepo.FindByPhone(phone)
+	if err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	// Verify device trust
+	device, err := s.deviceRepo.FindByFingerprint(user.ID, deviceID)
+	if err != nil || device == nil || !device.IsTrusted {
+		return nil, ErrDeviceNotTrusted
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PIN), []byte(pin)); err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	return s.completeAuth(ctx, user)
+}
+
+func (s *AuthService) VerifyCredential(ctx context.Context, req *dto.VerifyCredentialRequest) (*dto.LoginResponse, error) {
+	// Check if phone matches requestID verification
+	verifiedPhone, err := s.redis.Get(ctx, "verified:"+req.RequestID).Result()
+	if err != nil || verifiedPhone != req.Phone {
+		return nil, ErrVerificationRequired
+	}
+
+	user, err := s.userRepo.FindByPhone(req.Phone)
+	if err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	// Verify credential based on auth method
+	switch req.AuthMethod {
+	case "password":
+		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Value)); err != nil {
+			return nil, ErrInvalidCredentials
+		}
+	case "pin":
+		if err := bcrypt.CompareHashAndPassword([]byte(user.PIN), []byte(req.Value)); err != nil {
+			return nil, ErrInvalidCredentials
+		}
+	default:
+		return nil, ErrInvalidCredentials
+	}
+
+	// Mark device as trusted
+	s.upsertDeviceTrust(ctx, user.ID, req.DeviceID)
+
+	// Consume verification flag
+	s.redis.Del(ctx, "verified:"+req.RequestID)
+
+	return s.completeAuth(ctx, user)
+}
+
+func (s *AuthService) upsertDeviceTrust(ctx context.Context, userID uint, deviceID string) {
+	if deviceID == "" {
+		return
+	}
+
+	device, err := s.deviceRepo.FindByFingerprint(userID, deviceID)
+	if err != nil {
+		// New device
+		if createErr := s.deviceRepo.Create(&models.DeviceFingerprint{
+			UserID:          userID,
+			FingerprintHash: deviceID,
+			IsTrusted:       true,
+			FirstSeen:       time.Now(),
+			LastSeen:        time.Now(),
+		}); createErr != nil {
+			fmt.Printf("Failed to create device trust record for user %d: %v\n", userID, createErr)
+		}
+	} else if !device.IsTrusted {
+		device.IsTrusted = true
+		device.LastSeen = time.Now()
+		if updateErr := s.deviceRepo.Update(device); updateErr != nil {
+			fmt.Printf("Failed to update device trust for user %d: %v\n", userID, updateErr)
+		}
+	}
+}
+
+func (s *AuthService) completeAuth(ctx context.Context, user *models.User) (*dto.LoginResponse, error) {
+	now := time.Now()
+	user.LastLoginAt = &now
+	if err := s.userRepo.Update(user); err != nil {
+		return nil, err
+	}
+
+	accessToken, accessExpiresAt, err := s.generateToken(user)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, refreshExpiresAt, err := s.generateRefreshToken(user)
+	if err != nil {
+		return nil, err
+	}
+
+	s.storeRefreshToken(ctx, user.ID, refreshToken, refreshExpiresAt)
+
+	return &dto.LoginResponse{
+		UserID:        user.ID,
+		Email:         user.Email,
+		Phone:         user.Phone,
+		FullName:      user.FullName,
+		Token:         accessToken,
+		RefreshToken:  refreshToken,
+		ExpiresAt:     accessExpiresAt.Unix(),
+	}, nil
+}
+
 func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) (*dto.RegisterResponse, error) {
+	// Check if phone matches requestID verification
+	verifiedPhone, err := s.redis.Get(ctx, "verified:"+req.RequestID).Result()
+	if err != nil || verifiedPhone != req.Phone {
+		return nil, ErrVerificationRequired
+	}
+
 	existingUser, _ := s.userRepo.FindByEmailOrPhone(req.Email, req.Phone)
 	if existingUser != nil {
 		return nil, ErrUserExists
@@ -76,8 +248,8 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) (*
 		PIN:          string(hashedPIN),
 		Role:         "user",
 		Status:       "active",
-		EmailVerified: false,
-		PhoneVerified: false,
+		EmailVerified: true, // OTP already verified
+		PhoneVerified: true, // OTP already verified
 	}
 
 	if err := s.userRepo.Create(user); err != nil {
@@ -93,31 +265,43 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) (*
 		return nil, fmt.Errorf("failed to create wallet: %w", err)
 	}
 
-	otpCode := s.generateOTP()
-	otp := &models.OTP{
-		UserID:    user.ID,
-		Code:     otpCode,
-		Type:     "register",
-		ExpiresAt: time.Now().Add(time.Duration(s.cfg.OTPExpireMinutes) * time.Minute),
-	}
-	if err := s.otpRepo.Create(otp); err != nil {
-		return nil, fmt.Errorf("failed to create OTP: %w", err)
+	if req.DeviceID != "" {
+		device := &models.DeviceFingerprint{
+			UserID:          user.ID,
+			FingerprintHash: req.DeviceID,
+			IsTrusted:       true, // Initial device after OTP is trusted
+			FirstSeen:       time.Now(),
+			LastSeen:        time.Now(),
+		}
+		if err := s.deviceRepo.Create(device); err != nil {
+			fmt.Printf("Failed to create device trust record during registration for user %d: %v\n", user.ID, err)
+		}
 	}
 
-	token, expiresAt, err := s.generateToken(user)
+	// Consume verification flag
+	s.redis.Del(ctx, "verified:"+req.RequestID)
+
+	accessToken, accessExpiresAt, err := s.generateToken(user)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Printf("OTP for registration: %s (expires in %d minutes)\n", otpCode, s.cfg.OTPExpireMinutes)
+	refreshToken, refreshExpiresAt, err := s.generateRefreshToken(user)
+	if err != nil {
+		return nil, err
+	}
+
+	s.storeRefreshToken(ctx, user.ID, refreshToken, refreshExpiresAt)
 
 	return &dto.RegisterResponse{
-		UserID:    user.ID,
-		Email:     user.Email,
-		Phone:     user.Phone,
-		FullName:  user.FullName,
-		Token:     token,
-		ExpiresAt: expiresAt.Unix(),
+		UserID:            user.ID,
+		Email:             user.Email,
+		Phone:             user.Phone,
+		FullName:          user.FullName,
+		Token:             accessToken,
+		RefreshToken:      refreshToken,
+		ExpiresAt:         accessExpiresAt.Unix(),
+		RefreshExpiresAt:  refreshExpiresAt.Unix(),
 	}, nil
 }
 
@@ -168,50 +352,66 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Lo
 	}, nil
 }
 
+func (s *AuthService) SendOTP(ctx context.Context, req *dto.SendOTPRequest) (*dto.SendOTPResponse, error) {
+	otpCode := s.generateOTP()
+	requestID := uuid.New().String()
+
+	// Store in Redis: otp:request_id -> {phone, code, type}
+	otpData := fmt.Sprintf("%s:%s:%s", req.Phone, otpCode, req.Type)
+	err := s.redis.Set(ctx, "otp:"+requestID, otpData, time.Duration(s.cfg.OTPExpireMinutes)*time.Minute).Err()
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("OTP for %s [%s]: %s (expires in %d minutes)\n", req.Phone, req.Type, otpCode, s.cfg.OTPExpireMinutes)
+
+	return &dto.SendOTPResponse{
+		RequestID: requestID,
+		ExpiresAt: time.Now().Add(time.Duration(s.cfg.OTPExpireMinutes) * time.Minute).Unix(),
+	}, nil
+}
+
 func (s *AuthService) VerifyOTP(ctx context.Context, req *dto.VerifyOTPRequest) (*dto.VerifyOTPResponse, error) {
-	otp, err := s.otpRepo.FindValidOTP(req.UserID, req.Code, req.Type)
+	val, err := s.redis.Get(ctx, "otp:"+req.RequestID).Result()
 	if err != nil {
 		return nil, ErrInvalidOTP
 	}
 
-	if err := s.otpRepo.MarkAsUsed(otp); err != nil {
-		return nil, fmt.Errorf("failed to mark OTP as used: %w", err)
+	parts := strings.Split(val, ":")
+	if len(parts) != 3 {
+		return nil, ErrInvalidOTP
 	}
 
-	user, err := s.userRepo.FindByID(req.UserID)
-	if err != nil {
-		return nil, ErrUserNotFound
+	storedPhone := parts[0]
+	storedCode := parts[1]
+	storedType := parts[2]
+
+	if storedPhone != req.Phone || storedCode != req.Code || storedType != req.Type {
+		return nil, ErrInvalidOTP
 	}
 
-	if req.Type == "register" {
-		user.EmailVerified = true
-		user.PhoneVerified = true
-		if err := s.userRepo.Update(user); err != nil {
-			return nil, err
-		}
-	}
+	// Delete OTP after successful verification
+	s.redis.Del(ctx, "otp:"+req.RequestID)
 
-	accessToken, accessExpiresAt, err := s.generateToken(user)
-	if err != nil {
-		return nil, err
-	}
-
-	refreshToken, refreshExpiresAt, err := s.generateRefreshToken(user)
+	// Mark as verified in Redis: verified:request_id -> phone
+	err = s.redis.Set(ctx, "verified:"+req.RequestID, req.Phone, 10*time.Minute).Err()
 	if err != nil {
 		return nil, err
 	}
 
-	s.storeRefreshToken(ctx, user.ID, refreshToken, refreshExpiresAt)
+	// Check if this is a new user or existing user
+	_, err = s.userRepo.FindByPhone(req.Phone)
+	isNewUser := err != nil
 
 	return &dto.VerifyOTPResponse{
-		Token:        accessToken,
-		RefreshToken: refreshToken,
-		ExpiresAt:    accessExpiresAt.Unix(),
+		RequestID:  req.RequestID,
+		IsVerified: true,
+		IsNewUser:  isNewUser,
 	}, nil
 }
 
 func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*dto.RefreshTokenResponse, error) {
-	claims, err := s.validateToken(refreshToken)
+	claims, err := ValidateTokenStatic(refreshToken, s.cfg.JWTSecret)
 	if err != nil {
 		return nil, ErrInvalidToken
 	}
@@ -292,7 +492,42 @@ func (s *AuthService) ChangePIN(ctx context.Context, userID uint, oldPIN, newPIN
 }
 
 func (s *AuthService) ValidateToken(tokenString string) (*dto.TokenClaims, error) {
-	return s.validateToken(tokenString)
+	return ValidateTokenStatic(tokenString, s.cfg.JWTSecret)
+}
+
+func ValidateTokenStatic(tokenString string, secret string) (*dto.TokenClaims, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(secret), nil
+	})
+
+	if err != nil {
+		return nil, ErrInvalidToken
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		exp, ok := claims["exp"].(float64)
+		if !ok {
+			return nil, ErrInvalidToken
+		}
+
+		if int64(exp) < time.Now().Unix() {
+			return nil, ErrTokenExpired
+		}
+
+		return &dto.TokenClaims{
+			UserID:   uint(claims["user_id"].(float64)),
+			Email:    claims["email"].(string),
+			Phone:    claims["phone"].(string),
+			Role:     claims["role"].(string),
+			Exp:      int64(exp),
+			IssuedAt: int64(claims["iat"].(float64)),
+		}, nil
+	}
+
+	return nil, ErrInvalidToken
 }
 
 func (s *AuthService) generateToken(user *models.User) (string, time.Time, error) {
@@ -331,41 +566,6 @@ func (s *AuthService) generateRefreshToken(user *models.User) (string, time.Time
 	}
 
 	return tokenString, expiresAt, nil
-}
-
-func (s *AuthService) validateToken(tokenString string) (*dto.TokenClaims, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return []byte(s.cfg.JWTSecret), nil
-	})
-
-	if err != nil {
-		return nil, ErrInvalidToken
-	}
-
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		exp, ok := claims["exp"].(float64)
-		if !ok {
-			return nil, ErrInvalidToken
-		}
-
-		if int64(exp) < time.Now().Unix() {
-			return nil, ErrTokenExpired
-		}
-
-		return &dto.TokenClaims{
-			UserID:   uint(claims["user_id"].(float64)),
-			Email:    claims["email"].(string),
-			Phone:    claims["phone"].(string),
-			Role:     claims["role"].(string),
-			Exp:      int64(exp),
-			IssuedAt: int64(claims["iat"].(float64)),
-		}, nil
-	}
-
-	return nil, ErrInvalidToken
 }
 
 func (s *AuthService) generateOTP() string {

@@ -168,7 +168,7 @@ func TestAuthService_Register(t *testing.T) {
 	otpRepo := &mockOTPRepository{db: db}
 	walletRepo := &mockWalletRepository{db: db}
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, cfg)
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
 
 	ctx := context.Background()
 	req := &dto.RegisterRequest{
@@ -206,7 +206,7 @@ func TestAuthService_Register_DuplicateEmail(t *testing.T) {
 	otpRepo := &mockOTPRepository{db: db}
 	walletRepo := &mockWalletRepository{db: db}
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, cfg)
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
 
 	ctx := context.Background()
 	req := &dto.RegisterRequest{
@@ -238,7 +238,7 @@ func TestAuthService_Login_Success(t *testing.T) {
 	otpRepo := &mockOTPRepository{db: db}
 	walletRepo := &mockWalletRepository{db: db}
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, cfg)
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
 
 	ctx := context.Background()
 
@@ -283,7 +283,7 @@ func TestAuthService_Login_InvalidCredentials(t *testing.T) {
 	otpRepo := &mockOTPRepository{db: db}
 	walletRepo := &mockWalletRepository{db: db}
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, cfg)
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
 
 	ctx := context.Background()
 
@@ -320,7 +320,7 @@ func TestAuthService_Login_NonExistentUser(t *testing.T) {
 	otpRepo := &mockOTPRepository{db: db}
 	walletRepo := &mockWalletRepository{db: db}
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, cfg)
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
 
 	ctx := context.Background()
 
@@ -348,7 +348,7 @@ func TestAuthService_VerifyOTP_Success(t *testing.T) {
 	otpRepo := &mockOTPRepository{db: db}
 	walletRepo := &mockWalletRepository{db: db}
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, cfg)
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
 
 	ctx := context.Background()
 
@@ -389,7 +389,7 @@ func TestAuthService_VerifyOTP_InvalidCode(t *testing.T) {
 	otpRepo := &mockOTPRepository{db: db}
 	walletRepo := &mockWalletRepository{db: db}
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, cfg)
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
 
 	ctx := context.Background()
 
@@ -423,7 +423,7 @@ func TestAuthService_ValidateToken(t *testing.T) {
 	otpRepo := &mockOTPRepository{db: db}
 	walletRepo := &mockWalletRepository{db: db}
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, cfg)
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
 
 	ctx := context.Background()
 
@@ -454,7 +454,7 @@ func TestAuthService_ValidateToken(t *testing.T) {
 func TestAuthService_ValidateToken_Invalid(t *testing.T) {
 	cfg := setupTestConfig()
 
-	authService := NewAuthService(nil, nil, nil, nil, cfg)
+	authService := NewAuthService(nil, nil, nil, nil, nil, cfg)
 
 	_, err := authService.ValidateToken("invalid-token")
 
@@ -471,7 +471,7 @@ func TestAuthService_ChangePassword_Success(t *testing.T) {
 	otpRepo := &mockOTPRepository{db: db}
 	walletRepo := &mockWalletRepository{db: db}
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, cfg)
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
 
 	ctx := context.Background()
 
@@ -509,7 +509,7 @@ func TestAuthService_ChangePassword_WrongOldPassword(t *testing.T) {
 	otpRepo := &mockOTPRepository{db: db}
 	walletRepo := &mockWalletRepository{db: db}
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, cfg)
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
 
 	ctx := context.Background()
 

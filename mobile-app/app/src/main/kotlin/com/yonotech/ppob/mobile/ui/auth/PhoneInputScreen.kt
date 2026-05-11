@@ -21,26 +21,37 @@ import com.yonotech.ppob.mobile.viewmodels.auth.AuthViewModel
 
 @Composable
 fun PhoneInputScreen(
-    onNavigateToOtp: (String, Boolean) -> Unit, // phone, isNewUser
+    onNavigateToOtp: (String, String, String) -> Unit, // requestId, phone, type
     onNavigateToPinLogin: (String) -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     var phone by remember { mutableStateOf("") }
-    val authState by viewModel.authState.collectAsState()
+    val initiateState by viewModel.initiateState.collectAsState()
+    val sendOtpState by viewModel.sendOtpState.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(authState) {
-        when (authState) {
-            is Resource.Success -> {
-                val data = (authState as Resource.Success).data
-                if (data.requiresOtp) {
-                    onNavigateToOtp(phone, data.isNewUser)
-                } else if (!data.isNewUser) {
-                    onNavigateToPinLogin(phone)
-                }
+    LaunchedEffect(initiateState) {
+        if (initiateState is Resource.Success) {
+            val data = (initiateState as Resource.Success).data
+            if (data.isTrusted) {
+                // Trusted device: direct PIN login
+                onNavigateToPinLogin(phone)
                 viewModel.resetState()
+            } else {
+                // Requires OTP: send based on registration status
+                val otpType = if (data.isRegistered) "login" else "register"
+                viewModel.sendOtp(phone, otpType)
             }
-            else -> {}
+        }
+    }
+
+    LaunchedEffect(sendOtpState) {
+        if (sendOtpState is Resource.Success) {
+            val data = (sendOtpState as Resource.Success).data
+            val initiateData = (initiateState as? Resource.Success)?.data
+            val type = if (initiateData?.isRegistered == false) "register" else "login"
+            onNavigateToOtp(data.requestId, phone, type)
+            viewModel.resetState()
         }
     }
 
@@ -52,7 +63,7 @@ fun PhoneInputScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Masuk",
+            text = "Masuk / Daftar",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
@@ -77,9 +88,17 @@ fun PhoneInputScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        if (authState is Resource.Error) {
+        if (sendOtpState is Resource.Error) {
             Text(
-                text = (authState as Resource.Error).message,
+                text = (sendOtpState as Resource.Error).message,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
+
+        if (initiateState is Resource.Error) {
+            Text(
+                text = (initiateState as Resource.Error).message,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
@@ -88,9 +107,9 @@ fun PhoneInputScreen(
         PpoButton(
             label = "Lanjutkan",
             onClick = { 
-                viewModel.sendOtp(phone, DeviceUtils.getDeviceId(context)) 
+                viewModel.initiateAuth(phone, DeviceUtils.getDeviceId(context)) 
             },
-            isLoading = authState is Resource.Loading,
+            isLoading = initiateState is Resource.Loading || sendOtpState is Resource.Loading,
             enabled = phone.length >= 10
         )
     }

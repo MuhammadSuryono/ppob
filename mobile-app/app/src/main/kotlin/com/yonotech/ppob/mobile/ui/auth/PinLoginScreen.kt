@@ -102,7 +102,7 @@ fun PinLoginScreen(
 
         PpoButton(
             label = "Masuk",
-            onClick = { viewModel.pinLogin(phone, pin, DeviceUtils.getDeviceId(context)) },
+            onClick = { viewModel.verifyPin(phone, pin, DeviceUtils.getDeviceId(context)) },
             isLoading = authState is Resource.Loading,
             enabled = phone.isNotEmpty() && pin.length == 6
         )
