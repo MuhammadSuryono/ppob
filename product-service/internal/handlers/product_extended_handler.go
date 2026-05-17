@@ -66,11 +66,11 @@ func NewPriceValidationHandler(priceValidationService *services.PriceValidationS
 }
 
 func (h *PriceValidationHandler) ValidatePrice(c *gin.Context) {
-	productCode := c.Query("product_code")
+	code := c.Query("code")
 	sellingPriceStr := c.Query("selling_price")
 
-	if productCode == "" || sellingPriceStr == "" {
-		errors.RespondWithError(c, errors.NewAppError("VALIDATION_MISSING_FIELD", map[string]interface{}{"fields": "product_code, selling_price"}))
+	if code == "" || sellingPriceStr == "" {
+		errors.RespondWithError(c, errors.NewAppError("VALIDATION_MISSING_FIELD", map[string]interface{}{"fields": "code, selling_price"}))
 		return
 	}
 
@@ -80,10 +80,10 @@ func (h *PriceValidationHandler) ValidatePrice(c *gin.Context) {
 		return
 	}
 
-	result := h.priceValidationService.ValidatePrice(productCode, sellingPrice)
+	result := h.priceValidationService.ValidatePrice(code, sellingPrice)
 
 	if !result.Valid {
-		errors.RespondWithError(c, errors.NewAppError("TRANSACTION_PRICE_BELOW_COST", map[string]interface{}{"product_code": result.ProductCode}))
+		errors.RespondWithError(c, errors.NewAppError("TRANSACTION_PRICE_BELOW_COST", map[string]interface{}{"code": result.Code}))
 		return
 	}
 

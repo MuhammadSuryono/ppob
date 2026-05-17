@@ -5,9 +5,9 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yontech/ppob/shared/errors"
 	"github.com/yontech/ppob/product-service/internal/dto"
 	"github.com/yontech/ppob/product-service/internal/services"
+	"github.com/yontech/ppob/shared/errors"
 )
 
 type ProductHandler struct {
@@ -49,11 +49,12 @@ func (h *ProductHandler) GetProductByCode(c *gin.Context) {
 
 func (h *ProductHandler) ListProducts(c *gin.Context) {
 	categoryID, _ := strconv.ParseUint(c.Query("category_id"), 10, 32)
+	brand := c.Query("brand")
 	status := c.Query("status")
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
 	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 
-	resp, err := h.productService.ListProducts(c.Request.Context(), uint(categoryID), status, limit, offset)
+	resp, err := h.productService.ListProducts(c.Request.Context(), uint(categoryID), brand, status, limit, offset)
 	if err != nil {
 		errors.RespondWithError(c, errors.NewAppError("SYSTEM_INTERNAL", nil))
 		return

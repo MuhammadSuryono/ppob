@@ -4,8 +4,9 @@ import "time"
 
 type ProductResponse struct {
 	ID          uint      `json:"id"`
-	ProductCode string    `json:"product_code"`
-	ProductName string    `json:"product_name"`
+	Code        string    `json:"code"`
+	Name        string    `json:"name"`
+	Brand       string    `json:"brand"`
 	CategoryID  uint      `json:"category_id"`
 	Provider    string    `json:"provider"`
 	Price       float64   `json:"price"`
@@ -17,8 +18,9 @@ type ProductResponse struct {
 }
 
 type CreateProductRequest struct {
-	ProductCode string  `json:"product_code" binding:"required"`
-	ProductName string  `json:"product_name" binding:"required"`
+	Code        string  `json:"code" binding:"required"`
+	Name        string  `json:"name" binding:"required"`
+	Brand       string  `json:"brand"`
 	CategoryID  uint    `json:"category_id" binding:"required"`
 	Provider    string  `json:"provider"`
 	Price       float64 `json:"price" binding:"required,gt=0"`
@@ -27,7 +29,8 @@ type CreateProductRequest struct {
 }
 
 type UpdateProductRequest struct {
-	ProductName string  `json:"product_name"`
+	Name        string  `json:"name"`
+	Brand       string  `json:"brand"`
 	CategoryID  uint    `json:"category_id"`
 	Provider    string  `json:"provider"`
 	Price       float64 `json:"price"`
@@ -44,30 +47,42 @@ type ListProductsResponse struct {
 }
 
 type CategoryResponse struct {
-	ID          uint   `json:"id"`
-	Name        string `json:"name"`
-	Code        string `json:"code"`
-	Description string `json:"description"`
-	Icon        string `json:"icon"`
-	SortOrder   int    `json:"sort_order"`
-	Status      string `json:"status"`
+	ID              uint   `json:"id"`
+	Name            string `json:"name"`
+	Code            string `json:"code"`
+	Description     string `json:"description"`
+	Icon            string `json:"icon"`
+	SortOrder       int    `json:"sort_order"`
+	Status          string `json:"status"`
+	InputType       string `json:"input_type"`
+	InputLabel      string `json:"input_label"`
+	Placeholder     string `json:"placeholder"`
+	ValidationRegex string `json:"validation_regex"`
 }
 
 type CreateCategoryRequest struct {
-	Name        string `json:"name" binding:"required"`
-	Code        string `json:"code" binding:"required"`
-	Description string `json:"description"`
-	Icon        string `json:"icon"`
-	SortOrder   int    `json:"sort_order"`
+	Name            string `json:"name" binding:"required"`
+	Code            string `json:"code" binding:"required"`
+	Description     string `json:"description"`
+	Icon            string `json:"icon"`
+	SortOrder       int    `json:"sort_order"`
+	InputType       string `json:"input_type"`
+	InputLabel      string `json:"input_label"`
+	Placeholder     string `json:"placeholder"`
+	ValidationRegex string `json:"validation_regex"`
 }
 
 type UpdateCategoryRequest struct {
-	Name        string `json:"name"`
-	Code        string `json:"code"`
-	Description string `json:"description"`
-	Icon        string `json:"icon"`
-	SortOrder   int    `json:"sort_order"`
-	Status      string `json:"status"`
+	Name            string `json:"name"`
+	Code            string `json:"code"`
+	Description     string `json:"description"`
+	Icon            string `json:"icon"`
+	SortOrder       int    `json:"sort_order"`
+	Status          string `json:"status"`
+	InputType       string `json:"input_type"`
+	InputLabel      string `json:"input_label"`
+	Placeholder     string `json:"placeholder"`
+	ValidationRegex string `json:"validation_regex"`
 }
 
 type ErrorResponse struct {
@@ -91,13 +106,13 @@ type SyncTime struct {
 }
 
 type PriceValidationRequest struct {
-	ProductCode  string             `json:"product_code" binding:"required"`
+	Code         string             `json:"code" binding:"required"`
 	SellingPrice float64            `json:"selling_price" binding:"required,gt=0"`
 }
 
 type PriceValidationResponse struct {
 	Valid           bool    `json:"valid"`
-	ProductCode     string  `json:"product_code"`
+	Code            string  `json:"code"`
 	SellingPrice    float64 `json:"selling_price"`
 	PlatformPrice   float64 `json:"platform_price"`
 	Margin          float64 `json:"margin"`

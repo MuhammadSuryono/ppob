@@ -2,8 +2,11 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 	"github.com/yontech/ppob/transaction-service/config"
 	"github.com/yontech/ppob/transaction-service/internal/dto"
 	"github.com/yontech/ppob/transaction-service/internal/models"
@@ -106,7 +109,7 @@ func TestTransactionService_InitiateTransaction(t *testing.T) {
 		Amount:         5500,
 	}
 
-	resp, err := transactionService.InitiateTransaction(context.Background(), 1, req, "")
+	resp, err := transactionService.InitiateTransaction(context.Background(), 1, req, "", "test-auth-id")
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -121,6 +124,85 @@ func TestTransactionService_InitiateTransaction(t *testing.T) {
 
 	if resp.Amount != 5500 {
 		t.Errorf("Expected amount 5500, got %f", resp.Amount)
+	}
+}
+
+func TestTransactionService_InitiateTransaction_AuthorizeID_Success(t *testing.T) {
+	db := setupTransactionTestDB(t)
+	cfg := setupTransactionTestConfig()
+
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to run miniredis: %v", err)
+	}
+	defer s.Close()
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	transactionRepo := repository.NewTransactionRepository(db)
+	marginRepo := repository.NewMarginRepository(db)
+
+	transactionService := NewTransactionService(transactionRepo, marginRepo, redisClient, cfg, db)
+
+	userID := uint(1)
+	authorizeID := "valid-auth-id"
+	s.Set(fmt.Sprintf("transaction_authorize:%s", authorizeID), fmt.Sprintf("%d", userID))
+
+	req := &dto.CreateTransactionRequest{
+		ProductCode:    "PREPAID_SIMPATIS_5K",
+		CustomerNumber: "081234567890",
+		Amount:         5500,
+	}
+
+	resp, err := transactionService.InitiateTransaction(context.Background(), userID, req, "", authorizeID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	if resp.TransactionID == "" {
+		t.Error("Expected non-empty transaction ID")
+	}
+
+	// Verify key is consumed
+	if s.Exists(fmt.Sprintf("transaction_authorize:%s", authorizeID)) {
+		t.Error("Expected authorizeID to be consumed (deleted from redis)")
+	}
+}
+
+func TestTransactionService_InitiateTransaction_AuthorizeID_Invalid(t *testing.T) {
+	db := setupTransactionTestDB(t)
+	cfg := setupTransactionTestConfig()
+
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to run miniredis: %v", err)
+	}
+	defer s.Close()
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	transactionRepo := repository.NewTransactionRepository(db)
+	marginRepo := repository.NewMarginRepository(db)
+
+	transactionService := NewTransactionService(transactionRepo, marginRepo, redisClient, cfg, db)
+
+	userID := uint(1)
+	authorizeID := "invalid-auth-id"
+	// Don't set in redis
+
+	req := &dto.CreateTransactionRequest{
+		ProductCode:    "PREPAID_SIMPATIS_5K",
+		CustomerNumber: "081234567890",
+		Amount:         5500,
+	}
+
+	_, err = transactionService.InitiateTransaction(context.Background(), userID, req, "", authorizeID)
+	if err != ErrUnauthorizedTransaction {
+		t.Fatalf("Expected ErrUnauthorizedTransaction, got %v", err)
 	}
 }
 

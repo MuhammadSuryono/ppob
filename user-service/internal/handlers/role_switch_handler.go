@@ -80,7 +80,7 @@ func (h *RoleSwitchHandler) SwitchRole(c *gin.Context) {
 		"user_id":  userID.(uint),
 		"email":    c.GetString("email"),
 		"phone":    c.GetString("phone"),
-		"role":     role.Name,
+		"role":     role.RoleName,
 		"role_id":  req.RoleID,
 		"wallet_id": wallet.ID,
 		"exp":      time.Now().Add(h.cfg.JWTExpire).Unix(),
@@ -96,7 +96,7 @@ func (h *RoleSwitchHandler) SwitchRole(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SwitchRoleResponse{
 		Message:   "Role switched successfully",
 		RoleID:    req.RoleID,
-		RoleName:  role.Name,
+		RoleName:  role.RoleName,
 		WalletID:  wallet.ID,
 		Token:     tokenString,
 		ExpiresAt: time.Now().Add(h.cfg.JWTExpire).Unix(),

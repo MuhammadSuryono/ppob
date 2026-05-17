@@ -202,10 +202,12 @@ func (r *TransactionRepository) GetKPIs(startDate, endDate string, userID uint) 
 	}
 
 	// Success count
-	err = base.Where("status = ?", "success").Count(&result.SuccessCount).Error
+	var successCount int64
+	err = base.Where("status = ?", "success").Count(&successCount).Error
 	if err != nil {
 		return nil, err
 	}
+	result.SuccessCount = int(successCount)
 
 	// Total count (all statuses)
 	var total int64

@@ -7,36 +7,36 @@
 CREATE OR REPLACE FUNCTION create_wallet_for_role()
 RETURNS TRIGGER AS $$
 DECLARE
-    parent_wallet_id UUID;
+    parent_wallet_id BIGINT;
     role_name_val VARCHAR(50);
-    mitra_user_id UUID;
+    mitra_user_id BIGINT;
 BEGIN
     -- Get role name
-    SELECT role_name INTO role_name_val 
+    SELECT name INTO role_name_val 
     FROM roles 
-    WHERE role_id = NEW.role_id;
+    WHERE id = NEW.role_id;
     
     IF role_name_val = 'Mitra' THEN
         -- Create main wallet for Mitra
-        INSERT INTO wallets (wallet_id, owner_id, balance_available, balance_held, is_main_wallet, parent_wallet_id, is_frozen)
-        VALUES (gen_random_uuid(), NEW.user_id, 0, 0, TRUE, NULL, FALSE);
+        INSERT INTO wallets (user_id, balance, hold_amount, is_main_wallet, parent_wallet_id, is_frozen)
+        VALUES (NEW.user_id, 0, 0, TRUE, NULL, FALSE);
         
     ELSIF role_name_val = 'Staff' THEN
         -- Get assigned_by (Mitra) user_id
         mitra_user_id := NEW.assigned_by;
         
         -- Find Mitra's main wallet
-        SELECT wallet_id INTO parent_wallet_id 
+        SELECT id INTO parent_wallet_id 
         FROM wallets 
-        WHERE owner_id = mitra_user_id AND is_main_wallet = TRUE;
+        WHERE user_id = mitra_user_id AND is_main_wallet = TRUE;
         
         IF parent_wallet_id IS NULL THEN
             RAISE EXCEPTION 'Mitra (%) has no main wallet', mitra_user_id;
         END IF;
         
         -- Create sub-wallet for Staff
-        INSERT INTO wallets (wallet_id, owner_id, balance_available, balance_held, is_main_wallet, parent_wallet_id, is_frozen)
-        VALUES (gen_random_uuid(), NEW.user_id, 0, 0, FALSE, parent_wallet_id, FALSE);
+        INSERT INTO wallets (user_id, balance, hold_amount, is_main_wallet, parent_wallet_id, is_frozen)
+        VALUES (NEW.user_id, 0, 0, FALSE, parent_wallet_id, FALSE);
     END IF;
     
     RETURN NEW;

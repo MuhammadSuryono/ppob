@@ -58,7 +58,7 @@ func (s *MarginService) GetStaffCommission(staffID, productID uint, productCode 
 			return nil, err
 		}
 
-		schemeType = global.SchemeType
+		schemeType = global.CommissionType
 		if schemeType == "MarginShare" {
 			value = global.GlobalMarginPercent
 		} else {
@@ -89,7 +89,7 @@ func (s *MarginService) SetStaffMargin(mitraID, staffID uint, schemeType string,
 	err := s.db.Where("mitra_id = ? AND staff_id = ?", mitraID, staffID).First(&existing).Error
 
 	if err == nil {
-		existing.SchemeType = schemeType
+		existing.CommissionType = schemeType
 		if schemeType == "MarginShare" {
 			existing.GlobalMarginPercent = marginValue
 			existing.FixedAllowance = 0
@@ -106,7 +106,7 @@ func (s *MarginService) SetStaffMargin(mitraID, staffID uint, schemeType string,
 		setting := &models.StaffGlobalMarginSetting{
 			MitraID:            mitraID,
 			StaffID:            staffID,
-			SchemeType:         schemeType,
+			CommissionType:     schemeType,
 			GlobalMarginPercent: 0,
 			FixedAllowance:     0,
 			IsActive:           true,

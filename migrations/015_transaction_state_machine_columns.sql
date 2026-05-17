@@ -3,7 +3,7 @@
 -- Purpose: Add columns required for state machine tracking per TRANSACTION_STATE_MACHINE.md
 
 ALTER TABLE transactions
-    ADD COLUMN IF NOT EXISTS wallet_id UUID REFERENCES wallets(wallet_id),
+    ADD COLUMN IF NOT EXISTS wallet_id BIGINT REFERENCES wallets(id),
     ADD COLUMN IF NOT EXISTS hold_released_at TIMESTAMP,
     ADD COLUMN IF NOT EXISTS previous_status VARCHAR(50),
     ADD COLUMN IF NOT EXISTS status_change_reason VARCHAR(255),

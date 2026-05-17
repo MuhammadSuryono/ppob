@@ -2,13 +2,19 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
+	"fmt"
+	"math/big"
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
 	"github.com/yontech/ppob/auth-service/config"
 	"github.com/yontech/ppob/auth-service/internal/dto"
 	"github.com/yontech/ppob/auth-service/internal/models"
+	"github.com/yontech/ppob/auth-service/internal/repository"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -164,20 +170,34 @@ func TestAuthService_Register(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := setupTestConfig()
 
-	userRepo := &mockUserRepository{db: db}
-	otpRepo := &mockOTPRepository{db: db}
-	walletRepo := &mockWalletRepository{db: db}
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to run miniredis: %v", err)
+	}
+	defer s.Close()
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	userRepo := repository.NewUserRepository(db)
+	otpRepo := repository.NewOTPRepository(db)
+	walletRepo := repository.NewWalletRepository(db)
+
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
 
 	ctx := context.Background()
 	req := &dto.RegisterRequest{
 		Email:    "test@example.com",
 		Phone:    "081234567890",
-		FullName: "Test User",
+		Name:     "Test User",
 		Password: "password123",
 		PIN:      "123456",
+		RequestID: "req-1",
 	}
+
+	// Mock OTP verification in redis
+	s.Set("verified:"+req.RequestID, req.Phone)
 
 	resp, err := authService.Register(ctx, req)
 
@@ -202,23 +222,39 @@ func TestAuthService_Register_DuplicateEmail(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := setupTestConfig()
 
-	userRepo := &mockUserRepository{db: db}
-	otpRepo := &mockOTPRepository{db: db}
-	walletRepo := &mockWalletRepository{db: db}
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to run miniredis: %v", err)
+	}
+	defer s.Close()
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	userRepo := repository.NewUserRepository(db)
+	otpRepo := repository.NewOTPRepository(db)
+	walletRepo := repository.NewWalletRepository(db)
+
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
 
 	ctx := context.Background()
 	req := &dto.RegisterRequest{
 		Email:    "test@example.com",
 		Phone:    "081234567890",
-		FullName: "Test User",
+		Name:     "Test User",
 		Password: "password123",
 		PIN:      "123456",
+		RequestID: "req-1",
 	}
+
+	// Mock OTP verification in redis
+	s.Set("verified:"+req.RequestID, req.Phone)
 
 	authService.Register(ctx, req)
 
+	// Set again for second call because it's consumed
+	s.Set("verified:"+req.RequestID, req.Phone)
 	resp, err := authService.Register(ctx, req)
 
 	if err != ErrUserExists {
@@ -234,21 +270,33 @@ func TestAuthService_Login_Success(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := setupTestConfig()
 
-	userRepo := &mockUserRepository{db: db}
-	otpRepo := &mockOTPRepository{db: db}
-	walletRepo := &mockWalletRepository{db: db}
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to run miniredis: %v", err)
+	}
+	defer s.Close()
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	userRepo := repository.NewUserRepository(db)
+	otpRepo := repository.NewOTPRepository(db)
+	walletRepo := repository.NewWalletRepository(db)
+
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
 
 	ctx := context.Background()
 
 	registerReq := &dto.RegisterRequest{
 		Email:    "test@example.com",
 		Phone:    "081234567890",
-		FullName: "Test User",
+		Name:     "Test User",
 		Password: "password123",
 		PIN:      "123456",
+		RequestID: "req-1",
 	}
+	s.Set("verified:"+registerReq.RequestID, registerReq.Phone)
 	authService.Register(ctx, registerReq)
 
 	loginReq := &dto.LoginRequest{
@@ -279,21 +327,33 @@ func TestAuthService_Login_InvalidCredentials(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := setupTestConfig()
 
-	userRepo := &mockUserRepository{db: db}
-	otpRepo := &mockOTPRepository{db: db}
-	walletRepo := &mockWalletRepository{db: db}
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to run miniredis: %v", err)
+	}
+	defer s.Close()
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	userRepo := repository.NewUserRepository(db)
+	otpRepo := repository.NewOTPRepository(db)
+	walletRepo := repository.NewWalletRepository(db)
+
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
 
 	ctx := context.Background()
 
 	registerReq := &dto.RegisterRequest{
 		Email:    "test@example.com",
 		Phone:    "081234567890",
-		FullName: "Test User",
+		Name:     "Test User",
 		Password: "password123",
 		PIN:      "123456",
+		RequestID: "req-1",
 	}
+	s.Set("verified:"+registerReq.RequestID, registerReq.Phone)
 	authService.Register(ctx, registerReq)
 
 	loginReq := &dto.LoginRequest{
@@ -316,9 +376,9 @@ func TestAuthService_Login_NonExistentUser(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := setupTestConfig()
 
-	userRepo := &mockUserRepository{db: db}
-	otpRepo := &mockOTPRepository{db: db}
-	walletRepo := &mockWalletRepository{db: db}
+	userRepo := repository.NewUserRepository(db)
+	otpRepo := repository.NewOTPRepository(db)
+	walletRepo := repository.NewWalletRepository(db)
 
 	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
 
@@ -344,31 +404,48 @@ func TestAuthService_VerifyOTP_Success(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := setupTestConfig()
 
-	userRepo := &mockUserRepository{db: db}
-	otpRepo := &mockOTPRepository{db: db}
-	walletRepo := &mockWalletRepository{db: db}
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to run miniredis: %v", err)
+	}
+	defer s.Close()
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	userRepo := repository.NewUserRepository(db)
+	otpRepo := repository.NewOTPRepository(db)
+	walletRepo := repository.NewWalletRepository(db)
+
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
 
 	ctx := context.Background()
 
 	registerReq := &dto.RegisterRequest{
 		Email:    "test@example.com",
 		Phone:    "081234567890",
-		FullName: "Test User",
+		Name:     "Test User",
 		Password: "password123",
 		PIN:      "123456",
+		RequestID: "reg-req-1",
 	}
+	s.Set("verified:"+registerReq.RequestID, registerReq.Phone)
 	resp, _ := authService.Register(ctx, registerReq)
 
 	var otpModel models.OTP
 	db.Where("user_id = ? AND type = ?", resp.UserID, "register").First(&otpModel)
 
 	verifyReq := &dto.VerifyOTPRequest{
-		UserID: resp.UserID,
+		RequestID: "otp-req-1",
+		Phone:     "081234567890",
 		Code:   otpModel.Code,
 		Type:   "register",
 	}
+
+	// Mock OTP in redis for VerifyOTP
+	otpData := fmt.Sprintf("%s:%s:%s", verifyReq.Phone, otpModel.Code, verifyReq.Type)
+	s.Set("otp:"+verifyReq.RequestID, otpData)
 
 	verifyResp, err := authService.VerifyOTP(ctx, verifyReq)
 
@@ -376,8 +453,8 @@ func TestAuthService_VerifyOTP_Success(t *testing.T) {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	if verifyResp.Token == "" {
-		t.Error("Expected non-empty token")
+	if verifyResp != nil && !verifyResp.IsVerified {
+		t.Error("Expected IsVerified to be true")
 	}
 }
 
@@ -385,30 +462,43 @@ func TestAuthService_VerifyOTP_InvalidCode(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := setupTestConfig()
 
-	userRepo := &mockUserRepository{db: db}
-	otpRepo := &mockOTPRepository{db: db}
-	walletRepo := &mockWalletRepository{db: db}
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to run miniredis: %v", err)
+	}
+	defer s.Close()
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	userRepo := repository.NewUserRepository(db)
+	otpRepo := repository.NewOTPRepository(db)
+	walletRepo := repository.NewWalletRepository(db)
+
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
 
 	ctx := context.Background()
 
 	registerReq := &dto.RegisterRequest{
 		Email:    "test@example.com",
 		Phone:    "081234567890",
-		FullName: "Test User",
+		Name:     "Test User",
 		Password: "password123",
 		PIN:      "123456",
+		RequestID: "reg-req-1",
 	}
-	resp, _ := authService.Register(ctx, registerReq)
+	s.Set("verified:"+registerReq.RequestID, registerReq.Phone)
+	_, _ = authService.Register(ctx, registerReq)
 
 	verifyReq := &dto.VerifyOTPRequest{
-		UserID: resp.UserID,
+		RequestID: "req-1",
+		Phone:     "081234567890",
 		Code:   "000000",
 		Type:   "register",
 	}
 
-	_, err := authService.VerifyOTP(ctx, verifyReq)
+	_, err = authService.VerifyOTP(ctx, verifyReq)
 
 	if err != ErrInvalidOTP {
 		t.Fatalf("Expected ErrInvalidOTP, got %v", err)
@@ -419,21 +509,33 @@ func TestAuthService_ValidateToken(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := setupTestConfig()
 
-	userRepo := &mockUserRepository{db: db}
-	otpRepo := &mockOTPRepository{db: db}
-	walletRepo := &mockWalletRepository{db: db}
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to run miniredis: %v", err)
+	}
+	defer s.Close()
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	userRepo := repository.NewUserRepository(db)
+	otpRepo := repository.NewOTPRepository(db)
+	walletRepo := repository.NewWalletRepository(db)
+
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
 
 	ctx := context.Background()
 
 	registerReq := &dto.RegisterRequest{
 		Email:    "test@example.com",
 		Phone:    "081234567890",
-		FullName: "Test User",
+		Name:     "Test User",
 		Password: "password123",
 		PIN:      "123456",
+		RequestID: "req-1",
 	}
+	s.Set("verified:"+registerReq.RequestID, registerReq.Phone)
 	resp, _ := authService.Register(ctx, registerReq)
 
 	claims, err := authService.ValidateToken(resp.Token)
@@ -467,24 +569,36 @@ func TestAuthService_ChangePassword_Success(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := setupTestConfig()
 
-	userRepo := &mockUserRepository{db: db}
-	otpRepo := &mockOTPRepository{db: db}
-	walletRepo := &mockWalletRepository{db: db}
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to run miniredis: %v", err)
+	}
+	defer s.Close()
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	userRepo := repository.NewUserRepository(db)
+	otpRepo := repository.NewOTPRepository(db)
+	walletRepo := repository.NewWalletRepository(db)
+
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
 
 	ctx := context.Background()
 
 	registerReq := &dto.RegisterRequest{
 		Email:    "test@example.com",
 		Phone:    "081234567890",
-		FullName: "Test User",
+		Name:     "Test User",
 		Password: "password123",
 		PIN:      "123456",
+		RequestID: "req-1",
 	}
+	s.Set("verified:"+registerReq.RequestID, registerReq.Phone)
 	resp, _ := authService.Register(ctx, registerReq)
 
-	err := authService.ChangePassword(ctx, resp.UserID, "password123", "newpassword456")
+	err = authService.ChangePassword(ctx, resp.UserID, "password123", "newpassword456")
 
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -505,24 +619,36 @@ func TestAuthService_ChangePassword_WrongOldPassword(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := setupTestConfig()
 
-	userRepo := &mockUserRepository{db: db}
-	otpRepo := &mockOTPRepository{db: db}
-	walletRepo := &mockWalletRepository{db: db}
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to run miniredis: %v", err)
+	}
+	defer s.Close()
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	userRepo := repository.NewUserRepository(db)
+	otpRepo := repository.NewOTPRepository(db)
+	walletRepo := repository.NewWalletRepository(db)
+
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
 
 	ctx := context.Background()
 
 	registerReq := &dto.RegisterRequest{
 		Email:    "test@example.com",
 		Phone:    "081234567890",
-		FullName: "Test User",
+		Name:     "Test User",
 		Password: "password123",
 		PIN:      "123456",
+		RequestID: "req-1",
 	}
+	s.Set("verified:"+registerReq.RequestID, registerReq.Phone)
 	resp, _ := authService.Register(ctx, registerReq)
 
-	err := authService.ChangePassword(ctx, resp.UserID, "wrongpassword", "newpassword456")
+	err = authService.ChangePassword(ctx, resp.UserID, "wrongpassword", "newpassword456")
 
 	if err != ErrInvalidCredentials {
 		t.Fatalf("Expected ErrInvalidCredentials, got %v", err)
@@ -586,6 +712,99 @@ func generateToken(cfg *config.Config, user *models.User) (string, time.Time, er
 	return tokenString, expiresAt, nil
 }
 
+func TestAuthService_AuthorizeTransaction_Success(t *testing.T) {
+	db := setupTestDB(t)
+	cfg := setupTestConfig()
+
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to run miniredis: %v", err)
+	}
+	defer s.Close()
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	userRepo := repository.NewUserRepository(db)
+	otpRepo := repository.NewOTPRepository(db)
+	walletRepo := repository.NewWalletRepository(db)
+
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
+
+	ctx := context.Background()
+
+	registerReq := &dto.RegisterRequest{
+		Email:    "test@example.com",
+		Phone:    "081234567890",
+		Name:     "Test User",
+		Password: "password123",
+		PIN:      "123456",
+		RequestID: "req-1",
+	}
+	s.Set("verified:"+registerReq.RequestID, registerReq.Phone)
+	resp, _ := authService.Register(ctx, registerReq)
+
+	authResp, err := authService.AuthorizeTransaction(ctx, resp.UserID, "123456")
+
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	if authResp.AuthorizeID == "" {
+		t.Error("Expected non-empty AuthorizeID")
+	}
+
+	// Verify it's in redis
+	key := fmt.Sprintf("transaction_authorize:%s", authResp.AuthorizeID)
+	storedUserID, _ := redisClient.Get(ctx, key).Result()
+	if storedUserID != fmt.Sprintf("%d", resp.UserID) {
+		t.Errorf("Expected stored user ID %d, got %s", resp.UserID, storedUserID)
+	}
+}
+
+func TestAuthService_AuthorizeTransaction_InvalidPIN(t *testing.T) {
+	db := setupTestDB(t)
+	cfg := setupTestConfig()
+
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to run miniredis: %v", err)
+	}
+	defer s.Close()
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	userRepo := repository.NewUserRepository(db)
+	otpRepo := repository.NewOTPRepository(db)
+	walletRepo := repository.NewWalletRepository(db)
+
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
+
+	ctx := context.Background()
+
+	registerReq := &dto.RegisterRequest{
+		Email:    "test@example.com",
+		Phone:    "081234567890",
+		Name:     "Test User",
+		Password: "password123",
+		PIN:      "123456",
+		RequestID: "req-1",
+	}
+	s.Set("verified:"+registerReq.RequestID, registerReq.Phone)
+	resp, _ := authService.Register(ctx, registerReq)
+
+	_, err = authService.AuthorizeTransaction(ctx, resp.UserID, "000000")
+
+	if err != ErrInvalidCredentials {
+		t.Fatalf("Expected ErrInvalidCredentials, got %v", err)
+	}
+}
+
 func generateOTP() string {
-	return "123456"
+	max := big.NewInt(999999)
+	result, _ := rand.Int(rand.Reader, max)
+	return fmt.Sprintf("%06d", result)
 }

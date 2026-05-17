@@ -10,6 +10,7 @@ import (
 	"github.com/yontech/ppob/user-service/internal/dto"
 	"github.com/yontech/ppob/user-service/internal/models"
 	"github.com/yontech/ppob/user-service/internal/repository"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -60,7 +61,7 @@ func (s *UserService) GetUser(ctx context.Context, userID uint) (*dto.UserRespon
 		ID:            user.ID,
 		Email:         user.Email,
 		Phone:         user.Phone,
-		FullName:      user.FullName,
+		Name:          user.Name,
 		Role:          user.Role,
 		Status:        user.Status,
 		Avatar:        user.Avatar,
@@ -78,8 +79,8 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, req *dto.Upda
 		return nil, ErrUserNotFound
 	}
 
-	if req.FullName != "" {
-		user.FullName = req.FullName
+	if req.Name != "" {
+		user.Name = req.Name
 	}
 	if req.Phone != "" {
 		user.Phone = req.Phone
@@ -104,7 +105,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, req *dto.Upda
 		ID:            user.ID,
 		Email:         user.Email,
 		Phone:         user.Phone,
-		FullName:      user.FullName,
+		Name:          user.Name,
 		Role:          user.Role,
 		Status:        user.Status,
 		Avatar:        user.Avatar,
@@ -128,7 +129,7 @@ func (s *UserService) ListUsers(ctx context.Context, limit, offset int) (*dto.Li
 			ID:            user.ID,
 			Email:         user.Email,
 			Phone:         user.Phone,
-			FullName:      user.FullName,
+			Name:          user.Name,
 			Role:          user.Role,
 			Status:        user.Status,
 			Avatar:        user.Avatar,
@@ -158,7 +159,7 @@ func (s *UserService) GetUserRoles(ctx context.Context, userID uint) ([]dto.Role
 	for i, role := range roles {
 		roleResponses[i] = dto.RoleResponse{
 			ID:          role.ID,
-			Name:        role.Name,
+			Name:        role.RoleName,
 			Description: role.Description,
 			Permissions: role.Permissions,
 			Status:      role.Status,
@@ -183,7 +184,7 @@ func (s *UserService) AssignRole(ctx context.Context, userID uint, roleID uint) 
 
 	user, _ := s.userRepo.FindByID(userID)
 	if user != nil {
-		user.Role = role.Name
+		user.Role = role.RoleName
 		s.userRepo.Update(user)
 	}
 
@@ -201,7 +202,7 @@ func (s *UserService) ListRoles(ctx context.Context) ([]dto.RoleResponse, error)
 	for i, role := range roles {
 		roleResponses[i] = dto.RoleResponse{
 			ID:          role.ID,
-			Name:        role.Name,
+			Name:        role.RoleName,
 			Description: role.Description,
 			Permissions: role.Permissions,
 			Status:      role.Status,
@@ -219,10 +220,10 @@ func (s *UserService) CreateRole(ctx context.Context, req *dto.RoleRequest) (*dt
 	}
 
 	role := &models.Role{
-		Name:        req.Name,
+		RoleName:    req.Name,
 		Description: req.Description,
 		Permissions: req.Permissions,
-		Status:     "active",
+		Status:      "active",
 	}
 
 	if err := s.roleRepo.Create(role); err != nil {
@@ -231,10 +232,10 @@ func (s *UserService) CreateRole(ctx context.Context, req *dto.RoleRequest) (*dt
 
 	return &dto.RoleResponse{
 		ID:          role.ID,
-		Name:        role.Name,
+		Name:        role.RoleName,
 		Description: role.Description,
 		Permissions: role.Permissions,
-		Status:      role.Status,
+		Status:      "active",
 	}, nil
 }
 
@@ -246,7 +247,7 @@ func (s *UserService) invalidateUserCache(ctx context.Context, userID uint) {
 // ========== Staff Management ==========
 
 // ListStaff returns list of staff users for a Mitra
-func (s *UserService) ListStaff(ctx context.Context, mitraID uint, limit, offset int, status string) (*dto.ListUsersResponse, error) {
+func (s *UserService) ListStaff(ctx context.Context, mitraID uint, limit, offset int, status string) (*dto.ListStaffResponse, error) {
 	users, total, err := s.userRepo.FindStaffUsers(mitraID, limit, offset, status)
 	if err != nil {
 		return nil, err
@@ -263,7 +264,7 @@ func (s *UserService) ListStaff(ctx context.Context, mitraID uint, limit, offset
 			ID:                        user.ID,
 			Email:                     user.Email,
 			Phone:                     user.Phone,
-			FullName:                  user.FullName,
+			Name:                      user.Name,
 			Status:                    user.Status,
 			Avatar:                    user.Avatar,
 			TodayTransactionCount:     todayCount,
@@ -277,8 +278,8 @@ func (s *UserService) ListStaff(ctx context.Context, mitraID uint, limit, offset
 		}
 
 		if marginSetting != nil {
-			staffResponses[i].MarginSchemeType = marginSetting.SchemeType
-			if marginSetting.SchemeType == "MarginShare" {
+			staffResponses[i].MarginSchemeType = marginSetting.CommissionType
+			if marginSetting.CommissionType == "MarginShare" {
 				staffResponses[i].MarginValue = marginSetting.GlobalMarginPercent
 			} else {
 				staffResponses[i].MarginValue = marginSetting.FixedAllowance
@@ -286,51 +287,8 @@ func (s *UserService) ListStaff(ctx context.Context, mitraID uint, limit, offset
 		}
 	}
 
-	return &dto.ListUsersResponse{
-		Users:  staffResponses,
-		Total:  total,
-		Limit:  limit,
-		Offset: offset,
-	}, nil
-}
-	// ... rest unchanged
-
-	staffResponses := make([]dto.StaffResponse, len(users))
-	for i, user := range users {
-		balance, _ := s.userRepo.GetWalletBalance(user.ID)
-		todayCount, todayAmount, _ := s.userRepo.GetStaffTodayStats(user.ID)
-		maxCount, maxAmount, _ := s.userRepo.GetStaffDailyLimit(user.ID)
-		marginSetting, _ := s.marginService.GetStaffMarginSettings(user.ID)
-
-		staffResponses[i] = dto.StaffResponse{
-			ID:                        user.ID,
-			Email:                     user.Email,
-			Phone:                     user.Phone,
-			FullName:                  user.FullName,
-			Status:                    user.Status,
-			Avatar:                    user.Avatar,
-			TodayTransactionCount:     todayCount,
-			TodayTransactionAmount:    todayAmount,
-			WalletBalance:             balance,
-			DailyLimitCount:           maxCount,
-			DailyLimitAmount:          maxAmount,
-			MarginSchemeType:          "",
-			MarginValue:               0,
-			CreatedAt:                 user.CreatedAt,
-		}
-
-		if marginSetting != nil {
-			staffResponses[i].MarginSchemeType = marginSetting.SchemeType
-			if marginSetting.SchemeType == "MarginShare" {
-				staffResponses[i].MarginValue = marginSetting.GlobalMarginPercent
-			} else {
-				staffResponses[i].MarginValue = marginSetting.FixedAllowance
-			}
-		}
-	}
-
-	return &dto.ListUsersResponse{
-		Users:  staffResponses,
+	return &dto.ListStaffResponse{
+		Staff:  staffResponses,
 		Total:  total,
 		Limit:  limit,
 		Offset: offset,
@@ -357,7 +315,7 @@ func (s *UserService) GetStaff(ctx context.Context, staffID uint) (*dto.StaffDet
 		ID:                        user.ID,
 		Email:                     user.Email,
 		Phone:                     user.Phone,
-		FullName:                  user.FullName,
+		Name:                      user.Name,
 		Status:                    user.Status,
 		Avatar:                    user.Avatar,
 		Address:                   user.Address,
@@ -390,7 +348,7 @@ func (s *UserService) GetStaff(ctx context.Context, staffID uint) (*dto.StaffDet
 	}
 
 	if marginSetting != nil {
-		resp.MarginSetting.SchemeType = marginSetting.SchemeType
+		resp.MarginSetting.SchemeType = marginSetting.CommissionType
 		resp.MarginSetting.GlobalMarginPercent = marginSetting.GlobalMarginPercent
 		resp.MarginSetting.FixedAllowance = marginSetting.FixedAllowance
 	}
@@ -413,12 +371,18 @@ func (s *UserService) CreateStaff(ctx context.Context, mitraID uint, req *dto.St
 	user := &models.User{
 		Email:         req.Email,
 		Phone:         req.Phone,
-		FullName:      req.FullName,
+		Name:          req.Name,
 		Role:          "staff",
 		Status:        "active",
 		EmailVerified: false,
 		PhoneVerified: false,
 	}
+
+	// Hash password and PIN
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashedPIN, _ := bcrypt.GenerateFromPassword([]byte(req.Pin), bcrypt.DefaultCost)
+	user.PasswordHash = string(hashedPassword)
+	user.PinHash = string(hashedPIN)
 
 	if err := s.userRepo.Create(user); err != nil {
 		return nil, err
@@ -453,10 +417,10 @@ func (s *UserService) CreateStaff(ctx context.Context, mitraID uint, req *dto.St
 	// Set margin with Mitra ownership
 	if req.MarginSchemeType != "" {
 		setting := &models.StaffGlobalMarginSetting{
-			MitraID:       mitraID,
-			StaffID:      user.ID,
-			SchemeType:    req.MarginSchemeType,
-			IsActive:      true,
+			MitraID:        mitraID,
+			StaffID:       user.ID,
+			CommissionType: req.MarginSchemeType,
+			IsActive:       true,
 		}
 		if req.MarginSchemeType == "MarginShare" {
 			setting.GlobalMarginPercent = req.MarginValue
@@ -468,69 +432,6 @@ func (s *UserService) CreateStaff(ctx context.Context, mitraID uint, req *dto.St
 
 	s.invalidateUserCache(ctx, user.ID)
 
-	return s.GetStaff(ctx, user.ID)
-}
-	existing, _ = s.userRepo.FindByPhone(req.Phone)
-	if existing != nil {
-		return nil, errors.New("phone already exists")
-	}
-
-	user := &models.User{
-		Email:         req.Email,
-		Phone:         req.Phone,
-		FullName:      req.FullName,
-		Role:          "staff",
-		Status:        "active",
-		EmailVerified: false,
-		PhoneVerified: false,
-	}
-
-	if err := s.userRepo.Create(user); err != nil {
-		return nil, err
-	}
-
-	role, err := s.roleRepo.FindByName("staff")
-	if err != nil {
-		return nil, err
-	}
-	if err := s.roleRepo.AssignRole(user.ID, role.ID); err != nil {
-		return nil, err
-	}
-
-	// Daily limit
-	if req.DailyLimitCount != nil || req.DailyLimitAmount != nil {
-		limit := &models.DailyLimit{
-			UserID:   user.ID,
-			Date:     time.Now().Format("2006-01-02"),
-			MaxCount: 100,
-			MaxAmount: 10000000,
-		}
-		if req.DailyLimitCount != nil {
-			limit.MaxCount = *req.DailyLimitCount
-		}
-		if req.DailyLimitAmount != nil {
-			limit.MaxAmount = *req.DailyLimitAmount
-		}
-		s.db.Create(limit)
-	}
-
-	// Margin setting
-	if req.MarginSchemeType != "" {
-		setting := &models.StaffGlobalMarginSetting{
-			MitraID:      0,
-			StaffID:      user.ID,
-			SchemeType:    req.MarginSchemeType,
-			IsActive:      true,
-		}
-		if req.MarginSchemeType == "MarginShare" {
-			setting.GlobalMarginPercent = req.MarginValue
-		} else {
-			setting.FixedAllowance = req.MarginValue
-		}
-		s.db.Create(setting)
-	}
-
-	s.invalidateUserCache(ctx, user.ID)
 	return s.GetStaff(ctx, user.ID)
 }
 
@@ -541,8 +442,8 @@ func (s *UserService) UpdateStaff(ctx context.Context, staffID uint, req *dto.St
 		return nil, err
 	}
 
-	if req.FullName != "" {
-		user.FullName = req.FullName
+	if req.Name != "" {
+		user.Name = req.Name
 	}
 	if req.Phone != "" {
 		user.Phone = req.Phone
@@ -599,10 +500,10 @@ func (s *UserService) UpdateStaff(ctx context.Context, staffID uint, req *dto.St
 		}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			setting = &models.StaffGlobalMarginSetting{
-				MitraID:      0,
-				StaffID:      staffID,
-				SchemeType:    req.MarginSchemeType,
-				IsActive:      true,
+				MitraID:        0, // Should probably be passed or inferred
+				StaffID:       staffID,
+				CommissionType: req.MarginSchemeType,
+				IsActive:       true,
 			}
 			if req.MarginSchemeType == "MarginShare" {
 				setting.GlobalMarginPercent = req.MarginValue
@@ -611,7 +512,7 @@ func (s *UserService) UpdateStaff(ctx context.Context, staffID uint, req *dto.St
 			}
 			s.db.Create(setting)
 		} else {
-			setting.SchemeType = req.MarginSchemeType
+			setting.CommissionType = req.MarginSchemeType
 			setting.IsActive = true
 			if req.MarginSchemeType == "MarginShare" {
 				setting.GlobalMarginPercent = req.MarginValue

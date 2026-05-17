@@ -1,0 +1,8 @@
+_format_version: "3.0"
+services:
+    - name: auth-service
+      url: http://auth-service:8080
+      routes:
+          - name: auth-route
+            paths:
+                - /api/v1/auth

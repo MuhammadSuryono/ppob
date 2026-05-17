@@ -34,6 +34,7 @@ type DigiflazzProduct struct {
 	Code         string  `json:"code"`
 	Name         string  `json:"name"`
 	Price        float64 `json:"price"`
+	Brand        string  `json:"brand"`
 	Provider     string  `json:"provider"`
 	Status       string  `json:"status"`
 	Category     string  `json:"category"`
@@ -67,12 +68,13 @@ func (s *ProductSyncService) SyncPrepaidProducts(ctx context.Context) error {
 		categoryID, _ := s.getOrCreateCategory(ctx, p.Category)
 
 		var existing models.Product
-		err := s.db.Where("product_code = ?", p.Code).First(&existing).Error
+		err := s.db.Where("code = ?", p.Code).First(&existing).Error
 
 		if err == gorm.ErrRecordNotFound {
 			product := models.Product{
-				ProductCode: p.Code,
-				ProductName: p.Name,
+				Code:        p.Code,
+				Name:        p.Name,
+				Brand:       p.Brand,
 				CategoryID:  categoryID,
 				Provider:    p.Provider,
 				Price:       p.Price,
@@ -84,7 +86,8 @@ func (s *ProductSyncService) SyncPrepaidProducts(ctx context.Context) error {
 			}
 			s.db.Create(&product)
 		} else if err == nil {
-			existing.ProductName = p.Name
+			existing.Name = p.Name
+			existing.Brand = p.Brand
 			existing.CategoryID = categoryID
 			existing.Provider = p.Provider
 			existing.PriceAPI = p.Price
@@ -121,12 +124,13 @@ func (s *ProductSyncService) SyncPostpaidProducts(ctx context.Context) error {
 		categoryID, _ := s.getOrCreateCategory(ctx, p.Category)
 
 		var existing models.Product
-		err := s.db.Where("product_code = ?", p.Code).First(&existing).Error
+		err := s.db.Where("code = ?", p.Code).First(&existing).Error
 
 		if err == gorm.ErrRecordNotFound {
 			product := models.Product{
-				ProductCode: p.Code,
-				ProductName: p.Name,
+				Code:        p.Code,
+				Name:        p.Name,
+				Brand:       p.Brand,
 				CategoryID:  categoryID,
 				Provider:    p.Provider,
 				Price:       p.Price,
@@ -138,7 +142,8 @@ func (s *ProductSyncService) SyncPostpaidProducts(ctx context.Context) error {
 			}
 			s.db.Create(&product)
 		} else if err == nil {
-			existing.ProductName = p.Name
+			existing.Name = p.Name
+			existing.Brand = p.Brand
 			existing.CategoryID = categoryID
 			existing.Provider = p.Provider
 			existing.PriceAPI = p.Price
@@ -192,22 +197,22 @@ func (s *ProductSyncService) fetchDigiflazzProducts(ctx context.Context, product
 func (s *ProductSyncService) getMockProducts(productType string) []DigiflazzProduct {
 	if productType == "prepaid" {
 		return []DigiflazzProduct{
-			{Code: "PREPAID_SIMPATIS_5K", Name: "Simpati 5.000", Price: 5500, Provider: "Telkomsel", Status: "active", Category: "Pulsa"},
-			{Code: "PREPAID_SIMPATIS_10K", Name: "Simpati 10.000", Price: 10500, Provider: "Telkomsel", Status: "active", Category: "Pulsa"},
-			{Code: "PREPAID_SIMPATIS_20K", Name: "Simpati 20.000", Price: 20500, Provider: "Telkomsel", Status: "active", Category: "Pulsa"},
-			{Code: "PREPAID_AS_5K", Name: "AS 5.000", Price: 5500, Provider: "Telkomsel", Status: "active", Category: "Pulsa"},
-			{Code: "PREPAID_XL_10K", Name: "XL 10.000", Price: 11000, Provider: "XL", Status: "active", Category: "Pulsa"},
-			{Code: "PREPAID_AXIS_10K", Name: "Axis 10.000", Price: 11000, Provider: "Axis", Status: "active", Category: "Pulsa"},
-			{Code: "PREPAID_THREE_5K", Name: "Three 5.000", Price: 5500, Provider: "Three", Status: "active", Category: "Pulsa"},
-			{Code: "PREPAID_TOKEN_LISTRIK_20K", Name: "Token Listrik 20.000", Price: 21000, Provider: "PLN", Status: "active", Category: "Token Listrik"},
-			{Code: "PREPAID_TOKEN_LISTRIK_50K", Name: "Token Listrik 50.000", Price: 51000, Provider: "PLN", Status: "active", Category: "Token Listrik"},
-			{Code: "PREPAID_TOKEN_LISTRIK_100K", Name: "Token Listrik 100.000", Price: 101000, Provider: "PLN", Status: "active", Category: "Token Listrik"},
+			{Code: "PREPAID_SIMPATIS_5K", Name: "Simpati 5.000", Price: 5500, Brand: "TELKOMSEL", Provider: "Telkomsel", Status: "active", Category: "Pulsa"},
+			{Code: "PREPAID_SIMPATIS_10K", Name: "Simpati 10.000", Price: 10500, Brand: "TELKOMSEL", Provider: "Telkomsel", Status: "active", Category: "Pulsa"},
+			{Code: "PREPAID_SIMPATIS_20K", Name: "Simpati 20.000", Price: 20500, Brand: "TELKOMSEL", Provider: "Telkomsel", Status: "active", Category: "Pulsa"},
+			{Code: "PREPAID_AS_5K", Name: "AS 5.000", Price: 5500, Brand: "TELKOMSEL", Provider: "Telkomsel", Status: "active", Category: "Pulsa"},
+			{Code: "PREPAID_XL_10K", Name: "XL 10.000", Price: 11000, Brand: "XL", Provider: "XL", Status: "active", Category: "Pulsa"},
+			{Code: "PREPAID_AXIS_10K", Name: "Axis 10.000", Price: 11000, Brand: "AXIS", Provider: "Axis", Status: "active", Category: "Pulsa"},
+			{Code: "PREPAID_THREE_5K", Name: "Three 5.000", Price: 5500, Brand: "TRI", Provider: "Three", Status: "active", Category: "Pulsa"},
+			{Code: "PREPAID_TOKEN_LISTRIK_20K", Name: "Token Listrik 20.000", Price: 21000, Brand: "PLN", Provider: "PLN", Status: "active", Category: "Token Listrik"},
+			{Code: "PREPAID_TOKEN_LISTRIK_50K", Name: "Token Listrik 50.000", Price: 51000, Brand: "PLN", Provider: "PLN", Status: "active", Category: "Token Listrik"},
+			{Code: "PREPAID_TOKEN_LISTRIK_100K", Name: "Token Listrik 100.000", Price: 101000, Brand: "PLN", Provider: "PLN", Status: "active", Category: "Token Listrik"},
 		}
 	}
 	return []DigiflazzProduct{
-		{Code: "POSTPAID_TAGIHAN_TELKOM", Name: "Tagihan Telkomsel", Price: 0, Provider: "Telkomsel", Status: "active", Category: "Tagihan"},
-		{Code: "POSTPAID_TAGIHAN_XL", Name: "Tagihan XL", Price: 0, Provider: "XL", Status: "active", Category: "Tagihan"},
-		{Code: "POSTPAID_TAGIHAN_MOTOR", Name: "BPJS Kendaraan", Price: 0, Provider: "Samsung", Status: "active", Category: "Finance"},
+		{Code: "POSTPAID_TAGIHAN_TELKOM", Name: "Tagihan Telkomsel", Price: 0, Brand: "TELKOMSEL", Provider: "Telkomsel", Status: "active", Category: "Tagihan"},
+		{Code: "POSTPAID_TAGIHAN_XL", Name: "Tagihan XL", Price: 0, Brand: "XL", Provider: "XL", Status: "active", Category: "Tagihan"},
+		{Code: "POSTPAID_TAGIHAN_MOTOR", Name: "BPJS Kendaraan", Price: 0, Brand: "SAMUSUNG", Provider: "Samsung", Status: "active", Category: "Finance"},
 	}
 }
 
@@ -274,7 +279,7 @@ func NewPriceValidationService(db *gorm.DB) *PriceValidationService {
 
 type PriceValidationResult struct {
 	Valid           bool    `json:"valid"`
-	ProductCode     string  `json:"product_code"`
+	Code            string  `json:"code"`
 	SellingPrice    float64 `json:"selling_price"`
 	PlatformPrice   float64 `json:"platform_price"`
 	Margin          float64 `json:"margin"`
@@ -282,13 +287,13 @@ type PriceValidationResult struct {
 	ValidationError string  `json:"validation_error,omitempty"`
 }
 
-func (s *PriceValidationService) ValidatePrice(productCode string, sellingPrice float64) *PriceValidationResult {
+func (s *PriceValidationService) ValidatePrice(code string, sellingPrice float64) *PriceValidationResult {
 	var product models.Product
-	err := s.db.Where("product_code = ?", productCode).First(&product).Error
+	err := s.db.Where("code = ?", code).First(&product).Error
 	if err != nil {
 		return &PriceValidationResult{
 			Valid:           false,
-			ProductCode:     productCode,
+			Code:            code,
 			SellingPrice:    sellingPrice,
 			ValidationError: "Product not found",
 		}
@@ -303,7 +308,7 @@ func (s *PriceValidationService) ValidatePrice(productCode string, sellingPrice 
 
 	result := &PriceValidationResult{
 		Valid:           true,
-		ProductCode:     productCode,
+		Code:            code,
 		SellingPrice:    sellingPrice,
 		PlatformPrice:   platformPrice,
 		Margin:          margin,
@@ -323,8 +328,8 @@ func (s *PriceValidationService) ValidatePrice(productCode string, sellingPrice 
 
 func (s *PriceValidationService) BatchValidate(pricing map[string]float64) map[string]*PriceValidationResult {
 	results := make(map[string]*PriceValidationResult)
-	for productCode, price := range pricing {
-		results[productCode] = s.ValidatePrice(productCode, price)
+	for code, price := range pricing {
+		results[code] = s.ValidatePrice(code, price)
 	}
 	return results
 }

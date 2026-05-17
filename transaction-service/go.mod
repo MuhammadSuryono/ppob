@@ -3,6 +3,7 @@ module github.com/yontech/ppob/transaction-service
 go 1.21
 
 require (
+	github.com/alicebob/miniredis/v2 v2.38.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/google/uuid v1.6.0
@@ -51,6 +52,7 @@ require (
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
+	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.opentelemetry.io/otel/metric v1.21.0 // indirect
 	go.opentelemetry.io/otel/trace v1.21.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect

@@ -28,7 +28,7 @@ func (r *ProductRepository) FindByID(id uint) (*models.Product, error) {
 
 func (r *ProductRepository) FindByCode(code string) (*models.Product, error) {
 	var product models.Product
-	err := r.db.Where("product_code = ?", code).First(&product).Error
+	err := r.db.Where("code = ?", code).First(&product).Error
 	if err != nil {
 		return nil, err
 	}
@@ -43,13 +43,16 @@ func (r *ProductRepository) Delete(id uint) error {
 	return r.db.Delete(&models.Product{}, id).Error
 }
 
-func (r *ProductRepository) List(categoryID uint, status string, limit, offset int) ([]models.Product, int64, error) {
+func (r *ProductRepository) List(categoryID uint, brand string, status string, limit, offset int) ([]models.Product, int64, error) {
 	var products []models.Product
 	var total int64
 
 	query := r.db.Model(&models.Product{})
 	if categoryID > 0 {
 		query = query.Where("category_id = ?", categoryID)
+	}
+	if brand != "" {
+		query = query.Where("brand = ?", brand)
 	}
 	if status != "" {
 		query = query.Where("status = ?", status)
@@ -65,7 +68,7 @@ func (r *ProductRepository) Search(keyword string, limit, offset int) ([]models.
 	var products []models.Product
 	var total int64
 
-	query := r.db.Model(&models.Product{}).Where("product_name ILIKE ? OR product_code ILIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+	query := r.db.Model(&models.Product{}).Where("name ILIKE ? OR code ILIKE ?", "%"+keyword+"%", "%"+keyword+"%")
 	query.Count(&total)
 	err := query.Limit(limit).Offset(offset).Find(&products).Error
 

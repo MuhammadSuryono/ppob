@@ -365,6 +365,54 @@ Manages product catalog and synchronization with Digiflazz.
 
 ---
 
+### Detailed Endpoint Specifications
+
+---
+
+#### `GET /product/categories`
+
+**Description:** Lists all product categories with metadata for dynamic UI rendering.
+
+**Response Body:**
+```json
+{
+  "categories": [
+    {
+      "id": 1,
+      "name": "Pulsa",
+      "code": "pulsa",
+      "icon": "https://...",
+      "input_type": "NUMBER",
+      "input_label": "Nomor HP",
+      "placeholder": "08xxxxxxxxxx",
+      "validation_regex": "^[0-9]{10,14}$"
+    },
+    {
+      "id": 2,
+      "name": "PLN",
+      "code": "pln",
+      "icon": "https://...",
+      "input_type": "NUMBER",
+      "input_label": "ID Pelanggan",
+      "placeholder": "12 digit nomor meter",
+      "validation_regex": "^[0-9]{11,12}$"
+    }
+  ]
+}
+```
+
+**Field Explanation (Metadata):**
+| Field | Description |
+|---|---|
+| `input_type` | UI input type: `TEXT`, `NUMBER`, `PHONE`. |
+| `input_label` | Label to display above the input field. |
+| `placeholder` | Placeholder text for the input field. |
+| `validation_regex` | Regex pattern for frontend validation. |
+
+---
+
+---
+
 ## 4. Wallet Service
 **Base URL:** `https://fedora.sinauplatform.id/api/v1/wallet`
 
@@ -435,6 +483,33 @@ All services return errors in a standard JSON format:
 {
   "error": {
     "code": "TRANSACTION_INSUFFICIENT_BALANCE",
+    "message": "Saldo tidak mencukupi",
+    "details": { "required": 50000, "current": 25000 },
+    "trace_id": "uuid-string",
+    "timestamp": "2026-05-08T..."
+  }
+}
+```
+
+### Common Status Codes
+- `400 Bad Request`: Validation failure or business rule violation.
+- `401 Unauthorized`: Token expired or invalid.
+- `403 Forbidden`: Insufficient permissions or account locked.
+- `429 Too Many Requests`: Rate limit exceeded.
+- `502 Bad Gateway`: Digiflazz API error or timeout.
+- `503 Service Unavailable`: Circuit breaker open or system maintenance.
+
+---
+
+## Monitoring
+- `GET https://fedora.sinauplatform.id/api/v1/health/ready`: Liveness/Readiness probe for Kubernetes.
+- `GET https://fedora.sinauplatform.id/api/v1/metrics`: Prometheus metrics exporter.
+
+<br/>
+
+**Last Updated:** 2026-05-17
+ated:** 2026-05-09
+BALANCE",
     "message": "Saldo tidak mencukupi",
     "details": { "required": 50000, "current": 25000 },
     "trace_id": "uuid-string",

@@ -19,14 +19,14 @@ services:
             - REDIS_PORT=6379
             - GIN_MODE=debug
         # depends_on:
-        #   postgres:
-        #     condition: service_healthy
-        #   redis:
-        #     condition: service_healthy
+        #     postgres:
+        #         condition: service_healthy
+        #     redis:
+        #         condition: service_healthy
         networks:
-            - deployment_deployment_ppob-internal
+            - deployment_deployment_deployment_ppob-internal
         restart: unless-stopped
 
 networks:
-    deployment_deployment_ppob-internal:
+    deployment_deployment_deployment_ppob-internal:
         external: true

@@ -45,8 +45,9 @@ func (s *ProductService) GetProduct(ctx context.Context, id uint) (*dto.ProductR
 
 	return &dto.ProductResponse{
 		ID:          product.ID,
-		ProductCode: product.ProductCode,
-		ProductName: product.ProductName,
+		Code:        product.Code,
+		Name:        product.Name,
+		Brand:       product.Brand,
 		CategoryID:  product.CategoryID,
 		Provider:    product.Provider,
 		Price:       product.Price,
@@ -66,8 +67,9 @@ func (s *ProductService) GetProductByCode(ctx context.Context, code string) (*dt
 
 	return &dto.ProductResponse{
 		ID:          product.ID,
-		ProductCode: product.ProductCode,
-		ProductName: product.ProductName,
+		Code:        product.Code,
+		Name:        product.Name,
+		Brand:       product.Brand,
 		CategoryID:  product.CategoryID,
 		Provider:    product.Provider,
 		Price:       product.Price,
@@ -79,8 +81,8 @@ func (s *ProductService) GetProductByCode(ctx context.Context, code string) (*dt
 	}, nil
 }
 
-func (s *ProductService) ListProducts(ctx context.Context, categoryID uint, status string, limit, offset int) (*dto.ListProductsResponse, error) {
-	products, total, err := s.productRepo.List(categoryID, status, limit, offset)
+func (s *ProductService) ListProducts(ctx context.Context, categoryID uint, brand string, status string, limit, offset int) (*dto.ListProductsResponse, error) {
+	products, total, err := s.productRepo.List(categoryID, brand, status, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -89,8 +91,9 @@ func (s *ProductService) ListProducts(ctx context.Context, categoryID uint, stat
 	for i, p := range products {
 		responses[i] = dto.ProductResponse{
 			ID:          p.ID,
-			ProductCode: p.ProductCode,
-			ProductName: p.ProductName,
+			Code:        p.Code,
+			Name:        p.Name,
+			Brand:       p.Brand,
 			CategoryID:  p.CategoryID,
 			Provider:    p.Provider,
 			Price:       p.Price,
@@ -120,8 +123,9 @@ func (s *ProductService) SearchProducts(ctx context.Context, keyword string, lim
 	for i, p := range products {
 		responses[i] = dto.ProductResponse{
 			ID:          p.ID,
-			ProductCode: p.ProductCode,
-			ProductName: p.ProductName,
+			Code:        p.Code,
+			Name:        p.Name,
+			Brand:       p.Brand,
 			CategoryID:  p.CategoryID,
 			Provider:    p.Provider,
 			Price:       p.Price,
@@ -143,8 +147,9 @@ func (s *ProductService) SearchProducts(ctx context.Context, keyword string, lim
 
 func (s *ProductService) CreateProduct(ctx context.Context, req *dto.CreateProductRequest) (*dto.ProductResponse, error) {
 	product := &models.Product{
-		ProductCode: req.ProductCode,
-		ProductName: req.ProductName,
+		Code:        req.Code,
+		Name:        req.Name,
+		Brand:       req.Brand,
 		CategoryID:  req.CategoryID,
 		Provider:    req.Provider,
 		Price:       req.Price,
@@ -159,8 +164,9 @@ func (s *ProductService) CreateProduct(ctx context.Context, req *dto.CreateProdu
 
 	return &dto.ProductResponse{
 		ID:          product.ID,
-		ProductCode: product.ProductCode,
-		ProductName: product.ProductName,
+		Code:        product.Code,
+		Name:        product.Name,
+		Brand:       product.Brand,
 		CategoryID:  product.CategoryID,
 		Provider:    product.Provider,
 		Price:       product.Price,
@@ -177,8 +183,11 @@ func (s *ProductService) UpdateProduct(ctx context.Context, id uint, req *dto.Up
 		return nil, ErrProductNotFound
 	}
 
-	if req.ProductName != "" {
-		product.ProductName = req.ProductName
+	if req.Name != "" {
+		product.Name = req.Name
+	}
+	if req.Brand != "" {
+		product.Brand = req.Brand
 	}
 	if req.CategoryID > 0 {
 		product.CategoryID = req.CategoryID
@@ -205,8 +214,9 @@ func (s *ProductService) UpdateProduct(ctx context.Context, id uint, req *dto.Up
 
 	return &dto.ProductResponse{
 		ID:          product.ID,
-		ProductCode: product.ProductCode,
-		ProductName: product.ProductName,
+		Code:        product.Code,
+		Name:        product.Name,
+		Brand:       product.Brand,
 		CategoryID:  product.CategoryID,
 		Provider:    product.Provider,
 		Price:       product.Price,
@@ -235,13 +245,17 @@ func (s *ProductService) ListCategories(ctx context.Context) ([]dto.CategoryResp
 	responses := make([]dto.CategoryResponse, len(categories))
 	for i, c := range categories {
 		responses[i] = dto.CategoryResponse{
-			ID:          c.ID,
-			Name:        c.Name,
-			Code:        c.Code,
-			Description: c.Description,
-			Icon:        c.Icon,
-			SortOrder:   c.SortOrder,
-			Status:      c.Status,
+			ID:              c.ID,
+			Name:            c.Name,
+			Code:            c.Code,
+			Description:     c.Description,
+			Icon:            c.Icon,
+			SortOrder:       c.SortOrder,
+			Status:          c.Status,
+			InputType:       c.InputType,
+			InputLabel:      c.InputLabel,
+			Placeholder:     c.Placeholder,
+			ValidationRegex: c.ValidationRegex,
 		}
 	}
 
@@ -255,13 +269,17 @@ func (s *ProductService) GetCategory(ctx context.Context, id uint) (*dto.Categor
 	}
 
 	return &dto.CategoryResponse{
-		ID:          category.ID,
-		Name:        category.Name,
-		Code:        category.Code,
-		Description: category.Description,
-		Icon:        category.Icon,
-		SortOrder:   category.SortOrder,
-		Status:      category.Status,
+		ID:              category.ID,
+		Name:            category.Name,
+		Code:            category.Code,
+		Description:     category.Description,
+		Icon:            category.Icon,
+		SortOrder:       category.SortOrder,
+		Status:          category.Status,
+		InputType:       category.InputType,
+		InputLabel:      category.InputLabel,
+		Placeholder:     category.Placeholder,
+		ValidationRegex: category.ValidationRegex,
 	}, nil
 }
 
@@ -289,19 +307,35 @@ func (s *ProductService) UpdateCategory(ctx context.Context, id uint, req *dto.U
 	if req.Status != "" {
 		category.Status = req.Status
 	}
+	if req.InputType != "" {
+		category.InputType = req.InputType
+	}
+	if req.InputLabel != "" {
+		category.InputLabel = req.InputLabel
+	}
+	if req.Placeholder != "" {
+		category.Placeholder = req.Placeholder
+	}
+	if req.ValidationRegex != "" {
+		category.ValidationRegex = req.ValidationRegex
+	}
 
 	if err := s.categoryRepo.Update(category); err != nil {
 		return nil, err
 	}
 
 	return &dto.CategoryResponse{
-		ID:          category.ID,
-		Name:        category.Name,
-		Code:        category.Code,
-		Description: category.Description,
-		Icon:        category.Icon,
-		SortOrder:   category.SortOrder,
-		Status:      category.Status,
+		ID:              category.ID,
+		Name:            category.Name,
+		Code:            category.Code,
+		Description:     category.Description,
+		Icon:            category.Icon,
+		SortOrder:       category.SortOrder,
+		Status:          category.Status,
+		InputType:       category.InputType,
+		InputLabel:      category.InputLabel,
+		Placeholder:     category.Placeholder,
+		ValidationRegex: category.ValidationRegex,
 	}, nil
 }
 
@@ -316,12 +350,16 @@ func (s *ProductService) DeleteCategory(ctx context.Context, id uint) error {
 
 func (s *ProductService) CreateCategory(ctx context.Context, req *dto.CreateCategoryRequest) (*dto.CategoryResponse, error) {
 	category := &models.Category{
-		Name:        req.Name,
-		Code:        req.Code,
-		Description: req.Description,
-		Icon:        req.Icon,
-		SortOrder:   req.SortOrder,
-		Status:      "active",
+		Name:            req.Name,
+		Code:            req.Code,
+		Description:     req.Description,
+		Icon:            req.Icon,
+		SortOrder:       req.SortOrder,
+		Status:          "active",
+		InputType:       req.InputType,
+		InputLabel:      req.InputLabel,
+		Placeholder:     req.Placeholder,
+		ValidationRegex: req.ValidationRegex,
 	}
 
 	if err := s.categoryRepo.Create(category); err != nil {
@@ -329,12 +367,16 @@ func (s *ProductService) CreateCategory(ctx context.Context, req *dto.CreateCate
 	}
 
 	return &dto.CategoryResponse{
-		ID:          category.ID,
-		Name:        category.Name,
-		Code:        category.Code,
-		Description: category.Description,
-		Icon:        category.Icon,
-		SortOrder:   category.SortOrder,
-		Status:      category.Status,
+		ID:              category.ID,
+		Name:            category.Name,
+		Code:            category.Code,
+		Description:     category.Description,
+		Icon:            category.Icon,
+		SortOrder:       category.SortOrder,
+		Status:          category.Status,
+		InputType:       category.InputType,
+		InputLabel:      category.InputLabel,
+		Placeholder:     category.Placeholder,
+		ValidationRegex: category.ValidationRegex,
 	}, nil
 }

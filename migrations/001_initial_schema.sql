@@ -9,18 +9,19 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ============================================
 CREATE TABLE IF NOT EXISTS roles (
     id          BIGSERIAL PRIMARY KEY,
-    role_name   VARCHAR(50) UNIQUE NOT NULL,
+    name        VARCHAR(50) UNIQUE NOT NULL,
     description TEXT,
-    is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+    permissions TEXT,
+    status      VARCHAR(20) NOT NULL DEFAULT 'active',
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO roles (role_name, description, is_active) VALUES
-    ('Mitra', 'Mitra (Merchant/Agent)', TRUE),
-    ('Staff', 'Staff member working under Mitra', TRUE),
-    ('Admin', 'System administrator', TRUE)
-ON CONFLICT (role_name) DO NOTHING;
+INSERT INTO roles (name, description, permissions, status) VALUES
+    ('Mitra', 'Mitra (Merchant/Agent)', '', TRUE),
+    ('Staff', 'Staff member working under Mitra', '', TRUE),
+    ('Admin', 'System administrator', '', TRUE)
+ON CONFLICT (name) DO NOTHING;
 
 -- ============================================
 -- 2. users

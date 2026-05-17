@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS otp_codes (
     id          BIGSERIAL PRIMARY KEY,
-    user_id     BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    user_id     BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     phone       VARCHAR(20) NOT NULL,
     code        VARCHAR(10) NOT NULL,
     type        VARCHAR(20) NOT NULL DEFAULT 'verification',

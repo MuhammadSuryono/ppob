@@ -18,18 +18,19 @@ import (
 	"github.com/yontech/ppob/auth-service/internal/models"
 	"github.com/yontech/ppob/auth-service/internal/repository"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 var (
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrUserExists        = errors.New("user already exists")
-	ErrUserNotFound      = errors.New("user not found")
-	ErrInvalidOTP        = errors.New("invalid OTP")
-	ErrOTPExpired        = errors.New("OTP expired")
-	ErrInvalidToken      = errors.New("invalid token")
-	ErrTokenExpired      = errors.New("token expired")
+	ErrInvalidCredentials   = errors.New("invalid credentials")
+	ErrUserExists           = errors.New("user already exists")
+	ErrUserNotFound         = errors.New("user not found")
+	ErrInvalidOTP           = errors.New("invalid OTP")
+	ErrOTPExpired           = errors.New("OTP expired")
+	ErrInvalidToken         = errors.New("invalid token")
+	ErrTokenExpired         = errors.New("token expired")
 	ErrVerificationRequired = errors.New("OTP verification required")
-	ErrDeviceNotTrusted  = errors.New("device not trusted for PIN login")
+	ErrDeviceNotTrusted     = errors.New("device not trusted for PIN login")
 )
 
 type AuthService struct {
@@ -95,7 +96,7 @@ func (s *AuthService) VerifyPassword(ctx context.Context, req *dto.VerifyPasswor
 		return nil, ErrInvalidCredentials
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		return nil, ErrInvalidCredentials
 	}
 
@@ -120,7 +121,7 @@ func (s *AuthService) VerifyPINLogin(ctx context.Context, phone, pin, deviceID s
 		return nil, ErrDeviceNotTrusted
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PIN), []byte(pin)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PinHash), []byte(pin)); err != nil {
 		return nil, ErrInvalidCredentials
 	}
 
@@ -142,11 +143,11 @@ func (s *AuthService) VerifyCredential(ctx context.Context, req *dto.VerifyCrede
 	// Verify credential based on auth method
 	switch req.AuthMethod {
 	case "password":
-		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Value)); err != nil {
+		if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Value)); err != nil {
 			return nil, ErrInvalidCredentials
 		}
 	case "pin":
-		if err := bcrypt.CompareHashAndPassword([]byte(user.PIN), []byte(req.Value)); err != nil {
+		if err := bcrypt.CompareHashAndPassword([]byte(user.PinHash), []byte(req.Value)); err != nil {
 			return nil, ErrInvalidCredentials
 		}
 	default:
@@ -208,13 +209,13 @@ func (s *AuthService) completeAuth(ctx context.Context, user *models.User) (*dto
 	s.storeRefreshToken(ctx, user.ID, refreshToken, refreshExpiresAt)
 
 	return &dto.LoginResponse{
-		UserID:        user.ID,
-		Email:         user.Email,
-		Phone:         user.Phone,
-		FullName:      user.FullName,
-		Token:         accessToken,
-		RefreshToken:  refreshToken,
-		ExpiresAt:     accessExpiresAt.Unix(),
+		UserID:       user.ID,
+		Email:        user.Email,
+		Phone:        user.Phone,
+		Name:         user.Name,
+		Token:        accessToken,
+		RefreshToken: refreshToken,
+		ExpiresAt:    accessExpiresAt.Unix(),
 	}, nil
 }
 
@@ -241,41 +242,51 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) (*
 	}
 
 	user := &models.User{
-		Email:        req.Email,
-		Phone:        req.Phone,
-		Password:     string(hashedPassword),
-		FullName:    req.FullName,
-		PIN:          string(hashedPIN),
-		Role:         "user",
-		Status:       "active",
+		Email:         req.Email,
+		Phone:         req.Phone,
+		PasswordHash:  string(hashedPassword),
+		Name:          req.Name,
+		PinHash:       string(hashedPIN),
+		Role:          "Mitra",
+		Status:        "active",
 		EmailVerified: true, // OTP already verified
 		PhoneVerified: true, // OTP already verified
 	}
 
-	if err := s.userRepo.Create(user); err != nil {
-		return nil, fmt.Errorf("failed to create user: %w", err)
-	}
-
-	wallet := &models.Wallet{
-		UserID:   user.ID,
-		Balance: 0,
-		Status:  "active",
-	}
-	if err := s.walletRepo.Create(wallet); err != nil {
-		return nil, fmt.Errorf("failed to create wallet: %w", err)
-	}
-
-	if req.DeviceID != "" {
-		device := &models.DeviceFingerprint{
-			UserID:          user.ID,
-			FingerprintHash: req.DeviceID,
-			IsTrusted:       true, // Initial device after OTP is trusted
-			FirstSeen:       time.Now(),
-			LastSeen:        time.Now(),
+	err = s.userRepo.DB().Transaction(func(tx *gorm.DB) error {
+		txUserRepo := repository.NewUserRepository(tx)
+		if err := txUserRepo.Create(user); err != nil {
+			return fmt.Errorf("failed to create user: %w", err)
 		}
-		if err := s.deviceRepo.Create(device); err != nil {
-			fmt.Printf("Failed to create device trust record during registration for user %d: %v\n", user.ID, err)
+
+		wallet := &models.Wallet{
+			UserID:  user.ID,
+			Balance: 0,
+			Status:  "active",
 		}
+		txWalletRepo := repository.NewWalletRepository(tx)
+		if err := txWalletRepo.Create(wallet); err != nil {
+			return fmt.Errorf("failed to create wallet: %w", err)
+		}
+
+		if req.DeviceID != "" {
+			device := &models.DeviceFingerprint{
+				UserID:          user.ID,
+				FingerprintHash: req.DeviceID,
+				IsTrusted:       true, // Initial device after OTP is trusted
+				FirstSeen:       time.Now(),
+				LastSeen:        time.Now(),
+			}
+			txDeviceRepo := repository.NewDeviceRepository(tx)
+			if err := txDeviceRepo.Create(device); err != nil {
+				return fmt.Errorf("failed to create device trust record: %w", err)
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	// Consume verification flag
@@ -294,14 +305,14 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) (*
 	s.storeRefreshToken(ctx, user.ID, refreshToken, refreshExpiresAt)
 
 	return &dto.RegisterResponse{
-		UserID:            user.ID,
-		Email:             user.Email,
-		Phone:             user.Phone,
-		FullName:          user.FullName,
-		Token:             accessToken,
-		RefreshToken:      refreshToken,
-		ExpiresAt:         accessExpiresAt.Unix(),
-		RefreshExpiresAt:  refreshExpiresAt.Unix(),
+		UserID:           user.ID,
+		Email:            user.Email,
+		Phone:            user.Phone,
+		Name:             user.Name,
+		Token:            accessToken,
+		RefreshToken:     refreshToken,
+		ExpiresAt:        accessExpiresAt.Unix(),
+		RefreshExpiresAt: refreshExpiresAt.Unix(),
 	}, nil
 }
 
@@ -319,7 +330,7 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Lo
 		return nil, ErrInvalidCredentials
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		return nil, ErrInvalidCredentials
 	}
 
@@ -342,13 +353,13 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Lo
 	s.storeRefreshToken(ctx, user.ID, refreshToken, refreshExpiresAt)
 
 	return &dto.LoginResponse{
-		UserID:        user.ID,
-		Email:         user.Email,
-		Phone:         user.Phone,
-		FullName:      user.FullName,
-		Token:         accessToken,
-		RefreshToken:  refreshToken,
-		ExpiresAt:     accessExpiresAt.Unix(),
+		UserID:       user.ID,
+		Email:        user.Email,
+		Phone:        user.Phone,
+		Name:         user.Name,
+		Token:        accessToken,
+		RefreshToken: refreshToken,
+		ExpiresAt:    accessExpiresAt.Unix(),
 	}, nil
 }
 
@@ -459,7 +470,7 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID uint, oldPasswo
 		return ErrUserNotFound
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(oldPassword)); err != nil {
 		return ErrInvalidCredentials
 	}
 
@@ -468,7 +479,7 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID uint, oldPasswo
 		return fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	user.Password = string(hashedPassword)
+	user.PasswordHash = string(hashedPassword)
 	return s.userRepo.Update(user)
 }
 
@@ -478,7 +489,7 @@ func (s *AuthService) ChangePIN(ctx context.Context, userID uint, oldPIN, newPIN
 		return ErrUserNotFound
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PIN), []byte(oldPIN)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PinHash), []byte(oldPIN)); err != nil {
 		return ErrInvalidCredentials
 	}
 
@@ -487,8 +498,34 @@ func (s *AuthService) ChangePIN(ctx context.Context, userID uint, oldPIN, newPIN
 		return fmt.Errorf("failed to hash PIN: %w", err)
 	}
 
-	user.PIN = string(hashedPIN)
+	user.PinHash = string(hashedPIN)
 	return s.userRepo.Update(user)
+}
+
+func (s *AuthService) AuthorizeTransaction(ctx context.Context, userID uint, pin string) (*dto.AuthorizeResponse, error) {
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PinHash), []byte(pin)); err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	authorizeID := uuid.New().String()
+	ttl := 5 * time.Minute
+	expiresAt := time.Now().Add(ttl).Unix()
+
+	// Store in Redis: key "transaction_authorize:<authorizeID>" -> userID
+	key := fmt.Sprintf("transaction_authorize:%s", authorizeID)
+	if err := s.redis.Set(ctx, key, userID, ttl).Err(); err != nil {
+		return nil, fmt.Errorf("failed to store authorize id: %w", err)
+	}
+
+	return &dto.AuthorizeResponse{
+		AuthorizeID: authorizeID,
+		ExpiresAt:   expiresAt,
+	}, nil
 }
 
 func (s *AuthService) ValidateToken(tokenString string) (*dto.TokenClaims, error) {

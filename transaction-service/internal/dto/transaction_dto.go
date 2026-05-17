@@ -6,6 +6,7 @@ type CreateTransactionRequest struct {
 	ProductCode     string  `json:"product_code" binding:"required"`
 	CustomerNumber  string  `json:"customer_number" binding:"required"`
 	Amount          float64 `json:"amount" binding:"required,gt=0"`
+	AuthorizeID     string  `json:"authorize_id" binding:"required"`
 }
 
 type TransactionResponse struct {
@@ -53,6 +54,7 @@ type InitiateTransactionRequest struct {
 	Amount          float64 `json:"amount" binding:"required,gt=0"`
 	SellingPrice    float64 `json:"selling_price"`
 	IdempotencyKey  string  `json:"idempotency_key"`
+	AuthorizeID     string  `json:"authorize_id" binding:"required"`
 }
 
 type InitiateTransactionResponse struct {

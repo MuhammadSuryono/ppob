@@ -33,11 +33,15 @@ func (h *TransactionHandler) InitiateTransaction(c *gin.Context) {
 		ProductCode:    req.ProductCode,
 		CustomerNumber: req.CustomerNumber,
 		Amount:         req.Amount,
-	}, idempotencyKey)
+	}, idempotencyKey, req.AuthorizeID)
 
 	if err != nil {
 		if err == services.ErrIdempotencyKeyUsed {
 			errors.RespondWithError(c, errors.NewAppError("TRANSACTION_ALREADY_PROCESSING", nil))
+			return
+		}
+		if err == services.ErrUnauthorizedTransaction {
+			errors.RespondWithError(c, errors.NewAppError("AUTH_AUTHORIZE_INVALID", nil))
 			return
 		}
 		errors.RespondWithError(c, errors.NewAppError("SYSTEM_INTERNAL", nil))
@@ -58,8 +62,12 @@ func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 
 	idempotencyKey := c.GetHeader("Idempotency-Key")
 
-	resp, err := h.transactionService.InitiateTransaction(c.Request.Context(), userID.(uint), &req, idempotencyKey)
+	resp, err := h.transactionService.InitiateTransaction(c.Request.Context(), userID.(uint), &req, idempotencyKey, req.AuthorizeID)
 	if err != nil {
+		if err == services.ErrUnauthorizedTransaction {
+			errors.RespondWithError(c, errors.NewAppError("AUTH_AUTHORIZE_INVALID", nil))
+			return
+		}
 		errors.RespondWithError(c, errors.NewAppError("SYSTEM_INTERNAL", nil))
 		return
 	}

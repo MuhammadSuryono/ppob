@@ -3,9 +3,9 @@ package dto
 import "time"
 
 type RegisterRequest struct {
-	Email     string `json:"email" binding:"required,email"`
+	Email     string `json:"email"`
 	Phone     string `json:"phone" binding:"required,phone_id"`
-	FullName  string `json:"full_name" binding:"required,min=2,max=255"`
+	Name      string `json:"name"`
 	Password  string `json:"password" binding:"required,min=8,password_complex"`
 	PIN       string `json:"pin" binding:"required,pinformat"`
 	DeviceID  string `json:"device_id"`
@@ -16,7 +16,7 @@ type RegisterResponse struct {
 	UserID           uint   `json:"user_id"`
 	Email            string `json:"email"`
 	Phone            string `json:"phone"`
-	FullName         string `json:"full_name"`
+	Name             string `json:"full_name"`
 	Token            string `json:"token"`
 	RefreshToken     string `json:"refresh_token"`
 	ExpiresAt        int64  `json:"expires_at"`
@@ -31,8 +31,8 @@ type LoginRequest struct {
 }
 
 type InitiateAuthRequest struct {
-	Phone      string `json:"phone" binding:"required,phone_id"`
-	DeviceID   string `json:"device_id" binding:"required"`
+	Phone       string `json:"phone" binding:"required,phone_id"`
+	DeviceID    string `json:"device_id" binding:"required"`
 	Fingerprint string `json:"fingerprint"`
 }
 
@@ -51,13 +51,13 @@ type VerifyPasswordRequest struct {
 }
 
 type LoginResponse struct {
-	UserID      uint      `json:"user_id"`
-	Email       string    `json:"email"`
-	Phone       string    `json:"phone"`
-	FullName    string    `json:"full_name"`
-	Token       string    `json:"token"`
-	RefreshToken string   `json:"refresh_token"`
-	ExpiresAt   int64     `json:"expires_at"`
+	UserID       uint   `json:"user_id"`
+	Email        string `json:"email"`
+	Phone        string `json:"phone"`
+	Name         string `json:"full_name"`
+	Token        string `json:"token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresAt    int64  `json:"expires_at"`
 }
 
 type SendOTPRequest struct {
@@ -92,9 +92,9 @@ type VerifyCredentialRequest struct {
 }
 
 type PINLoginRequest struct {
-	Phone     string `json:"phone" binding:"required,phone_id"`
-	PIN       string `json:"pin" binding:"required,pinformat"`
-	DeviceID  string `json:"device_id" binding:"required"`
+	Phone    string `json:"phone" binding:"required,phone_id"`
+	PIN      string `json:"pin" binding:"required,pinformat"`
+	DeviceID string `json:"device_id" binding:"required"`
 }
 
 type RefreshTokenRequest struct {
@@ -102,8 +102,8 @@ type RefreshTokenRequest struct {
 }
 
 type RefreshTokenResponse struct {
-	Token       string `json:"token"`
-	ExpiresAt   int64  `json:"expires_at"`
+	Token     string `json:"token"`
+	ExpiresAt int64  `json:"expires_at"`
 }
 
 type ChangePasswordRequest struct {
@@ -114,6 +114,15 @@ type ChangePasswordRequest struct {
 type ChangePINRequest struct {
 	OldPIN string `json:"old_pin" binding:"required,pinformat"`
 	NewPIN string `json:"new_pin" binding:"required,pinformat"`
+}
+
+type AuthorizeRequest struct {
+	PIN string `json:"pin" binding:"required,pinformat"`
+}
+
+type AuthorizeResponse struct {
+	AuthorizeID string `json:"authorize_id"`
+	ExpiresAt   int64  `json:"expires_at"`
 }
 
 type ErrorResponse struct {
@@ -140,9 +149,9 @@ type LoginWithOTPRequest struct {
 }
 
 type LoginWithOTPResponse struct {
-	UserID    uint   `json:"user_id"`
-	NeedOTP   bool   `json:"need_otp"`
-	ExpiresAt int64  `json:"expires_at"`
+	UserID    uint  `json:"user_id"`
+	NeedOTP   bool  `json:"need_otp"`
+	ExpiresAt int64 `json:"expires_at"`
 }
 
 type TokenInfo struct {

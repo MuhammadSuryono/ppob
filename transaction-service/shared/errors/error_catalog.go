@@ -25,8 +25,10 @@ var ErrorCatalog = map[string]ErrorCode{
 	"AUTH_ACCOUNT_LOCKED":        {Code: "AUTH_ACCOUNT_LOCKED", Message: "Akun diblokir karena terlalu banyak percobaan PIN", HTTPStatus: 403, Retryable: false},
 	"AUTH_DEVICE_NOT_TRUSTED":    {Code: "AUTH_DEVICE_NOT_TRUSTED", Message: "Perangkat tidak terpercaya, silakan Otentikasi ulang", HTTPStatus: 403, Retryable: false},
 	"AUTH_INSUFFICIENT_PERMISSION": {Code: "AUTH_INSUFFICIENT_PERMISSION", Message: "Anda tidak memiliki izin untuk mengakses sumber daya ini", HTTPStatus: 403, Retryable: false},
+	"AUTH_AUTHORIZE_INVALID":      {Code: "AUTH_AUTHORIZE_INVALID", Message: "Otorisasi transaksi tidak valid atau kedaluwarsa", HTTPStatus: 401, Retryable: false},
 
-	// TRANSACTION Errors
+	// SYSTEM Errors
+
 	"TRANSACTION_INSUFFICIENT_BALANCE":   {Code: "TRANSACTION_INSUFFICIENT_BALANCE", Message: "Saldo tidak mencukupi", HTTPStatus: 400, Retryable: false},
 	"TRANSACTION_DAILY_LIMIT_EXCEEDED":     {Code: "TRANSACTION_DAILY_LIMIT_EXCEEDED", Message: "Limit harian transaksi tercapai", HTTPStatus: 403, Retryable: false},
 	"TRANSACTION_PRODUCT_INACTIVE":       {Code: "TRANSACTION_PRODUCT_INACTIVE", Message: "Produk tidak aktif", HTTPStatus: 400, Retryable: false},

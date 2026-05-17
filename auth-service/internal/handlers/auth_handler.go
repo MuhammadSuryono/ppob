@@ -107,7 +107,7 @@ func (h *AuthHandler) VerifyCredential(c *gin.Context) {
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		errors.BadRequest(c, "VALIDATION_MISSING_FIELD", "Field 'phone_number' wajib diisi")
+		errors.BadRequest(c, "VALIDATION_MISSING_FIELD", err.Error())
 		return
 	}
 
@@ -344,4 +344,33 @@ func (h *AuthHandler) ChangePIN(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "PIN changed successfully"})
+}
+
+func (h *AuthHandler) AuthorizeTransaction(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		errors.Unauthorized(c, "AUTH_UNAUTHORIZED", "User ID not found in token")
+		return
+	}
+
+	var req dto.AuthorizeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errors.BadRequest(c, "VALIDATION_ERROR", err.Error())
+		return
+	}
+
+	resp, err := h.authService.AuthorizeTransaction(c.Request.Context(), userID.(uint), req.PIN)
+	if err != nil {
+		switch {
+		case err == services.ErrInvalidCredentials:
+			errors.Unauthorized(c, "AUTH_INVALID_CREDENTIALS", "Invalid PIN")
+		case err == services.ErrUserNotFound:
+			errors.NotFound(c, "AUTH_USER_NOT_FOUND", "User not found")
+		default:
+			errors.InternalError(c, "SYSTEM_INTERNAL", err.Error())
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
 }

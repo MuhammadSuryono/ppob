@@ -3,7 +3,7 @@ package dto
 import "time"
 
 type UpdateUserRequest struct {
-	FullName    string     `json:"full_name"`
+	Name        string     `json:"full_name"`
 	Phone       string     `json:"phone"`
 	Avatar      string     `json:"avatar"`
 	Address     string     `json:"address"`
@@ -14,7 +14,7 @@ type UserResponse struct {
 	ID            uint       `json:"id"`
 	Email         string     `json:"email"`
 	Phone         string     `json:"phone"`
-	FullName      string     `json:"full_name"`
+	Name          string     `json:"full_name"`
 	Role          string     `json:"role"`
 	Status        string     `json:"status"`
 	Avatar        string     `json:"avatar"`
@@ -54,11 +54,18 @@ type ListUsersResponse struct {
 	Offset int            `json:"offset"`
 }
 
+type ListStaffResponse struct {
+	Staff  []StaffResponse `json:"staff"`
+	Total  int64           `json:"total"`
+	Limit  int             `json:"limit"`
+	Offset int             `json:"offset"`
+}
+
 type StaffResponse struct {
 	ID                          uint      `json:"id"`
 	Email                       string    `json:"email"`
 	Phone                       string    `json:"phone"`
-	FullName                    string    `json:"full_name"`
+	Name                        string    `json:"full_name"`
 	Status                      string    `json:"status"`
 	Avatar                      string    `json:"avatar"`
 	TodayTransactionCount       int       `json:"today_transaction_count"`
@@ -75,7 +82,7 @@ type StaffDetailResponse struct {
 	ID                          uint      `json:"id"`
 	Email                       string    `json:"email"`
 	Phone                       string    `json:"phone"`
-	FullName                    string    `json:"full_name"`
+	Name                        string    `json:"full_name"`
 	Status                      string    `json:"status"`
 	Avatar                      string    `json:"avatar"`
 	Address                     string    `json:"address"`
@@ -101,7 +108,7 @@ type StaffDetailResponse struct {
 type StaffCreateRequest struct {
 	Email        string `json:"email" binding:"required,email"`
 	Phone        string `json:"phone" binding:"required"`
-	FullName     string `json:"full_name" binding:"required"`
+	Name         string `json:"full_name" binding:"required"`
 	Password     string `json:"password" binding:"required,min=6"`
 	Pin          string `json:"pin" binding:"required,min=6"`
 	DailyLimitCount    *int     `json:"daily_limit_count"`
@@ -111,7 +118,7 @@ type StaffCreateRequest struct {
 }
 
 type StaffUpdateRequest struct {
-	FullName              string  `json:"full_name"`
+	Name                  string  `json:"full_name"`
 	Phone                 string  `json:"phone"`
 	Avatar                string  `json:"avatar"`
 	Address               string  `json:"address"`

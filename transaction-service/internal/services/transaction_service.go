@@ -32,6 +32,7 @@ var (
 	ErrTransactionCancelled = errors.New("transaction cancelled")
 	ErrHoldNotFound         = errors.New("hold not found for this transaction")
 	ErrHoldFailed           = errors.New("failed to place hold on wallet")
+	ErrUnauthorizedTransaction = errors.New("unauthorized transaction")
 )
 
 type TransactionState string
@@ -94,7 +95,18 @@ func (s *TransactionService) logStateTransition(ctx context.Context, tx *Transac
 	`, tx.UserID, "transaction_status_change", tx.ID, details)
 }
 
-func (s *TransactionService) InitiateTransaction(ctx context.Context, userID uint, req *dto.CreateTransactionRequest, idempotencyKey string) (*dto.TransactionResponse, error) {
+func (s *TransactionService) InitiateTransaction(ctx context.Context, userID uint, req *dto.CreateTransactionRequest, idempotencyKey string, authorizeID string) (*dto.TransactionResponse, error) {
+	// Validate AuthorizeID
+	if s.redis != nil {
+		authKey := fmt.Sprintf("transaction_authorize:%s", authorizeID)
+		storedUserID, err := s.redis.Get(ctx, authKey).Result()
+		if err != nil || storedUserID != fmt.Sprintf("%d", userID) {
+			return nil, ErrUnauthorizedTransaction
+		}
+		// Consume authorizeID (single-use)
+		s.redis.Del(ctx, authKey)
+	}
+
 	if idempotencyKey != "" {
 		existingKey := fmt.Sprintf("idempotency:%s", idempotencyKey)
 		existing, err := s.redis.Get(ctx, existingKey).Result()
@@ -591,7 +603,7 @@ func (s *TransactionService) GetReports(ctx context.Context, startDate, endDate 
 	}
 
 	// Get KPIs
-	kpiResult, err := s.transactionRepo.GetKPIs(startDate, endDate, reportUserID)
+	kpiResult, err := s.transactionRepo.GetKPIs(startDate, endDate, userID)
 	if err != nil {
 		return nil, err
 	}
