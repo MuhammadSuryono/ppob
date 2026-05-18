@@ -98,6 +98,15 @@ func (r *TransactionRepository) GetProductByID(ctx context.Context, productID ui
 	return &product, nil
 }
 
+func (r *TransactionRepository) GetProductByCode(ctx context.Context, code string) (*models.Product, error) {
+	var product models.Product
+	err := r.db.Where("code = ?", code).First(&product).Error
+	if err != nil {
+		return nil, err
+	}
+	return &product, nil
+}
+
 func (r *TransactionRepository) GetMitraProductPrice(ctx context.Context, mitraID uint, productCode string) (float64, error) {
 	return 0, nil // Not implemented
 }

@@ -3,18 +3,20 @@ package dto
 import "time"
 
 type ProductResponse struct {
-	ID          uint      `json:"id"`
-	Code        string    `json:"code"`
-	Name        string    `json:"name"`
-	Brand       string    `json:"brand"`
-	CategoryID  uint      `json:"category_id"`
-	Provider    string    `json:"provider"`
-	Price       float64   `json:"price"`
-	PriceAPI    float64   `json:"price_api"`
-	Stock       int       `json:"stock"`
-	Status      string    `json:"status"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID             uint      `json:"id"`
+	Code           string    `json:"code"`
+	Name           string    `json:"name"`
+	Brand          string    `json:"brand"`
+	CategoryID     uint      `json:"category_id"`
+	Provider       string    `json:"provider"`
+	Price          float64   `json:"price"`
+	PriceAPI       float64   `json:"price_api"`
+	OriginalPrice  float64   `json:"original_price"`
+	PlatformMargin float64   `json:"platform_margin"`
+	Stock          int       `json:"stock"`
+	Status         string    `json:"status"`
+	Description    string    `json:"description"`
+	CreatedAt      time.Time `json:"created_at"`
 }
 
 type CreateProductRequest struct {

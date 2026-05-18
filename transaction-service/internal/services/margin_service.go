@@ -15,6 +15,7 @@ import (
 var (
 	ErrProductNotFound     = errors.New("product not found")
 	ErrStaffNotFound       = errors.New("staff not found")
+	ErrNoMarginSetting    = errors.New("no margin setting found for staff")
 	ErrInvalidPrice        = errors.New("invalid price calculation")
 )
 
@@ -147,13 +148,13 @@ func (s *MarginService) CalculateTransactionMargin(userID uint, productCode stri
 }
 
 type WalletClient interface {
-	Credit(amount float64, referenceID, referenceType string) error
+	CreditWallet(walletID uint, amount float64, referenceID, referenceType string) error
 }
 
 type CommissionService struct {
-	db          *gorm.DB
-	marginSvc   *MarginService
-	walletSvc   WalletClient
+	db        *gorm.DB
+	marginSvc *MarginService
+	walletSvc WalletClient
 }
 
 func NewCommissionService(db *gorm.DB, marginSvc *MarginService, walletSvc WalletClient) *CommissionService {
@@ -164,7 +165,7 @@ func NewCommissionService(db *gorm.DB, marginSvc *MarginService, walletSvc Walle
 	}
 }
 
-func (s *CommissionService) CreateAndCreditCommission(ctx context.Context, userID uint, transactionID string, amount float64, commissionType string, level int) (*models.Commission, error) {
+func (s *CommissionService) CreateAndCreditCommission(ctx context.Context, userID uint, walletID uint, transactionID string, amount float64, commissionType string, level int) (*models.Commission, error) {
 	tx := s.db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -176,6 +177,7 @@ func (s *CommissionService) CreateAndCreditCommission(ctx context.Context, userI
 	txID, _ := strconv.ParseUint(transactionID, 10, 32)
 	commission := &models.Commission{
 		UserID:        userID,
+		WalletID:      &walletID,
 		TransactionID: uint(txID),
 		Amount:        amount,
 		Type:          commissionType,
@@ -191,7 +193,7 @@ func (s *CommissionService) CreateAndCreditCommission(ctx context.Context, userI
 
 	if s.walletSvc != nil {
 		referenceID := "commission_" + transactionID
-		if err := s.walletSvc.Credit(amount, referenceID, "commission"); err != nil {
+		if err := s.walletSvc.CreditWallet(walletID, amount, referenceID, "commission"); err != nil {
 			tx.Rollback()
 			return nil, err
 		}

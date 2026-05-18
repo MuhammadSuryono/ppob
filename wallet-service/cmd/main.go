@@ -75,16 +75,16 @@ func main() {
 	{
 		wallets := api.Group("/wallets")
 		{
-			wallets.GET("/:id/balance", walletHandler.GetBalance)
-			wallets.GET("/:id/balance-events", walletHandler.GetBalanceByEvents)
+			wallets.GET("/me/balance", walletHandler.GetBalance)
+			wallets.GET("/me/balance-events", walletHandler.GetBalanceByEvents)
 			wallets.POST("/:id/hold", walletHandler.PlaceHold)
 			wallets.POST("/:id/release-hold", walletHandler.ReleaseHold)
 			wallets.POST("/:id/debit", walletHandler.Debit)
 			wallets.POST("/:id/credit", walletHandler.Credit)
-			wallets.POST("/:id/topup", walletHandler.TopUp) // Mitra self top-up
+			wallets.POST("/me/topup", walletHandler.TopUp) // Mitra self top-up
 			wallets.POST("/transfer", walletHandler.Transfer)
 			wallets.POST("/staff/topup", walletHandler.TopUpStaff)
-			wallets.GET("/:id/events", walletHandler.GetEvents)
+			wallets.GET("/me/events", walletHandler.GetEvents)
 			wallets.GET("/:id/reconcile", walletHandler.Reconcile)
 		}
 		txHandlers := api.Group("/wallets/transactions")

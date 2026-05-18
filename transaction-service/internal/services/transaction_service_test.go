@@ -21,7 +21,7 @@ func setupTransactionTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("Failed to connect to test database: %v", err)
 	}
 
-	db.AutoMigrate(&models.Transaction{})
+	db.AutoMigrate(&models.Transaction{}, &models.Product{})
 	return db
 }
 
@@ -103,13 +103,24 @@ func TestTransactionService_InitiateTransaction(t *testing.T) {
 
 	transactionService := NewTransactionService(transactionRepo, marginRepo, nil, cfg, db)
 
+	// Add product to test DB
+	product := &models.Product{
+		Code:     "PREPAID_SIMPATIS_5K",
+		Name:     "Simpati 5000",
+		Price:    5500,
+		Status:   "active",
+		IsActive: true,
+	}
+	db.Create(product)
+
 	req := &dto.CreateTransactionRequest{
 		ProductCode:    "PREPAID_SIMPATIS_5K",
 		CustomerNumber: "081234567890",
 		Amount:         5500,
+		AuthorizeID:    "test-auth-id",
 	}
 
-	resp, err := transactionService.InitiateTransaction(context.Background(), 1, req, "", "test-auth-id")
+	resp, err := transactionService.InitiateTransaction(context.Background(), 1, req, "")
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -146,6 +157,16 @@ func TestTransactionService_InitiateTransaction_AuthorizeID_Success(t *testing.T
 
 	transactionService := NewTransactionService(transactionRepo, marginRepo, redisClient, cfg, db)
 
+	// Add product to test DB
+	product := &models.Product{
+		Code:     "PREPAID_SIMPATIS_5K",
+		Name:     "Simpati 5000",
+		Price:    5500,
+		Status:   "active",
+		IsActive: true,
+	}
+	db.Create(product)
+
 	userID := uint(1)
 	authorizeID := "valid-auth-id"
 	s.Set(fmt.Sprintf("transaction_authorize:%s", authorizeID), fmt.Sprintf("%d", userID))
@@ -154,9 +175,10 @@ func TestTransactionService_InitiateTransaction_AuthorizeID_Success(t *testing.T
 		ProductCode:    "PREPAID_SIMPATIS_5K",
 		CustomerNumber: "081234567890",
 		Amount:         5500,
+		AuthorizeID:    authorizeID,
 	}
 
-	resp, err := transactionService.InitiateTransaction(context.Background(), userID, req, "", authorizeID)
+	resp, err := transactionService.InitiateTransaction(context.Background(), userID, req, "")
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -198,9 +220,10 @@ func TestTransactionService_InitiateTransaction_AuthorizeID_Invalid(t *testing.T
 		ProductCode:    "PREPAID_SIMPATIS_5K",
 		CustomerNumber: "081234567890",
 		Amount:         5500,
+		AuthorizeID:    authorizeID,
 	}
 
-	_, err = transactionService.InitiateTransaction(context.Background(), userID, req, "", authorizeID)
+	_, err = transactionService.InitiateTransaction(context.Background(), userID, req, "")
 	if err != ErrUnauthorizedTransaction {
 		t.Fatalf("Expected ErrUnauthorizedTransaction, got %v", err)
 	}

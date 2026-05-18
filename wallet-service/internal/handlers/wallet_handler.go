@@ -19,14 +19,13 @@ func NewWalletHandler(walletService *services.WalletService) *WalletHandler {
 }
 
 func (h *WalletHandler) GetBalance(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
-	if err != nil {
-		errors.RespondWithError(c, errors.NewAppError("VALIDATION_MISSING_FIELD", map[string]interface{}{"field": "id"}))
+	userID, exists := c.Get("user_id")
+	if !exists {
+		errors.RespondWithError(c, errors.NewAppError("AUTH_INSUFFICIENT_PERMISSION", nil))
 		return
 	}
 
-	resp, err := h.walletService.GetBalance(c.Request.Context(), uint(id))
+	resp, err := h.walletService.GetBalance(c.Request.Context(), userID.(uint))
 	if err != nil {
 		errors.RespondWithError(c, errors.NewAppError("TRANSACTION_NOT_FOUND", nil))
 		return
@@ -36,14 +35,13 @@ func (h *WalletHandler) GetBalance(c *gin.Context) {
 }
 
 func (h *WalletHandler) GetBalanceByEvents(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
-	if err != nil {
-		errors.RespondWithError(c, errors.NewAppError("VALIDATION_MISSING_FIELD", map[string]interface{}{"field": "id"}))
+	userID, exists := c.Get("user_id")
+	if !exists {
+		errors.RespondWithError(c, errors.NewAppError("AUTH_INSUFFICIENT_PERMISSION", nil))
 		return
 	}
 
-	resp, err := h.walletService.GetBalanceByEvents(c.Request.Context(), uint(id))
+	resp, err := h.walletService.GetBalanceByEvents(c.Request.Context(), userID.(uint))
 	if err != nil {
 		errors.RespondWithError(c, errors.NewAppError("TRANSACTION_NOT_FOUND", nil))
 		return
@@ -181,15 +179,8 @@ func (h *WalletHandler) TopUpStaff(c *gin.Context) {
 
 // TopUp allows Mitra to top up their own wallet
 func (h *WalletHandler) TopUp(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
-	if err != nil {
-		errors.RespondWithError(c, errors.NewAppError("VALIDATION_MISSING_FIELD", map[string]interface{}{"field": "id"}))
-		return
-	}
-
-	userID, _ := c.Get("user_id")
-	if uint(id) != userID.(uint) {
+	userID, exists := c.Get("user_id")
+	if !exists {
 		errors.RespondWithError(c, errors.NewAppError("AUTH_INSUFFICIENT_PERMISSION", nil))
 		return
 	}
@@ -209,17 +200,16 @@ func (h *WalletHandler) TopUp(c *gin.Context) {
 }
 
 func (h *WalletHandler) GetEvents(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
-	if err != nil {
-		errors.RespondWithError(c, errors.NewAppError("VALIDATION_MISSING_FIELD", map[string]interface{}{"field": "id"}))
+	userID, exists := c.Get("user_id")
+	if !exists {
+		errors.RespondWithError(c, errors.NewAppError("AUTH_INSUFFICIENT_PERMISSION", nil))
 		return
 	}
 
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 
-	resp, err := h.walletService.GetEvents(c.Request.Context(), uint(id), limit, offset)
+	resp, err := h.walletService.GetEvents(c.Request.Context(), userID.(uint), limit, offset)
 	if err != nil {
 		errors.RespondWithError(c, errors.NewAppError("SYSTEM_INTERNAL", nil))
 		return

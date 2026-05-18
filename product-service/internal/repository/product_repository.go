@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"strings"
+
 	"github.com/yontech/ppob/product-service/internal/models"
 	"gorm.io/gorm"
 )
@@ -52,7 +54,7 @@ func (r *ProductRepository) List(categoryID uint, brand string, status string, l
 		query = query.Where("category_id = ?", categoryID)
 	}
 	if brand != "" {
-		query = query.Where("brand = ?", brand)
+		query = query.Where("lower(brand) = ?", strings.ToLower(brand))
 	}
 	if status != "" {
 		query = query.Where("status = ?", status)
@@ -62,6 +64,36 @@ func (r *ProductRepository) List(categoryID uint, brand string, status string, l
 	err := query.Order("created_at DESC").Limit(limit).Offset(offset).Find(&products).Error
 
 	return products, total, err
+}
+
+type ProductWithPrice struct {
+	models.Product
+	MitraSellingPrice *float64 `gorm:"column:mitra_selling_price"`
+}
+
+func (r *ProductRepository) ListWithMitraPrice(mitraID uint, categoryID uint, brand string, status string, limit, offset int) ([]ProductWithPrice, int64, error) {
+	var results []ProductWithPrice
+	var total int64
+
+	query := r.db.Table("products").
+		Select("products.*, mpp.selling_price as mitra_selling_price").
+		Joins("LEFT JOIN mitra_product_prices mpp ON mpp.product_id = products.id AND mpp.mitra_id = ?", mitraID).
+		Where("products.deleted_at IS NULL")
+
+	if categoryID > 0 {
+		query = query.Where("products.category_id = ?", categoryID)
+	}
+	if brand != "" {
+		query = query.Where("lower(products.brand) = ?", strings.ToLower(brand))
+	}
+	if status != "" {
+		query = query.Where("products.status = ?", status)
+	}
+
+	query.Count(&total)
+	err := query.Order("products.created_at DESC").Limit(limit).Offset(offset).Scan(&results).Error
+
+	return results, total, err
 }
 
 func (r *ProductRepository) Search(keyword string, limit, offset int) ([]models.Product, int64, error) {

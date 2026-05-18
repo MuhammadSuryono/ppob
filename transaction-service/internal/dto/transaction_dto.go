@@ -6,6 +6,7 @@ type CreateTransactionRequest struct {
 	ProductCode     string  `json:"product_code" binding:"required"`
 	CustomerNumber  string  `json:"customer_number" binding:"required"`
 	Amount          float64 `json:"amount" binding:"required,gt=0"`
+	SellingPrice    float64 `json:"selling_price"`
 	AuthorizeID     string  `json:"authorize_id" binding:"required"`
 }
 

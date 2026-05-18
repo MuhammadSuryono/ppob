@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -20,19 +21,20 @@ import (
 )
 
 var (
-	ErrTransactionNotFound  = errors.New("transaction not found")
-	ErrInvalidAmount        = errors.New("invalid amount")
-	ErrTxProductNotFound    = errors.New("product not found")
-	ErrInvalidState         = errors.New("invalid state transition")
-	ErrIdempotencyKeyUsed   = errors.New("idempotency key already used")
-	ErrMissingRefID         = errors.New("ref_id required for transition")
-	ErrAmountMustBePositive = errors.New("amount must be greater than 0")
+	ErrTransactionNotFound      = errors.New("transaction not found")
+	ErrInvalidAmount            = errors.New("invalid amount")
+	ErrTxProductNotFound        = errors.New("product not found")
+	ErrProductInactive          = errors.New("product inactive")
+	ErrInvalidState             = errors.New("invalid state transition")
+	ErrIdempotencyKeyUsed       = errors.New("idempotency key already used")
+	ErrMissingRefID             = errors.New("ref_id required for transition")
+	ErrAmountMustBePositive     = errors.New("amount must be greater than 0")
 	ErrCannotSucceedAfterExpiry = errors.New("cannot succeed after expiry; should be Expired first")
-	ErrRefundWindowClosed   = errors.New("refund window closed (24h)")
-	ErrTransactionCancelled = errors.New("transaction cancelled")
-	ErrHoldNotFound         = errors.New("hold not found for this transaction")
-	ErrHoldFailed           = errors.New("failed to place hold on wallet")
-	ErrUnauthorizedTransaction = errors.New("unauthorized transaction")
+	ErrRefundWindowClosed       = errors.New("refund window closed (24h)")
+	ErrTransactionCancelled     = errors.New("transaction cancelled")
+	ErrHoldNotFound             = errors.New("hold not found for this transaction")
+	ErrHoldFailed               = errors.New("failed to place hold on wallet")
+	ErrUnauthorizedTransaction  = errors.New("unauthorized transaction")
 )
 
 type TransactionState string
@@ -82,11 +84,11 @@ func (s *TransactionService) logStateTransition(ctx context.Context, tx *Transac
 	}
 
 	details, _ := json.Marshal(map[string]interface{}{
-		"old_status":     oldStatus,
-		"new_status":     newStatus,
-		"reason":         reason,
-		"provider_ref":  tx.ProviderRef,
-		"digiflazz_rc":  tx.DigiflazzRC,
+		"old_status":   oldStatus,
+		"new_status":   newStatus,
+		"reason":       reason,
+		"provider_ref": tx.ProviderRef,
+		"digiflazz_rc": tx.DigiflazzRC,
 	})
 
 	s.db.WithContext(ctx).Exec(`
@@ -95,10 +97,10 @@ func (s *TransactionService) logStateTransition(ctx context.Context, tx *Transac
 	`, tx.UserID, "transaction_status_change", tx.ID, details)
 }
 
-func (s *TransactionService) InitiateTransaction(ctx context.Context, userID uint, req *dto.CreateTransactionRequest, idempotencyKey string, authorizeID string) (*dto.TransactionResponse, error) {
+func (s *TransactionService) InitiateTransaction(ctx context.Context, userID uint, req *dto.CreateTransactionRequest, idempotencyKey string) (*dto.TransactionResponse, error) {
 	// Validate AuthorizeID
 	if s.redis != nil {
-		authKey := fmt.Sprintf("transaction_authorize:%s", authorizeID)
+		authKey := fmt.Sprintf("transaction_authorize:%s", req.AuthorizeID)
 		storedUserID, err := s.redis.Get(ctx, authKey).Result()
 		if err != nil || storedUserID != fmt.Sprintf("%d", userID) {
 			return nil, ErrUnauthorizedTransaction
@@ -118,19 +120,34 @@ func (s *TransactionService) InitiateTransaction(ctx context.Context, userID uin
 		}
 	}
 
-	margin, _ := s.marginRepo.GetMarkupByProductCode(req.ProductCode)
-	price := req.Amount + margin
+	product, err := s.transactionRepo.GetProductByCode(ctx, req.ProductCode)
+	if err != nil || product == nil {
+		return nil, ErrTxProductNotFound
+	}
+	if !product.IsActive || product.Status != "active" {
+		return nil, ErrProductInactive
+	}
+
+	platformPrice := product.Price
+	sellingPrice := req.SellingPrice
+	if sellingPrice <= 0 {
+		sellingPrice = platformPrice
+	}
+	margin := sellingPrice - platformPrice
+
 	transactionID := uuid.New().String()
 
 	tx := &models.Transaction{
-		TransactionID:   transactionID,
-		UserID:          userID,
-		ProductCode:     req.ProductCode,
-		CustomerNumber:  req.CustomerNumber,
-		Amount:          req.Amount,
-		Price:           price,
-		Margin:          margin,
-		Status:          string(StateInitiated),
+		TransactionID:  transactionID,
+		UserID:         userID,
+		ProductID:      product.ID,
+		ProductCode:    req.ProductCode,
+		CustomerNumber: req.CustomerNumber,
+		Amount:         platformPrice,
+		Price:          platformPrice,
+		SellingPrice:   sellingPrice,
+		Margin:         margin,
+		Status:         string(StateInitiated),
 	}
 
 	if err := s.transactionRepo.Create(tx); err != nil {
@@ -195,6 +212,10 @@ func (s *TransactionService) UpdateTransactionStatus(ctx context.Context, id uin
 		return nil, err
 	}
 
+	if newState == StateSuccess {
+		s.publishCommissionTask(ctx, tx.TransactionID)
+	}
+
 	s.logStateTransition(ctx, tx, oldStatus, string(newState), "api_update")
 
 	return s.toResponse(tx), nil
@@ -225,20 +246,41 @@ func (s *TransactionService) UpdateTransactionStatusByProviderRef(ctx context.Co
 		return nil, err
 	}
 
+	if newState == StateSuccess {
+		s.publishCommissionTask(ctx, tx.TransactionID)
+	}
+
 	s.logStateTransition(ctx, tx, oldStatus, string(newState), "webhook")
 
 	return s.toResponse(tx), nil
 }
 
+func (s *TransactionService) publishCommissionTask(ctx context.Context, transactionID string) {
+	if s.redis == nil {
+		return
+	}
+
+	task := map[string]string{
+		"transaction_id": transactionID,
+	}
+	payload, _ := json.Marshal(task)
+
+	if err := s.redis.RPush(ctx, CommissionQueueKey, payload).Err(); err != nil {
+		log.Printf("Failed to publish commission task for %s: %v", transactionID, err)
+	} else {
+		log.Printf("Commission task published for %s", transactionID)
+	}
+}
+
 func (s *TransactionService) isValidTransition(from, to TransactionState) bool {
 	validTransitions := map[TransactionState][]TransactionState{
-		StateInitiated:  {StatePending, StateSuccess, StateFailed},
-		StatePending:    {StateSuccess, StateFailed, StateExpired, StateCancelled},
-		StateSuccess:    {StateRefunded},
-		StateFailed:     {},
-		StateExpired:    {},
-		StateCancelled:  {},
-		StateRefunded:   {},
+		StateInitiated: {StatePending, StateSuccess, StateFailed},
+		StatePending:   {StateSuccess, StateFailed, StateExpired, StateCancelled},
+		StateSuccess:   {StateRefunded},
+		StateFailed:    {},
+		StateExpired:   {},
+		StateCancelled: {},
+		StateRefunded:  {},
 	}
 
 	allowed, exists := validTransitions[from]
@@ -397,11 +439,11 @@ func (s *TransactionService) pushToDeadLetterQueue(ctx context.Context, refID, t
 		return
 	}
 	entry := map[string]interface{}{
-		"ref_id":     refID,
-		"trx_id":     trxID,
-		"payload":    payload,
-		"error":      errorMsg,
-		"failed_at":  time.Now().Unix(),
+		"ref_id":    refID,
+		"trx_id":    trxID,
+		"payload":   payload,
+		"error":     errorMsg,
+		"failed_at": time.Now().Unix(),
 	}
 	entryJSON, _ := json.Marshal(entry)
 	s.redis.LPush(ctx, "digiflazz_webhook_dlq", entryJSON)
@@ -609,12 +651,12 @@ func (s *TransactionService) GetReports(ctx context.Context, startDate, endDate 
 	}
 
 	kpi := dto.ReportKPIResponse{
-		TotalSales:         kpiResult.TotalSales,
-		PlatformProfit:     kpiResult.PlatformProfit,
-		TransactionCount:   kpiResult.TotalCount,
-		SuccessRate:        s.calculateSuccessRate(kpiResult.SuccessCount, kpiResult.TotalCount),
-		PeriodStart:        startDate,
-		PeriodEnd:          endDate,
+		TotalSales:       kpiResult.TotalSales,
+		PlatformProfit:   kpiResult.PlatformProfit,
+		TransactionCount: kpiResult.TotalCount,
+		SuccessRate:      s.calculateSuccessRate(kpiResult.SuccessCount, kpiResult.TotalCount),
+		PeriodStart:      startDate,
+		PeriodEnd:        endDate,
 	}
 	// Staff count from result
 	kpi.StaffCount = int(kpiResult.StaffCount)
@@ -645,15 +687,15 @@ func (s *TransactionService) GetReports(ctx context.Context, startDate, endDate 
 			StaffName:        item.StaffName,
 			TransactionCount: item.TransactionCount,
 			TotalSales:       0, // can compute from transactions if needed
-			TotalCommission:   item.TotalCommission,
-			SuccessRate:       0, // could compute from commissions
+			TotalCommission:  item.TotalCommission,
+			SuccessRate:      0, // could compute from commissions
 		}
 	}
 
 	return &dto.ReportsResponse{
-		KPIs:              []dto.ReportKPIResponse{kpi},
-		SalesTrend:        salesTrendItems,
-		StaffPerformance:  staffPerfItems,
+		KPIs:             []dto.ReportKPIResponse{kpi},
+		SalesTrend:       salesTrendItems,
+		StaffPerformance: staffPerfItems,
 	}, nil
 }
 

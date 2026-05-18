@@ -81,6 +81,50 @@ func (s *ProductService) GetProductByCode(ctx context.Context, code string) (*dt
 	}, nil
 }
 
+func (s *ProductService) ListProductsWithPrice(ctx context.Context, userID uint, role string, categoryID uint, brand string, status string, limit, offset int) (*dto.ListProductsResponse, error) {
+	// If Mitra, fetch with custom prices
+	if role == "Mitra" || role == "Staff" {
+		products, total, err := s.productRepo.ListWithMitraPrice(userID, categoryID, brand, status, limit, offset)
+		if err != nil {
+			return nil, err
+		}
+
+		responses := make([]dto.ProductResponse, len(products))
+		for i, p := range products {
+			finalPrice := p.Price // Default platform price
+			if p.MitraSellingPrice != nil && *p.MitraSellingPrice > 0 {
+				finalPrice = *p.MitraSellingPrice
+			}
+
+			responses[i] = dto.ProductResponse{
+				ID:             p.ID,
+				Code:           p.Code,
+				Name:           p.Name,
+				Brand:          p.Brand,
+				CategoryID:     p.CategoryID,
+				Provider:       p.Provider,
+				Price:          finalPrice,
+				OriginalPrice:  p.OriginalPrice,
+				PlatformMargin: p.PlatformMargin,
+				PriceAPI:       p.PriceAPI,
+				Status:         p.Status,
+				Description:    p.Description,
+				CreatedAt:      p.CreatedAt,
+			}
+		}
+
+		return &dto.ListProductsResponse{
+			Products: responses,
+			Total:    total,
+			Limit:    limit,
+			Offset:   offset,
+		}, nil
+	}
+
+	// Default list for Admin or Public
+	return s.ListProducts(ctx, categoryID, brand, status, limit, offset)
+}
+
 func (s *ProductService) ListProducts(ctx context.Context, categoryID uint, brand string, status string, limit, offset int) (*dto.ListProductsResponse, error) {
 	products, total, err := s.productRepo.List(categoryID, brand, status, limit, offset)
 	if err != nil {

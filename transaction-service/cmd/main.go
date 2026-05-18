@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/yontech/ppob/transaction-service/config"
+	"github.com/yontech/ppob/transaction-service/internal/clients"
 	"github.com/yontech/ppob/transaction-service/internal/handlers"
 	"github.com/yontech/ppob/transaction-service/internal/middleware"
 	"github.com/yontech/ppob/transaction-service/internal/models"
@@ -106,9 +107,16 @@ func main() {
 
 	transactionRepo := repository.NewTransactionRepository(db)
 	marginRepo := repository.NewMarginRepository(db)
+	marginService := services.NewMarginService(db, cfg)
 
 	transactionService := services.NewTransactionService(transactionRepo, marginRepo, redisClient, cfg, db)
 	transactionHandler := handlers.NewTransactionHandler(transactionService)
+
+	// Commission System Wiring (Async)
+	walletClient := clients.NewWalletClient("http://wallet-service:8080") // Internal URL
+	commissionService := services.NewCommissionService(db, marginService, walletClient)
+	commissionWorker := services.NewCommissionWorker(redisClient, transactionRepo, marginService, commissionService)
+	go commissionWorker.Start(context.Background())
 
 	reconciliationService := services.NewReconciliationService(db)
 	startReconciliationCron(reconciliationService)

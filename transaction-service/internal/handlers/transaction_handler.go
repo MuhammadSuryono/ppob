@@ -33,7 +33,9 @@ func (h *TransactionHandler) InitiateTransaction(c *gin.Context) {
 		ProductCode:    req.ProductCode,
 		CustomerNumber: req.CustomerNumber,
 		Amount:         req.Amount,
-	}, idempotencyKey, req.AuthorizeID)
+		SellingPrice:   req.SellingPrice,
+		AuthorizeID:    req.AuthorizeID,
+	}, idempotencyKey)
 
 	if err != nil {
 		if err == services.ErrIdempotencyKeyUsed {
@@ -62,7 +64,7 @@ func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 
 	idempotencyKey := c.GetHeader("Idempotency-Key")
 
-	resp, err := h.transactionService.InitiateTransaction(c.Request.Context(), userID.(uint), &req, idempotencyKey, req.AuthorizeID)
+	resp, err := h.transactionService.InitiateTransaction(c.Request.Context(), userID.(uint), &req, idempotencyKey)
 	if err != nil {
 		if err == services.ErrUnauthorizedTransaction {
 			errors.RespondWithError(c, errors.NewAppError("AUTH_AUTHORIZE_INVALID", nil))

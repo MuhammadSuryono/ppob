@@ -422,16 +422,16 @@ Financial ledger handling balance, holds, and transfers.
 
 | Method | Endpoint | Full URL | Auth | Description |
 |:---|:---|:---|:---|:---|
-| `GET` | `/:id/balance` | `.../wallet/:id/balance` | Bearer | Get current available and held balance. |
-| `GET` | `/:id/balance-events` | `.../wallet/:id/balance-events` | Bearer | Get balance reconstructed from events. |
+| `GET` | `/me/balance` | `.../wallet/me/balance` | Bearer | Get current available and held balance for logged-in user. |
+| `GET` | `/me/balance-events` | `.../wallet/me/balance-events` | Bearer | Get balance reconstructed from events for logged-in user. |
 | `POST` | `/:id/hold` | `.../wallet/:id/hold` | Bearer | Place a hold on funds for a transaction. |
 | `POST` | `/:id/release-hold` | `.../wallet/:id/release-hold` | Bearer | Release a previously held amount. |
 | `POST` | `/:id/debit` | `.../wallet/:id/debit` | Bearer | Direct debit from wallet. |
 | `POST` | `/:id/credit` | `.../wallet/:id/credit` | Bearer | Direct credit to wallet. |
 | `POST` | `/transfer` | `.../wallet/transfer` | Bearer | Internal transfer between users. |
 | `POST` | `/staff/topup` | `.../wallet/staff/topup` | Bearer | Mitra tops up linked Staff wallet. |
-| `POST` | `/:id/topup` | `.../wallet/:id/topup` | Bearer | Mitra tops up own wallet. |
-| `GET` | `/:id/events` | `.../wallet/:id/events` | Bearer | Paginated transaction history of the wallet. |
+| `POST` | `/me/topup` | `.../wallet/me/topup` | Bearer | Mitra tops up own wallet. |
+| `GET` | `/me/events` | `.../wallet/me/events` | Bearer | Paginated transaction history of the wallet for logged-in user. |
 | `GET` | `/:id/reconcile` | `.../wallet/:id/reconcile` | Bearer | Check balance vs events drift. |
 
 ---

@@ -63,26 +63,33 @@ func (s *ProductSyncService) SyncPrepaidProducts(ctx context.Context) error {
 		return err
 	}
 
+	// Fetch global margin settings
+	var marginSettings []models.PlatformMarginSetting
+	s.db.Where("is_active = ?", true).Find(&marginSettings)
+
 	now := time.Now()
 	for _, p := range products {
 		categoryID, _ := s.getOrCreateCategory(ctx, p.Category)
+		platformMargin, platformPrice := s.calculatePlatformPrice(p.Price, categoryID, marginSettings)
 
 		var existing models.Product
 		err := s.db.Where("code = ?", p.Code).First(&existing).Error
 
 		if err == gorm.ErrRecordNotFound {
 			product := models.Product{
-				Code:        p.Code,
-				Name:        p.Name,
-				Brand:       p.Brand,
-				CategoryID:  categoryID,
-				Provider:    p.Provider,
-				Price:       p.Price,
-				PriceAPI:    p.Price,
-				Stock:       -1,
-				Status:      s.mapStatus(p.Status),
-				Description: p.Description,
-				LastSyncAt:  &now,
+				Code:           p.Code,
+				Name:           p.Name,
+				Brand:          p.Brand,
+				CategoryID:     categoryID,
+				Provider:       p.Provider,
+				OriginalPrice:  p.Price,
+				PlatformMargin: platformMargin,
+				Price:          platformPrice,
+				PriceAPI:       p.Price,
+				Stock:          -1,
+				Status:         s.mapStatus(p.Status),
+				Description:    p.Description,
+				LastSyncAt:     &now,
 			}
 			s.db.Create(&product)
 		} else if err == nil {
@@ -90,11 +97,11 @@ func (s *ProductSyncService) SyncPrepaidProducts(ctx context.Context) error {
 			existing.Brand = p.Brand
 			existing.CategoryID = categoryID
 			existing.Provider = p.Provider
+			existing.OriginalPrice = p.Price
+			existing.PlatformMargin = platformMargin
+			existing.Price = platformPrice
 			existing.PriceAPI = p.Price
 			existing.LastSyncAt = &now
-			if existing.Price == existing.PriceAPI {
-				existing.Price = p.Price
-			}
 			s.db.Save(&existing)
 		}
 	}
@@ -119,26 +126,33 @@ func (s *ProductSyncService) SyncPostpaidProducts(ctx context.Context) error {
 		return err
 	}
 
+	// Fetch global margin settings
+	var marginSettings []models.PlatformMarginSetting
+	s.db.Where("is_active = ?", true).Find(&marginSettings)
+
 	now := time.Now()
 	for _, p := range products {
 		categoryID, _ := s.getOrCreateCategory(ctx, p.Category)
+		platformMargin, platformPrice := s.calculatePlatformPrice(p.Price, categoryID, marginSettings)
 
 		var existing models.Product
 		err := s.db.Where("code = ?", p.Code).First(&existing).Error
 
 		if err == gorm.ErrRecordNotFound {
 			product := models.Product{
-				Code:        p.Code,
-				Name:        p.Name,
-				Brand:       p.Brand,
-				CategoryID:  categoryID,
-				Provider:    p.Provider,
-				Price:       p.Price,
-				PriceAPI:    p.Price,
-				Stock:       -1,
-				Status:      s.mapStatus(p.Status),
-				Description: p.Description,
-				LastSyncAt:  &now,
+				Code:           p.Code,
+				Name:           p.Name,
+				Brand:          p.Brand,
+				CategoryID:     categoryID,
+				Provider:       p.Provider,
+				OriginalPrice:  p.Price,
+				PlatformMargin: platformMargin,
+				Price:          platformPrice,
+				PriceAPI:       p.Price,
+				Stock:          -1,
+				Status:         s.mapStatus(p.Status),
+				Description:    p.Description,
+				LastSyncAt:     &now,
 			}
 			s.db.Create(&product)
 		} else if err == nil {
@@ -146,17 +160,52 @@ func (s *ProductSyncService) SyncPostpaidProducts(ctx context.Context) error {
 			existing.Brand = p.Brand
 			existing.CategoryID = categoryID
 			existing.Provider = p.Provider
+			existing.OriginalPrice = p.Price
+			existing.PlatformMargin = platformMargin
+			existing.Price = platformPrice
 			existing.PriceAPI = p.Price
 			existing.LastSyncAt = &now
-			if existing.Price == existing.PriceAPI {
-				existing.Price = p.Price
-			}
 			s.db.Save(&existing)
 		}
 	}
 
 	s.setLastSyncTime(ctx, "postpaid")
 	return nil
+}
+
+func (s *ProductSyncService) calculatePlatformPrice(originalPrice float64, categoryID uint, settings []models.PlatformMarginSetting) (float64, float64) {
+	// 1. Try to find category specific margin
+	var selectedSetting *models.PlatformMarginSetting
+	for _, setting := range settings {
+		if setting.CategoryID != nil && *setting.CategoryID == categoryID {
+			selectedSetting = &setting
+			break
+		}
+	}
+
+	// 2. If not found, use global margin (where CategoryID is NULL)
+	if selectedSetting == nil {
+		for _, setting := range settings {
+			if setting.CategoryID == nil {
+				selectedSetting = &setting
+				break
+			}
+		}
+	}
+
+	// 3. Default if no settings found
+	if selectedSetting == nil {
+		return 0, originalPrice
+	}
+
+	var margin float64
+	if selectedSetting.MarginType == "PERCENT" {
+		margin = originalPrice * (selectedSetting.MarginValue / 100)
+	} else {
+		margin = selectedSetting.MarginValue
+	}
+
+	return margin, originalPrice + margin
 }
 
 func (s *ProductSyncService) fetchDigiflazzProducts(ctx context.Context, productType string) ([]DigiflazzProduct, error) {

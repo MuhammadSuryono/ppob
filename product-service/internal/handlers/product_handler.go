@@ -54,7 +54,18 @@ func (h *ProductHandler) ListProducts(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
 	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 
-	resp, err := h.productService.ListProducts(c.Request.Context(), uint(categoryID), brand, status, limit, offset)
+	userID, _ := c.Get("user_id")
+	role, _ := c.Get("role")
+
+	var resp *dto.ListProductsResponse
+	var err error
+
+	if userID != nil {
+		resp, err = h.productService.ListProductsWithPrice(c.Request.Context(), userID.(uint), role.(string), uint(categoryID), brand, status, limit, offset)
+	} else {
+		resp, err = h.productService.ListProducts(c.Request.Context(), uint(categoryID), brand, status, limit, offset)
+	}
+
 	if err != nil {
 		errors.RespondWithError(c, errors.NewAppError("SYSTEM_INTERNAL", nil))
 		return
