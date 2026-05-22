@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.navigation.compose.*
 import com.yonotech.ppob.mobile.ui.auth.*
 import com.yonotech.ppob.mobile.ui.history.TransactionHistoryScreen
@@ -227,20 +229,24 @@ class MainActivity : ComponentActivity() {
                             ProductListScreen(
                                 categoryId = categoryId,
                                 onProductClick = { product ->
-                                    navController.navigate(Screen.TransactionInit.createRoute(product.id, product.code, product.price))
+                                    navController.navigate(Screen.TransactionInit.createRoute(product.code, product.price))
                                 },
                                 onBackClick = { navController.popBackStack() }
                             )
                         }
                         
                         // Transaction Flow with shared ViewModel
-                        composable(Screen.TransactionInit.route) { backStackEntry ->
-                            val productId = backStackEntry.arguments?.getString("productId") ?: ""
+                        composable(
+                            route = Screen.TransactionInit.route,
+                            arguments = listOf(
+                                navArgument("productCode") { type = NavType.StringType; defaultValue = "" },
+                                navArgument("amount") { type = NavType.StringType; defaultValue = "0.0" }
+                            )
+                        ) { backStackEntry ->
                             val productCode = backStackEntry.arguments?.getString("productCode") ?: ""
                             val amount = backStackEntry.arguments?.getString("amount")?.toDoubleOrNull() ?: 0.0
                             val viewModel: TransactionViewModel = hiltViewModel(backStackEntry)
                             TransactionInitScreen(
-                                productId = productId,
                                 productCode = productCode,
                                 amount = amount,
                                 onNext = { navController.navigate(Screen.TransactionConfirm.route) },

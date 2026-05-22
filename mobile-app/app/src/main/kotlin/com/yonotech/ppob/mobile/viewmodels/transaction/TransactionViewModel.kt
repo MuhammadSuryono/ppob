@@ -33,7 +33,6 @@ class TransactionViewModel @Inject constructor(
     val walletState = _walletState.asStateFlow()
 
     // State for the multi-step flow
-    var selectedProductId: String = ""
     var selectedProductCode: String = ""
     var customerNo: String = ""
     var amount: Double = 0.0
@@ -81,7 +80,6 @@ class TransactionViewModel @Inject constructor(
                     
                     // Step 2: Initiate Transaction with authorize_id
                     val request = InitiateTransactionRequest(
-                        productId = selectedProductId.toIntOrNull() ?: 0,
                         productCode = selectedProductCode,
                         customerNumber = customerNo,
                         amount = amount,
