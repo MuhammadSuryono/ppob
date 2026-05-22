@@ -80,7 +80,8 @@ class TransactionViewModel @Inject constructor(
                     
                     // Step 2: Initiate Transaction with authorize_id
                     val request = InitiateTransactionRequest(
-                        productId = selectedProductId,
+                        productId = selectedProductId.toIntOrNull() ?: 0,
+                        productCode = selectedProductCode,
                         customerNumber = customerNo,
                         amount = amount,
                         authorizeId = authorizeId

@@ -19,6 +19,8 @@ import com.yonotech.ppob.mobile.viewmodels.transaction.TransactionViewModel
 @Composable
 fun TransactionInitScreen(
     productId: String,
+    productCode: String,
+    amount: Double,
     onNext: () -> Unit,
     onBack: () -> Unit,
     viewModel: TransactionViewModel
@@ -26,6 +28,8 @@ fun TransactionInitScreen(
     var customerNo by remember { mutableStateOf("") }
 
     viewModel.selectedProductId = productId
+    viewModel.selectedProductCode = productCode
+    viewModel.amount = amount
 
     Scaffold(
         topBar = {

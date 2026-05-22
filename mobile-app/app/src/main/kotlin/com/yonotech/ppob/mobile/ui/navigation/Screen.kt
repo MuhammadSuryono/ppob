@@ -40,8 +40,9 @@ sealed class Screen(val route: String) {
         fun createRoute(categoryId: String, categoryCode: String, categoryName: String) = 
             "product_generic/$categoryId/$categoryCode/$categoryName"
     }
-    object TransactionInit : Screen("transaction/init/{productId}") {
-        fun createRoute(productId: String) = "transaction/init/$productId"
+    object TransactionInit : Screen("transaction/init/{productId}/{productCode}/{amount}") {
+        fun createRoute(productId: String, productCode: String, amount: Double) = 
+            "transaction/init/$productId/$productCode/$amount"
     }
     object TransactionConfirm : Screen("transaction/confirm")
     object TransactionResult : Screen("transaction/result/{txId}") {

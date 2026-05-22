@@ -227,7 +227,7 @@ class MainActivity : ComponentActivity() {
                             ProductListScreen(
                                 categoryId = categoryId,
                                 onProductClick = { product ->
-                                    navController.navigate(Screen.TransactionInit.createRoute(product.id))
+                                    navController.navigate(Screen.TransactionInit.createRoute(product.id, product.code, product.price))
                                 },
                                 onBackClick = { navController.popBackStack() }
                             )
@@ -236,9 +236,13 @@ class MainActivity : ComponentActivity() {
                         // Transaction Flow with shared ViewModel
                         composable(Screen.TransactionInit.route) { backStackEntry ->
                             val productId = backStackEntry.arguments?.getString("productId") ?: ""
+                            val productCode = backStackEntry.arguments?.getString("productCode") ?: ""
+                            val amount = backStackEntry.arguments?.getString("amount")?.toDoubleOrNull() ?: 0.0
                             val viewModel: TransactionViewModel = hiltViewModel(backStackEntry)
                             TransactionInitScreen(
                                 productId = productId,
+                                productCode = productCode,
+                                amount = amount,
                                 onNext = { navController.navigate(Screen.TransactionConfirm.route) },
                                 onBack = { navController.popBackStack() },
                                 viewModel = viewModel
