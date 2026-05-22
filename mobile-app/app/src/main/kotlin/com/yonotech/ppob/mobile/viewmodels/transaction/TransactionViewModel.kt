@@ -34,6 +34,7 @@ class TransactionViewModel @Inject constructor(
 
     // State for the multi-step flow
     var selectedProductId: String = ""
+    var selectedProductCode: String = ""
     var customerNo: String = ""
     var amount: Double = 0.0
 
