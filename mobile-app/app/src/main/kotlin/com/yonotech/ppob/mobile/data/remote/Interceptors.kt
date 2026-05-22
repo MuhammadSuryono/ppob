@@ -20,9 +20,24 @@ class AuthInterceptor @Inject constructor(
             .header("Content-Type", "application/json")
             .header("Accept", "application/json")
 
-        // Skip adding token for auth endpoints
-        if (originalRequest.url.encodedPath.contains("/auth/")) {
-            println("AuthInterceptor: Skipping token for ${originalRequest.url}")
+        // List of public endpoints that don't require an access token
+        val publicEndpoints = listOf(
+            "/auth/initiate",
+            "/auth/register",
+            "/auth/login",
+            "/auth/send-otp",
+            "/auth/verify-otp",
+            "/auth/verify-password",
+            "/auth/verify-pin",
+            "/auth/verify-credential",
+            "/auth/refresh"
+        )
+
+        val path = originalRequest.url.encodedPath
+        val isPublic = publicEndpoints.any { path.contains(it) }
+
+        if (isPublic) {
+            println("AuthInterceptor: Skipping token for public endpoint ${originalRequest.url}")
             return chain.proceed(requestBuilder.build())
         }
 
@@ -48,6 +63,12 @@ class AuthAuthenticator @Inject constructor(
 ) : Authenticator {
     override fun authenticate(route: Route?, response: okhttp3.Response): okhttp3.Request? {
         println("AuthAuthenticator: 401 intercepted for ${response.request.url}")
+
+        // Skip refresh if the request was to an auth endpoint
+        if (response.request.url.encodedPath.contains("/auth/")) {
+            println("AuthAuthenticator: 401 on auth endpoint, skipping refresh")
+            return null
+        }
 
         val refreshToken = runBlocking {
             tokenManager.refreshToken.first()

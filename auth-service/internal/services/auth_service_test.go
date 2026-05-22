@@ -803,6 +803,50 @@ func TestAuthService_AuthorizeTransaction_InvalidPIN(t *testing.T) {
 	}
 }
 
+func TestAuthService_RefreshToken_Success(t *testing.T) {
+	db := setupTestDB(t)
+	cfg := setupTestConfig()
+
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to run miniredis: %v", err)
+	}
+	defer s.Close()
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	userRepo := repository.NewUserRepository(db)
+	otpRepo := repository.NewOTPRepository(db)
+	walletRepo := repository.NewWalletRepository(db)
+
+	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
+
+	ctx := context.Background()
+
+	registerReq := &dto.RegisterRequest{
+		Email:    "test@example.com",
+		Phone:    "081234567890",
+		Name:     "Test User",
+		Password: "password123",
+		PIN:      "123456",
+		RequestID: "req-1",
+	}
+	s.Set("verified:"+registerReq.RequestID, registerReq.Phone)
+	resp, _ := authService.Register(ctx, registerReq)
+
+	refreshResp, err := authService.RefreshToken(ctx, resp.RefreshToken)
+
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	if refreshResp.Token == "" {
+		t.Error("Expected non-empty new access token")
+	}
+}
+
 func generateOTP() string {
 	max := big.NewInt(999999)
 	result, _ := rand.Int(rand.Reader, max)

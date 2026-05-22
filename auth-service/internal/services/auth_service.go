@@ -554,13 +554,19 @@ func ValidateTokenStatic(tokenString string, secret string) (*dto.TokenClaims, e
 			return nil, ErrTokenExpired
 		}
 
+		userID, _ := claims["user_id"].(float64)
+		email, _ := claims["email"].(string)
+		phone, _ := claims["phone"].(string)
+		role, _ := claims["role"].(string)
+		iat, _ := claims["iat"].(float64)
+
 		return &dto.TokenClaims{
-			UserID:   uint(claims["user_id"].(float64)),
-			Email:    claims["email"].(string),
-			Phone:    claims["phone"].(string),
-			Role:     claims["role"].(string),
+			UserID:   uint(userID),
+			Email:    email,
+			Phone:    phone,
+			Role:     role,
 			Exp:      int64(exp),
-			IssuedAt: int64(claims["iat"].(float64)),
+			IssuedAt: int64(iat),
 		}, nil
 	}
 
