@@ -7,7 +7,17 @@ import com.squareup.moshi.JsonClass
 data class CategoryDto(
     @Json(name = "id") val id: String,
     @Json(name = "name") val name: String,
-    @Json(name = "icon_url") val iconUrl: String? = null
+    @Json(name = "code") val code: String,
+    @Json(name = "icon_url") val iconUrl: String? = null,
+    @Json(name = "input_type") val inputType: String? = null,
+    @Json(name = "input_label") val inputLabel: String? = null,
+    @Json(name = "placeholder") val placeholder: String? = null,
+    @Json(name = "validation_regex") val validationRegex: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class CategoryCollection(
+    @Json(name = "categories") val categories: List<CategoryDto>,
 )
 
 @JsonClass(generateAdapter = true)
@@ -20,4 +30,9 @@ data class ProductDto(
     @Json(name = "price") val price: Double,
     @Json(name = "description") val description: String? = null,
     @Json(name = "status") val status: String
+)
+
+@JsonClass(generateAdapter = true)
+data class ProductCollection(
+    @Json(name = "products") val products: List<ProductDto>,
 )

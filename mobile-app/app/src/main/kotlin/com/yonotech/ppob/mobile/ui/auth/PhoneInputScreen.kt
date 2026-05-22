@@ -25,7 +25,7 @@ fun PhoneInputScreen(
     onNavigateToPinLogin: (String) -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
-    var phone by remember { mutableStateOf("") }
+    var phoneValue by remember { mutableStateOf("") }
     val initiateState by viewModel.initiateState.collectAsState()
     val sendOtpState by viewModel.sendOtpState.collectAsState()
     val context = LocalContext.current
@@ -35,12 +35,12 @@ fun PhoneInputScreen(
             val data = (initiateState as Resource.Success).data
             if (data.isTrusted) {
                 // Trusted device: direct PIN login
-                onNavigateToPinLogin(phone)
+                onNavigateToPinLogin(phoneValue)
                 viewModel.resetState()
             } else {
                 // Requires OTP: send based on registration status
                 val otpType = if (data.isRegistered) "login" else "register"
-                viewModel.sendOtp(phone, otpType)
+                viewModel.sendOtp(phoneValue, otpType)
             }
         }
     }
@@ -50,7 +50,7 @@ fun PhoneInputScreen(
             val data = (sendOtpState as Resource.Success).data
             val initiateData = (initiateState as? Resource.Success)?.data
             val type = if (initiateData?.isRegistered == false) "register" else "login"
-            onNavigateToOtp(data.requestId, phone, type)
+            onNavigateToOtp(data.requestId, phoneValue, type)
             viewModel.resetState()
         }
     }
@@ -71,19 +71,28 @@ fun PhoneInputScreen(
         Text(
             text = "Masukkan nomor telepon Anda untuk melanjutkan",
             fontSize = 16.sp,
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp, bottom = 32.dp),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
 
         PpoTextField(
-            value = phone,
-            onValueChange = { 
-                if (it.length <= 15 && it.all { char -> char.isDigit() || char == '+' }) phone = it 
+            value = phoneValue,
+            onValueChange = { input ->
+                val cleanInput = input.filter { it.isDigit() || it == '+' }
+                if (cleanInput.length <= 15) {
+                    val transformed = when {
+                        cleanInput.startsWith("08") -> "628" + cleanInput.substring(2)
+                        cleanInput.startsWith("+62") -> "62" + cleanInput.substring(3)
+                        cleanInput.startsWith("8") && !cleanInput.startsWith("628") -> "62$cleanInput"
+                        else -> cleanInput
+                    }
+                    phoneValue = transformed
+                }
             },
             label = "Nomor Telepon",
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            placeholder = "+62xxxxxxxxxx"
+            placeholder = "08xxxxxxxxxx"
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -106,11 +115,17 @@ fun PhoneInputScreen(
 
         PpoButton(
             label = "Lanjutkan",
-            onClick = { 
-                viewModel.initiateAuth(phone, DeviceUtils.getDeviceId(context)) 
+            onClick = {
+                val currentPhone = phoneValue
+                val formattedPhone = if (currentPhone.startsWith("+")) {
+                    currentPhone.substring(1)
+                } else {
+                    currentPhone
+                }
+                viewModel.initiateAuth(formattedPhone, DeviceUtils.getDeviceId(context), DeviceUtils.getFingerprint())
             },
             isLoading = initiateState is Resource.Loading || sendOtpState is Resource.Loading,
-            enabled = phone.length >= 10
+            enabled = phoneValue.length >= 10
         )
     }
 }

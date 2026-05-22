@@ -10,16 +10,7 @@ import javax.inject.Singleton
 class WalletRepository @Inject constructor(
     private val walletService: WalletService
 ) {
-    suspend fun getBalance(): Resource<WalletResponse> {
-        return try {
-            val response = walletService.getBalance()
-            if (response.isSuccessful) {
-                Resource.Success(response.body()!!)
-            } else {
-                Resource.Error("Failed to get balance: ${response.message()}")
-            }
-        } catch (e: Exception) {
-            Resource.Error(e.message ?: "Unknown error")
-        }
+    suspend fun getBalance(walletId: String): retrofit2.Response<WalletResponse> {
+        return walletService.getBalance(walletId)
     }
 }

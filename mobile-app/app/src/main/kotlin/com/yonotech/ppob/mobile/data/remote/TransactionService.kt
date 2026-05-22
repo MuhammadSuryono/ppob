@@ -11,16 +11,16 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface TransactionService {
-    @POST("transaction/initiate")
+    @POST("transactions/initiate")
     suspend fun initiate(
         @Header("Idempotency-Key") idempotencyKey: String,
         @Body request: InitiateTransactionRequest
     ): Response<TransactionResponse>
 
-    @GET("transaction/{id}")
+    @GET("transactions/{id}")
     suspend fun getStatus(@Path("id") id: String): Response<TransactionResponse>
 
-    @GET("transaction/history")
+    @GET("transactions/history")
     suspend fun getHistory(
         @Query("limit") limit: Int = 20,
         @Query("offset") offset: Int = 0

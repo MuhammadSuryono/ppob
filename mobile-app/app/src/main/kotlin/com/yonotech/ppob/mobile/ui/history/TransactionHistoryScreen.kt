@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.yonotech.ppob.mobile.data.remote.dto.TransactionHistoryResponse
+import com.yonotech.ppob.mobile.ui.theme.*
 import com.yonotech.ppob.mobile.utils.Resource
 import com.yonotech.ppob.mobile.viewmodels.staff.StaffViewModel
 import java.text.NumberFormat
@@ -177,10 +178,10 @@ fun StatusChip(status: String) {
 
 fun getStatusColor(status: String): Color {
     return when (status.uppercase()) {
-        "SUCCESS" -> Color(0xFF4CAF50)
-        "PENDING" -> Color(0xFFFF9800)
-        "FAILED" -> Color(0xFFF44336)
-        else -> Color.Gray
+        "SUCCESS" -> SuccessGreen
+        "PENDING" -> WarningOrange
+        "FAILED" -> ErrorRed
+        else -> TextLight
     }
 }
 

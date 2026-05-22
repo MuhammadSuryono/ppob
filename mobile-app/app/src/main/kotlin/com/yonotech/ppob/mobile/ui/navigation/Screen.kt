@@ -1,6 +1,9 @@
 package com.yonotech.ppob.mobile.ui.navigation
 
 sealed class Screen(val route: String) {
+    // Splash screen
+    object Splash : Screen("splash")
+
     // Auth screens
     object PhoneInput : Screen("phone_input")
     object Otp : Screen("otp/{requestId}/{phone}/{type}") {
@@ -32,6 +35,10 @@ sealed class Screen(val route: String) {
     // Other screens
     object ProductList : Screen("products/{categoryId}") {
         fun createRoute(categoryId: String) = "products/$categoryId"
+    }
+    object GenericProduct : Screen("product_generic/{categoryId}/{categoryCode}/{categoryName}") {
+        fun createRoute(categoryId: String, categoryCode: String, categoryName: String) = 
+            "product_generic/$categoryId/$categoryCode/$categoryName"
     }
     object TransactionInit : Screen("transaction/init/{productId}") {
         fun createRoute(productId: String) = "transaction/init/$productId"

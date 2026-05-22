@@ -31,10 +31,12 @@ class TokenManager @Inject constructor(
         preferences[REFRESH_TOKEN_KEY]
     }
 
-    suspend fun saveTokens(accessToken: String, refreshToken: String) {
+    suspend fun saveTokens(accessToken: String, refreshToken: String? = null) {
         context.dataStore.edit { preferences ->
             preferences[ACCESS_TOKEN_KEY] = accessToken
-            preferences[REFRESH_TOKEN_KEY] = refreshToken
+            if (refreshToken != null) {
+                preferences[REFRESH_TOKEN_KEY] = refreshToken
+            }
         }
     }
 

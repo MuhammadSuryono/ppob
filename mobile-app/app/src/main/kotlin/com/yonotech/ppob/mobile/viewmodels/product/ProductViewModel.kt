@@ -2,7 +2,9 @@ package com.yonotech.ppob.mobile.viewmodels.product
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.yonotech.ppob.mobile.data.remote.dto.CategoryCollection
 import com.yonotech.ppob.mobile.data.remote.dto.CategoryDto
+import com.yonotech.ppob.mobile.data.remote.dto.ProductCollection
 import com.yonotech.ppob.mobile.data.remote.dto.ProductDto
 import com.yonotech.ppob.mobile.data.repository.ProductRepository
 import com.yonotech.ppob.mobile.utils.Resource
@@ -17,10 +19,10 @@ class ProductViewModel @Inject constructor(
     private val repository: ProductRepository
 ) : ViewModel() {
 
-    private val _categories = MutableStateFlow<Resource<List<CategoryDto>>>(Resource.Idle)
+    private val _categories = MutableStateFlow<Resource<CategoryCollection>>(Resource.Idle)
     val categories = _categories.asStateFlow()
 
-    private val _products = MutableStateFlow<Resource<List<ProductDto>>>(Resource.Idle)
+    private val _products = MutableStateFlow<Resource<ProductCollection>>(Resource.Idle)
     val products = _products.asStateFlow()
 
     fun getCategories() {
@@ -29,12 +31,12 @@ class ProductViewModel @Inject constructor(
             try {
                 val response = repository.getCategories()
                 if (response.isSuccessful) {
-                    _categories.value = Resource.Success(response.body() ?: emptyList())
+                    _categories.value = Resource.Success(response.body() ?: CategoryCollection(emptyList()))
                 } else {
-                    _categories.value = Resource.Error("Failed to fetch categories: ${response.message()}")
+                    _categories.value = Resource.Success(CategoryCollection(emptyList()))
                 }
             } catch (e: Exception) {
-                _categories.value = Resource.Error(e.message ?: "An unknown error occurred")
+                _categories.value = Resource.Success(CategoryCollection(emptyList()))
             }
         }
     }
@@ -45,7 +47,7 @@ class ProductViewModel @Inject constructor(
             try {
                 val response = repository.getProducts(categoryId, brand)
                 if (response.isSuccessful) {
-                    _products.value = Resource.Success(response.body() ?: emptyList())
+                    _products.value = Resource.Success(response.body() ?: ProductCollection(emptyList()))
                 } else {
                     _products.value = Resource.Error("Failed to fetch products: ${response.message()}")
                 }
@@ -61,7 +63,7 @@ class ProductViewModel @Inject constructor(
             try {
                 val response = repository.searchProducts(query)
                 if (response.isSuccessful) {
-                    _products.value = Resource.Success(response.body() ?: emptyList())
+                    _products.value = Resource.Success(response.body() ?: ProductCollection(emptyList()))
                 } else {
                     _products.value = Resource.Error("Failed to search products: ${response.message()}")
                 }

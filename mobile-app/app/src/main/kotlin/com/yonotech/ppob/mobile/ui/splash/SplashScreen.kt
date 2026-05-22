@@ -15,20 +15,31 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.yonotech.ppob.mobile.R
+import com.yonotech.ppob.mobile.viewmodels.SplashViewModel
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(
-    onTimeout: () -> Unit
+    onNavigateToHome: () -> Unit,
+    onNavigateToLogin: () -> Unit,
+    viewModel: SplashViewModel = hiltViewModel()
 ) {
-    var alpha by remember { mutableStateOf(0f) }
-    val context = LocalContext.current
+    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
 
-    LaunchedEffect(Unit) {
-        alpha = 1f
-        delay(2000)
-        onTimeout()
+    LaunchedEffect(isLoggedIn) {
+        delay(2000) // Branding delay
+        when (isLoggedIn) {
+            true -> onNavigateToHome()
+            false -> onNavigateToLogin()
+            else -> {} // Wait for state
+        }
     }
 
     Box(
@@ -37,17 +48,16 @@ fun SplashScreen(
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
-                painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                painter = painterResource(id = R.drawable.ic_logo_app_background),
                 contentDescription = "Logo",
-                modifier = Modifier
-                    .size(120.dp)
-                    .alpha(alpha)
+                modifier = Modifier.size(120.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
-            androidx.compose.material3.Text(
+            Text(
                 text = "PPOB Mobile",
-                fontSize = androidx.compose.ui.unit.TextUnit.Unspecified,
-                modifier = Modifier.alpha(alpha)
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }

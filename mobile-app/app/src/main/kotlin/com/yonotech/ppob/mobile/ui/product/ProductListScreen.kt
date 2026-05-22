@@ -81,7 +81,9 @@ fun ProductListScreen(
                     }
                 }
                 is Resource.Success -> {
-                    val products = (productsState as Resource.Success).data
+                    val productCollection = (productsState as Resource.Success).data
+                    var products = productCollection.products
+
                     if (products.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Text(text = "Produk tidak ditemukan")

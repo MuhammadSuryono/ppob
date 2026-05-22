@@ -2,6 +2,7 @@ package com.yonotech.ppob.mobile.di.modules
 
 import com.yonotech.ppob.mobile.BuildConfig
 import com.yonotech.ppob.mobile.data.remote.AuthInterceptor
+import com.yonotech.ppob.mobile.data.remote.AuthAuthenticator
 import com.yonotech.ppob.mobile.data.remote.AuthService
 import com.yonotech.ppob.mobile.data.remote.ProductService
 import com.yonotech.ppob.mobile.data.remote.StaffService
@@ -26,20 +27,18 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideOkHttpClient(
-        authInterceptor: AuthInterceptor
+        authInterceptor: AuthInterceptor,
+        authAuthenticator: AuthAuthenticator
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .addInterceptor(authInterceptor)
+            .authenticator(authAuthenticator)
             .addInterceptor(RetryInterceptor())
             .addInterceptor(HttpLoggingInterceptor().apply {
-                level = if (BuildConfig.DEBUG) {
-                    HttpLoggingInterceptor.Level.BODY
-                } else {
-                    HttpLoggingInterceptor.Level.NONE
-                }
+                level = HttpLoggingInterceptor.Level.BODY
             })
             .build()
     }

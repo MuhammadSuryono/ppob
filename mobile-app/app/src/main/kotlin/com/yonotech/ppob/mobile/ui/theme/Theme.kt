@@ -16,52 +16,55 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Green200,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
-
 private val LightColorScheme = lightColorScheme(
-    primary = Green700,
+    primary = PrimaryGreen,
     onPrimary = Color.White,
     primaryContainer = Green200,
     onPrimaryContainer = Green900,
-    background = Color(0xFFF5F5F5),
-    surface = Color.White,
-    onSurface = Color.Black,
-
-    /* Other default colors to override
-    secondary = Purple40,
-    tertiary = Pink40,
+    secondary = SecondaryBlue,
     onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    */
+    tertiary = AccentOrange,
+    background = BackgroundLight,
+    surface = SurfaceWhite,
+    onSurface = TextDark,
+    onSurfaceVariant = TextMedium,
+    outline = TextLight,
+    error = ErrorRed,
+    onError = Color.White
+)
+
+// Dark scheme defined but will be bypassed as per "jangan dark" requirement
+private val DarkColorScheme = darkColorScheme(
+    primary = Green200,
+    onPrimary = Green900,
+    secondary = SecondaryBlue,
+    background = Color(0xFF121212),
+    surface = Color(0xFF1E1E1E),
+    onSurface = Color.White
 )
 
 @Composable
 fun PpoMobileTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Set to false to strictly follow design system colors
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    // Force LightColorScheme as per "jangan dark" requirement
+    val colorScheme = if (darkTheme) {
+        // Even if system is dark, we follow the "Modern & Bright" design principle
+        LightColorScheme 
+    } else {
+        LightColorScheme
     }
+    
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            // Set status bar icons to light (since we use a green primary) or dark based on needs
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
     }
 

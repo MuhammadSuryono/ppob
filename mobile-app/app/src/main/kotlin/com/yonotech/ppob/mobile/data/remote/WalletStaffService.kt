@@ -13,18 +13,18 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface WalletService {
-    @GET("wallets/v1/balance")
-    suspend fun getBalance(): Response<WalletResponse>
+    @GET("wallets/{id}/balance")
+    suspend fun getBalance(@Path("id") walletId: String): Response<WalletResponse>
 }
 
 interface StaffService {
-    @GET("user/v1/staff")
+    @GET("staff")
     suspend fun getStaffList(): Response<List<StaffDto>>
 
-    @POST("user/v1/staff")
+    @POST("staff")
     suspend fun createStaff(@Body request: CreateStaffRequest): Response<StaffDto>
 
-    @POST("wallets/v1/staff/{id}/topup")
+    @POST("wallets/{id}/topup")
     suspend fun topUpStaff(
         @Path("id") staffId: String,
         @Body request: TopUpRequest

@@ -37,4 +37,12 @@ class AuthRepository @Inject constructor(
     suspend fun verifyPin(request: LoginRequest): Response<AuthResponse> {
         return authService.verifyPin(request)
     }
+
+    suspend fun authorize(request: AuthorizeRequest): Response<AuthorizeResponse> {
+        return authService.authorize(request)
+    }
+
+    suspend fun refreshToken(request: RefreshTokenRequest): Response<AuthResponse> {
+        return authService.refreshToken(request)
+    }
 }

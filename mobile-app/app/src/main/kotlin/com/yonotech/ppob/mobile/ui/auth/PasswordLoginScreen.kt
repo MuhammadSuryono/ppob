@@ -6,17 +6,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.yonotech.ppob.mobile.ui.components.PpoButton
 import com.yonotech.ppob.mobile.ui.components.PpoTextField
+import com.yonotech.ppob.mobile.ui.theme.PpoMobileTheme
 import com.yonotech.ppob.mobile.utils.DeviceUtils
 import com.yonotech.ppob.mobile.utils.Resource
 import com.yonotech.ppob.mobile.viewmodels.auth.AuthViewModel
@@ -28,8 +29,6 @@ fun PasswordLoginScreen(
     onLoginSuccess: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
-    var password by remember { mutableStateOf("") }
-    var showPassword by remember { mutableStateOf(false) }
     val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current
 
@@ -39,6 +38,24 @@ fun PasswordLoginScreen(
             viewModel.resetState()
         }
     }
+
+    PasswordLoginContent(
+        phone = phone,
+        authState = authState,
+        onVerifyPassword = { password ->
+            viewModel.verifyPassword(phone, password, DeviceUtils.getDeviceId(context), requestId)
+        }
+    )
+}
+
+@Composable
+fun PasswordLoginContent(
+    phone: String,
+    authState: Resource<Any>,
+    onVerifyPassword: (String) -> Unit
+) {
+    var password by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -56,7 +73,7 @@ fun PasswordLoginScreen(
         Text(
             text = "Silakan masukkan password untuk nomor $phone",
             fontSize = 16.sp,
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp, bottom = 32.dp),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
@@ -86,11 +103,21 @@ fun PasswordLoginScreen(
 
         PpoButton(
             label = "Masuk",
-            onClick = { 
-                viewModel.verifyPassword(phone, password, DeviceUtils.getDeviceId(context), requestId) 
-            },
+            onClick = { onVerifyPassword(password) },
             isLoading = authState is Resource.Loading,
             enabled = password.isNotEmpty()
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PasswordLoginScreenPreview() {
+    PpoMobileTheme {
+        PasswordLoginContent(
+            phone = "08123456789",
+            authState = Resource.Idle,
+            onVerifyPassword = {}
         )
     }
 }

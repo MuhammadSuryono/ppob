@@ -19,10 +19,19 @@ class WalletViewModel @Inject constructor(
     private val _balanceState = MutableStateFlow<Resource<WalletResponse>>(Resource.Idle)
     val balanceState = _balanceState.asStateFlow()
 
-    fun getBalance() {
+    fun getBalance(walletId: String = "me") {
         viewModelScope.launch {
             _balanceState.value = Resource.Loading
-            _balanceState.value = repository.getBalance()
+            try {
+                val response = repository.getBalance(walletId)
+                if (response.isSuccessful && response.body() != null) {
+                    _balanceState.value = Resource.Success(response.body()!!)
+                } else {
+                    _balanceState.value = Resource.Error("Gagal mengambil saldo: ${response.message()}")
+                }
+            } catch (e: Exception) {
+                _balanceState.value = Resource.Error(e.message ?: "Terjadi kesalahan sistem")
+            }
         }
     }
 

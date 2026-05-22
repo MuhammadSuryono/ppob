@@ -48,7 +48,7 @@ data class VerifyOtpResponse(
 data class RegisterRequest(
     @Json(name = "email") val email: String,
     @Json(name = "phone") val phone: String,
-    @Json(name = "full_name") val fullName: String,
+    @Json(name = "name") val fullName: String,
     @Json(name = "password") val password: String,
     @Json(name = "pin") val pin: String,
     @Json(name = "device_id") val deviceId: String? = null,
@@ -64,8 +64,16 @@ data class VerifyPasswordRequest(
 )
 
 @JsonClass(generateAdapter = true)
+data class LoginRequest(
+    @Json(name = "phone") val phone: String,
+    @Json(name = "password") val password: String? = null,
+    @Json(name = "pin") val pin: String? = null,
+    @Json(name = "device_id") val deviceId: String
+)
+
+@JsonClass(generateAdapter = true)
 data class AuthResponse(
-    @Json(name = "access_token") val accessToken: String? = null,
+    @Json(name = "token") val accessToken: String? = null,
     @Json(name = "refresh_token") val refreshToken: String? = null,
     @Json(name = "expires_at") val expiresAt: Long? = null,
     @Json(name = "user_id") val userId: Int? = null,
@@ -80,6 +88,21 @@ data class UserDto(
     @Json(name = "email") val email: String,
     @Json(name = "phone") val phone: String,
     @Json(name = "name") val name: String
+)
+
+@JsonClass(generateAdapter = true)
+data class AuthorizeRequest(
+    @Json(name = "pin") val pin: String
+)
+
+@JsonClass(generateAdapter = true)
+data class AuthorizeResponse(
+    @Json(name = "authorize_id") val authorizeId: String
+)
+
+@JsonClass(generateAdapter = true)
+data class RefreshTokenRequest(
+    @Json(name = "refresh_token") val refreshToken: String
 )
 
 @JsonClass(generateAdapter = true)

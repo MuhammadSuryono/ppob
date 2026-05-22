@@ -1,11 +1,13 @@
 package com.yonotech.ppob.mobile.utils
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.provider.Settings
 import java.util.*
 
 object DeviceUtils {
+    @SuppressLint("HardwareIds")
     fun getDeviceId(context: Context): String {
         return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: UUID.randomUUID().toString()
     }
@@ -22,5 +24,9 @@ object DeviceUtils {
 
     fun getOsVersion(): String {
         return "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
+    }
+
+    fun getFingerprint(): String {
+        return Build.FINGERPRINT
     }
 }

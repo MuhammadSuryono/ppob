@@ -30,11 +30,11 @@ class AuthViewModel @Inject constructor(
     private val _verifyOtpState = MutableStateFlow<Resource<VerifyOtpResponse>>(Resource.Idle)
     val verifyOtpState = _verifyOtpState.asStateFlow()
 
-    fun initiateAuth(phone: String, deviceId: String) {
+    fun initiateAuth(phone: String, deviceId: String, fingerPrint: String? = null) {
         viewModelScope.launch {
             _initiateState.value = Resource.Loading
             try {
-                val response = repository.initiateAuth(InitiateAuthRequest(phone, deviceId))
+                val response = repository.initiateAuth(InitiateAuthRequest(phone, deviceId, fingerPrint))
                 if (response.isSuccessful) {
                     val data = response.body()
                     if (data != null) {
@@ -80,7 +80,7 @@ class AuthViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     val authData = response.body()
                     if (authData != null) {
-                        if (authData.accessToken != null && authData.refreshToken != null) {
+                        if (authData.accessToken != null) {
                             tokenManager.saveTokens(authData.accessToken, authData.refreshToken)
                         }
                         _authState.value = Resource.Success(authData)
@@ -103,10 +103,10 @@ class AuthViewModel @Inject constructor(
                 val response = repository.verifyPin(LoginRequest(phone = phone, pin = pin, deviceId = deviceId))
                 if (response.isSuccessful) {
                     val authData = response.body()
-                    if (authData != null && authData.accessToken != null && authData.refreshToken != null) {
-                        tokenManager.saveTokens(authData.accessToken, authData.refreshToken)
-                        _authState.value = Resource.Success(authData)
-                    } else if (authData != null) {
+                    if (authData != null) {
+                        if (authData.accessToken != null) {
+                            tokenManager.saveTokens(authData.accessToken, authData.refreshToken)
+                        }
                         _authState.value = Resource.Success(authData)
                     } else {
                         _authState.value = Resource.Error("Response body is empty")
@@ -124,11 +124,11 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _authState.value = Resource.Loading
             try {
-                val response = repository.register(RegisterRequest(email, phone, fullName, password, pin, deviceId, requestId))
+                val response = repository.register(RegisterRequest(email, phone, phone, password, pin, deviceId, requestId))
                 if (response.isSuccessful) {
                     val authData = response.body()
                     if (authData != null) {
-                        if (authData.accessToken != null && authData.refreshToken != null) {
+                        if (authData.accessToken != null) {
                             tokenManager.saveTokens(authData.accessToken, authData.refreshToken)
                         }
                         _authState.value = Resource.Success(authData)
@@ -173,7 +173,7 @@ class AuthViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     val authData = response.body()
                     if (authData != null) {
-                        if (authData.accessToken != null && authData.refreshToken != null) {
+                        if (authData.accessToken != null) {
                             tokenManager.saveTokens(authData.accessToken, authData.refreshToken)
                         }
                         _authState.value = Resource.Success(authData)

@@ -1,23 +1,19 @@
 package com.yonotech.ppob.mobile.ui.auth
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.yonotech.ppob.mobile.ui.components.PinDots
 import com.yonotech.ppob.mobile.ui.components.PinPad
-import com.yonotech.ppob.mobile.ui.components.PpoButton
-import com.yonotech.ppob.mobile.ui.components.PpoTextField
+import com.yonotech.ppob.mobile.ui.theme.PpoMobileTheme
 import com.yonotech.ppob.mobile.utils.DeviceUtils
 import com.yonotech.ppob.mobile.utils.Resource
 import com.yonotech.ppob.mobile.viewmodels.auth.AuthViewModel
@@ -30,8 +26,6 @@ fun PinLoginScreen(
     onNavigateToPhoneInput: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
-    var phone by remember { mutableStateOf(phoneArg) }
-    var pin by remember { mutableStateOf("") }
     val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current
 
@@ -39,6 +33,31 @@ fun PinLoginScreen(
         if (authState is Resource.Success) {
             onLoginSuccess()
             viewModel.resetState()
+        }
+    }
+
+    PinLoginContent(
+        phoneArg = phoneArg,
+        authState = authState,
+        onVerifyPin = { phone, pin ->
+            viewModel.verifyPin(phone, pin, DeviceUtils.getDeviceId(context))
+        },
+        onPasswordLogin = onPasswordLogin
+    )
+}
+
+@Composable
+fun PinLoginContent(
+    phoneArg: String,
+    authState: Resource<Any>,
+    onVerifyPin: (String, String) -> Unit,
+    onPasswordLogin: () -> Unit
+) {
+    var pin by remember { mutableStateOf("") }
+
+    LaunchedEffect(pin) {
+        if (pin.length == 6) {
+            onVerifyPin(phoneArg, pin)
         }
     }
 
@@ -56,21 +75,11 @@ fun PinLoginScreen(
             color = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Masukkan nomor telepon dan PIN Anda",
+            text = "Masukkan PIN untuk nomor $phoneArg",
             fontSize = 16.sp,
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp, bottom = 32.dp),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-
-        PpoTextField(
-            value = phone,
-            onValueChange = { 
-                if (phoneArg.isEmpty() && it.length <= 15 && it.all { char -> char.isDigit() || char == '+' }) phone = it 
-            },
-            label = "Nomor Telepon",
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            placeholder = "+62xxxxxxxxxx"
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -91,20 +100,15 @@ fun PinLoginScreen(
             )
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        if (authState is Resource.Loading) {
+            CircularProgressIndicator(modifier = Modifier.padding(bottom = 16.dp))
+        }
 
         PinPad(
             onDigit = { digit -> if (pin.length < 6) pin += digit },
             onBackspace = { if (pin.isNotEmpty()) pin = pin.dropLast(1) }
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        PpoButton(
-            label = "Masuk",
-            onClick = { viewModel.verifyPin(phone, pin, DeviceUtils.getDeviceId(context)) },
-            isLoading = authState is Resource.Loading,
-            enabled = phone.isNotEmpty() && pin.length == 6
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -112,5 +116,18 @@ fun PinLoginScreen(
         TextButton(onClick = onPasswordLogin) {
             Text(text = "Masuk dengan Password")
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PinLoginScreenPreview() {
+    PpoMobileTheme {
+        PinLoginContent(
+            phoneArg = "08123456789",
+            authState = Resource.Idle,
+            onVerifyPin = { _, _ -> },
+            onPasswordLogin = {}
+        )
     }
 }

@@ -5,10 +5,10 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class WalletResponse(
-    @Json(name = "id") val id: String,
-    @Json(name = "balance_available") val balanceAvailable: Double,
-    @Json(name = "balance_held") val balanceHeld: Double,
-    @Json(name = "balance_total") val balanceTotal: Double,
+    @Json(name = "wallet_id") val id: String,
+    @Json(name = "available") val balanceAvailable: Double,
+    @Json(name = "hold_amount") val balanceHeld: Double,
+    @Json(name = "balance") val balanceTotal: Double,
     @Json(name = "updated_at") val updatedAt: String? = null
 )
 

@@ -3,9 +3,10 @@ package com.yonotech.ppob.mobile
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -33,24 +34,42 @@ import com.yonotech.ppob.mobile.ui.wallet.WalletScreen
 import com.yonotech.ppob.mobile.ui.theme.PpoMobileTheme
 import com.yonotech.ppob.mobile.viewmodels.transaction.TransactionViewModel
 import com.yonotech.ppob.mobile.data.remote.dto.StaffDto
+import com.yonotech.ppob.mobile.ui.product.GenericProductScreen
 import dagger.hilt.android.AndroidEntryPoint
+
+import com.yonotech.ppob.mobile.ui.splash.SplashScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
             PpoMobileTheme {
                 val navController = rememberNavController()
                 
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().safeDrawingPadding(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     NavHost(
                         navController = navController,
-                        startDestination = Screen.PhoneInput.route
+                        startDestination = Screen.Splash.route
                     ) {
+                        composable(Screen.Splash.route) {
+                            SplashScreen(
+                                onNavigateToHome = {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(Screen.Splash.route) { inclusive = true }
+                                    }
+                                },
+                                onNavigateToLogin = {
+                                    navController.navigate(Screen.PhoneInput.route) {
+                                        popUpTo(Screen.Splash.route) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
                         // Auth Flow
                         composable(Screen.PhoneInput.route) {
                             PhoneInputScreen(
@@ -134,7 +153,12 @@ class MainActivity : ComponentActivity() {
                             MainScreen(navController) {
                                 HomeScreen(
                                     onCategoryClick = { category ->
-                                        navController.navigate(Screen.ProductList.createRoute(category.id))
+                                        // Use GenericProductScreen for most product types
+                                        if (category.code in listOf("pulsa", "data", "masa_aktif", "paket_sms_and_telpon", "e-money", "pln", "games")) {
+                                            navController.navigate(Screen.GenericProduct.createRoute(category.id, category.code, category.name))
+                                        } else {
+                                            navController.navigate(Screen.ProductList.createRoute(category.id))
+                                        }
                                     },
                                     onWalletClick = {
                                         navController.navigate(Screen.Wallet.route)
@@ -181,6 +205,23 @@ class MainActivity : ComponentActivity() {
                         }
 
                         // Other screens
+                        composable(Screen.GenericProduct.route) { backStackEntry ->
+                            val categoryId = backStackEntry.arguments?.getString("categoryId") ?: ""
+                            val categoryCode = backStackEntry.arguments?.getString("categoryCode") ?: ""
+                            val categoryName = backStackEntry.arguments?.getString("categoryName") ?: ""
+                            GenericProductScreen(
+                                categoryId = categoryId,
+                                categoryCode = categoryCode,
+                                categoryName = categoryName,
+                                onBackClick = { navController.popBackStack() },
+                                onTransactionSuccess = { txId ->
+                                    navController.navigate(Screen.TransactionResult.createRoute(txId)) {
+                                        popUpTo(Screen.Home.route) { inclusive = false }
+                                    }
+                                }
+                            )
+                        }
+
                         composable(Screen.ProductList.route) { backStackEntry ->
                             val categoryId = backStackEntry.arguments?.getString("categoryId") ?: ""
                             ProductListScreen(
@@ -268,7 +309,9 @@ fun MainScreen(navController: NavController, content: @Composable () -> Unit) {
     
     Scaffold(
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                windowInsets = WindowInsets.navigationBars
+            ) {
                 items.forEachIndexed { index, item ->
                     NavigationBarItem(
                         icon = { Icon(item.icon, contentDescription = null) },

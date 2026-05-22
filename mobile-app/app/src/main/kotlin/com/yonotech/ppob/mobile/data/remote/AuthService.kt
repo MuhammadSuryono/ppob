@@ -3,6 +3,7 @@ package com.yonotech.ppob.mobile.data.remote
 import com.yonotech.ppob.mobile.data.remote.dto.*
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.Header
 import retrofit2.http.POST
 
 interface AuthService {
@@ -27,6 +28,9 @@ interface AuthService {
     @POST("auth/verify-pin")
     suspend fun verifyPin(@Body request: LoginRequest): Response<AuthResponse>
 
+    @POST("auth/authorize")
+    suspend fun authorize(@Body request: AuthorizeRequest): Response<AuthorizeResponse>
+
     @POST("auth/refresh")
-    suspend fun refreshToken(@Body refreshToken: String): Response<AuthResponse>
+    suspend fun refreshToken(@Body request: RefreshTokenRequest): Response<AuthResponse>
 }
