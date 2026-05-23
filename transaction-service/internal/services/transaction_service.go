@@ -61,9 +61,9 @@ type TransactionService struct {
 	cfg             *config.Config
 	db              *gorm.DB
 	webhookSecret   string
-	walletClient    *clients.WalletClient
-	productClient   *clients.ProductClient
-	integrationClient *clients.IntegrationClient
+	walletClient    WalletClient
+	productClient   ProductClient
+	integrationClient IntegrationClient
 	eventPublisher    *events.EventPublisher
 }
 
@@ -73,9 +73,9 @@ func NewTransactionService(
 	redis *redis.Client,
 	cfg *config.Config,
 	db *gorm.DB,
-	walletClient *clients.WalletClient,
-	productClient *clients.ProductClient,
-	integrationClient *clients.IntegrationClient,
+	walletClient WalletClient,
+	productClient ProductClient,
+	integrationClient IntegrationClient,
 ) *TransactionService {
 	return &TransactionService{
 		transactionRepo:   transactionRepo,
@@ -210,6 +210,15 @@ func (s *TransactionService) processExternalTransaction(ctx context.Context, tx 
 		s.UpdateTransactionStatus(ctx, tx.ID, &dto.UpdateStatusRequest{
 			Status:  string(StateFailed),
 			Message: "Provider communication failed",
+		})
+		return
+	}
+
+	if resp == nil {
+		log.Printf("Integration returned nil response for %s", tx.TransactionID)
+		s.UpdateTransactionStatus(ctx, tx.ID, &dto.UpdateStatusRequest{
+			Status:  string(StateFailed),
+			Message: "Provider returned empty response",
 		})
 		return
 	}

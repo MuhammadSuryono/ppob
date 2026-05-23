@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/yontech/ppob/transaction-service/config"
-	"github.com/yontech/ppob/transaction-service/internal/clients"
 	"github.com/yontech/ppob/transaction-service/internal/dto"
 	"github.com/yontech/ppob/transaction-service/internal/models"
 	"gorm.io/gorm"
@@ -23,10 +22,10 @@ var (
 type MarginService struct {
 	db            *gorm.DB
 	cfg           *config.Config
-	productClient *clients.ProductClient
+	productClient ProductClient
 }
 
-func NewMarginService(db *gorm.DB, cfg *config.Config, productClient *clients.ProductClient) *MarginService {
+func NewMarginService(db *gorm.DB, cfg *config.Config, productClient ProductClient) *MarginService {
 	return &MarginService{db: db, cfg: cfg, productClient: productClient}
 }
 
@@ -144,10 +143,6 @@ func (s *MarginService) CalculateTransactionMargin(userID uint, productCode stri
 	}
 
 	return marginResp.Margin, marginResp.Commission, nil
-}
-
-type WalletClient interface {
-	CreditWallet(ctx context.Context, userID uint, amount float64, referenceID, referenceType string) error
 }
 
 type CommissionService struct {

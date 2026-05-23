@@ -7,13 +7,64 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
+	"github.com/yontech/ppob/shared/proto/product"
 	"github.com/yontech/ppob/transaction-service/config"
+	"github.com/yontech/ppob/transaction-service/internal/clients"
 	"github.com/yontech/ppob/transaction-service/internal/dto"
 	"github.com/yontech/ppob/transaction-service/internal/models"
 	"github.com/yontech/ppob/transaction-service/internal/repository"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+type mockProductClient struct {
+	product *product.GetProductResponse
+	err     error
+}
+
+func (m *mockProductClient) GetProductByCode(ctx context.Context, skuCode string) (*product.GetProductResponse, error) {
+	return m.product, m.err
+}
+
+func (m *mockProductClient) ValidateProduct(ctx context.Context, productID uint, expectedPrice float64) (*product.ValidateProductResponse, error) {
+	return nil, nil
+}
+
+type mockWalletClient struct {
+	err error
+}
+
+func (m *mockWalletClient) PlaceHoldForTransaction(ctx context.Context, userID uint, amount float64, transactionID string) error {
+	return m.err
+}
+
+func (m *mockWalletClient) ReleaseHoldForTransaction(ctx context.Context, userID uint, transactionID string) error {
+	return m.err
+}
+
+func (m *mockWalletClient) DebitForTransaction(ctx context.Context, userID uint, amount float64, transactionID string) error {
+	return m.err
+}
+
+func (m *mockWalletClient) CreditWallet(ctx context.Context, userID uint, amount float64, referenceID, referenceType string) error {
+	return m.err
+}
+
+func (m *mockWalletClient) DebitWallet(ctx context.Context, userID uint, amount float64, referenceID, referenceType string) error {
+	return m.err
+}
+
+type mockIntegrationClient struct {
+	resp *clients.IntegrationResponse
+	err  error
+}
+
+func (m *mockIntegrationClient) TopUp(ctx context.Context, req *clients.TopUpRequest) (*clients.IntegrationResponse, error) {
+	if m.resp == nil && m.err == nil {
+		return &clients.IntegrationResponse{Success: true}, nil
+	}
+	return m.resp, m.err
+}
 
 func setupTransactionTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
@@ -98,19 +149,26 @@ func TestTransactionService_InitiateTransaction(t *testing.T) {
 	cfg := setupTransactionTestConfig()
 
 	transactionRepo := repository.NewTransactionRepository(db)
-	marginRepo := repository.NewMarginRepository(db)
-
-	transactionService := NewTransactionService(transactionRepo, marginRepo, nil, cfg, db, nil, nil)
+	mockProd := &mockProductClient{
+		product: &product.GetProductResponse{
+			Id:       1,
+			SkuCode:  "PREPAID_SIMPATIS_5K",
+			Price:    5500,
+			IsActive: true,
+		},
+	}
+	marginService := NewMarginService(db, cfg, mockProd)
+	transactionService := NewTransactionService(transactionRepo, marginService, nil, cfg, db, &mockWalletClient{}, mockProd, &mockIntegrationClient{})
 
 	// Add product to test DB
-	product := &models.Product{
+	productModel := &models.Product{
 		Code:     "PREPAID_SIMPATIS_5K",
 		Name:     "Simpati 5000",
 		Price:    5500,
 		Status:   "active",
 		IsActive: true,
 	}
-	db.Create(product)
+	db.Create(productModel)
 
 	req := &dto.CreateTransactionRequest{
 		ProductCode:    "PREPAID_SIMPATIS_5K",
@@ -152,19 +210,26 @@ func TestTransactionService_InitiateTransaction_AuthorizeID_Success(t *testing.T
 	})
 
 	transactionRepo := repository.NewTransactionRepository(db)
-	marginRepo := repository.NewMarginRepository(db)
-
-	transactionService := NewTransactionService(transactionRepo, marginRepo, redisClient, cfg, db, nil, nil)
+	mockProd := &mockProductClient{
+		product: &product.GetProductResponse{
+			Id:       1,
+			SkuCode:  "PREPAID_SIMPATIS_5K",
+			Price:    5500,
+			IsActive: true,
+		},
+	}
+	marginService := NewMarginService(db, cfg, mockProd)
+	transactionService := NewTransactionService(transactionRepo, marginService, redisClient, cfg, db, &mockWalletClient{}, mockProd, &mockIntegrationClient{})
 
 	// Add product to test DB
-	product := &models.Product{
+	productModel := &models.Product{
 		Code:     "PREPAID_SIMPATIS_5K",
 		Name:     "Simpati 5000",
 		Price:    5500,
 		Status:   "active",
 		IsActive: true,
 	}
-	db.Create(product)
+	db.Create(productModel)
 
 	userID := uint(1)
 	authorizeID := "valid-auth-id"
@@ -207,9 +272,16 @@ func TestTransactionService_InitiateTransaction_AuthorizeID_Invalid(t *testing.T
 	})
 
 	transactionRepo := repository.NewTransactionRepository(db)
-	marginRepo := repository.NewMarginRepository(db)
-
-	transactionService := NewTransactionService(transactionRepo, marginRepo, redisClient, cfg, db, nil, nil)
+	mockProd := &mockProductClient{
+		product: &product.GetProductResponse{
+			Id:       1,
+			SkuCode:  "PREPAID_SIMPATIS_5K",
+			Price:    5500,
+			IsActive: true,
+		},
+	}
+	marginService := NewMarginService(db, cfg, mockProd)
+	transactionService := NewTransactionService(transactionRepo, marginService, redisClient, cfg, db, &mockWalletClient{}, mockProd, &mockIntegrationClient{})
 
 	userID := uint(1)
 	authorizeID := "invalid-auth-id"
@@ -237,9 +309,9 @@ func TestTransactionService_UpdateStatus_ValidTransition(t *testing.T) {
 	cfg := setupTransactionTestConfig()
 
 	transactionRepo := repository.NewTransactionRepository(db)
-	marginRepo := repository.NewMarginRepository(db)
-
-	transactionService := NewTransactionService(transactionRepo, marginRepo, nil, cfg, db, nil, nil)
+	mockProd := &mockProductClient{}
+	marginService := NewMarginService(db, cfg, mockProd)
+	transactionService := NewTransactionService(transactionRepo, marginService, nil, cfg, db, &mockWalletClient{}, mockProd, &mockIntegrationClient{})
 
 	tx := &models.Transaction{
 		TransactionID:  "test-123",
@@ -274,9 +346,9 @@ func TestTransactionService_UpdateStatus_InvalidTransition(t *testing.T) {
 	cfg := setupTransactionTestConfig()
 
 	transactionRepo := repository.NewTransactionRepository(db)
-	marginRepo := repository.NewMarginRepository(db)
-
-	transactionService := NewTransactionService(transactionRepo, marginRepo, nil, cfg, db, nil, nil)
+	mockProd := &mockProductClient{}
+	marginService := NewMarginService(db, cfg, mockProd)
+	transactionService := NewTransactionService(transactionRepo, marginService, nil, cfg, db, &mockWalletClient{}, mockProd, &mockIntegrationClient{})
 
 	tx := &models.Transaction{
 		TransactionID:  "test-123",
@@ -304,9 +376,9 @@ func TestTransactionService_ListTransactions(t *testing.T) {
 	cfg := setupTransactionTestConfig()
 
 	transactionRepo := repository.NewTransactionRepository(db)
-	marginRepo := repository.NewMarginRepository(db)
-
-	transactionService := NewTransactionService(transactionRepo, marginRepo, nil, cfg, db, nil, nil)
+	mockProd := &mockProductClient{}
+	marginService := NewMarginService(db, cfg, mockProd)
+	transactionService := NewTransactionService(transactionRepo, marginService, nil, cfg, db, &mockWalletClient{}, mockProd, &mockIntegrationClient{})
 
 	for i := 0; i < 5; i++ {
 		tx := &models.Transaction{
