@@ -30,8 +30,9 @@ For every task that involves modifying code, follow this strict lifecycle:
 2.  **Build & Test:** You **MUST** always run the build process (e.g., `make build`) and any relevant tests (e.g., `make test` or `go test ./...`) to ensure the code compiles and tests pass.
 3.  **Commit:** If the build and tests are successful, and the subagent review (if applicable) is positive, you **MUST** stage the changes and commit them using `git add` and `git commit`. Use clear, descriptive commit messages.
 
-## 5. Security & Integrity
+## 6. Plan Tracking & Monitoring
 
-- **Never** hardcode secrets, API keys, or credentials. Use Vault or environment variables as specified in the Security Architecture.
-- Protect `.env` files and avoid committing sensitive data.
-- Ensure all database writes that involve financial balances use appropriate locking mechanisms (e.g., `SELECT FOR UPDATE`) as defined in the Data Architecture documentation.
+All complex architectural changes or features must have an implementation plan.
+- **Location:** All plans must be stored in the `docs/plan/` directory.
+- **Completion:** Once a plan is fully implemented and verified, the filename **MUST** be appended with `_COMPLETED` (e.g., `feature-x.md` becomes `feature-x_COMPLETED.md`).
+- This allows for easy auditing of implemented vs. pending architectural changes.
