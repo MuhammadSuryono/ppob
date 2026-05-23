@@ -11,18 +11,23 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/yontech/ppob/transaction-service/internal/clients"
 	"gorm.io/gorm"
 )
 
 type ReconciliationService struct {
-	db             *gorm.DB
-	digiflazzURL   string
-	digiflazzKey   string
+	db              *gorm.DB
+	walletClient    *clients.WalletClient
+	digiflazzURL    string
+	digiflazzKey    string
 	digiflazzSecret string
 }
 
-func NewReconciliationService(db *gorm.DB) *ReconciliationService {
-	return &ReconciliationService{db: db}
+func NewReconciliationService(db *gorm.DB, walletClient *clients.WalletClient) *ReconciliationService {
+	return &ReconciliationService{
+		db:           db,
+		walletClient: walletClient,
+	}
 }
 
 type ReconciliationResult struct {
@@ -67,6 +72,15 @@ func (s *ReconciliationService) ReconcileStalePending(ctx context.Context) (*Rec
 }
 
 func (s *ReconciliationService) expireTransaction(ctx context.Context, tx *Transaction) error {
+	// 1. Release wallet hold first (Compensate)
+	if s.walletClient != nil {
+		if err := s.walletClient.ReleaseHoldForTransaction(ctx, tx.UserID, tx.TransactionID); err != nil {
+			log.Printf("Warning: failed to release wallet hold for expired transaction %s: %v", tx.TransactionID, err)
+			// We continue even if hold release fails, as we want to mark it expired in DB
+			// In production, this should probably be retried or logged for manual review
+		}
+	}
+
 	return s.db.WithContext(ctx).Transaction(func(txDB *gorm.DB) error {
 		oldStatus := tx.Status
 		tx.Status = string(StateExpired)

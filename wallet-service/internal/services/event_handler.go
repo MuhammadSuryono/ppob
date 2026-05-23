@@ -54,21 +54,23 @@ func (h *WalletEventHandler) handleUserRegistered(ctx context.Context, payload s
 
 func (h *WalletEventHandler) handleTransactionSuccess(ctx context.Context, payload string) error {
 	var data struct {
-		TransactionID string  `json:"transaction_id"`
-		UserID        uint    `json:"user_id"`
-		Amount        float64 `json:"amount"`
-		ProductCode   string  `json:"product_code"`
+		TransactionID   string  `json:"transaction_id"`
+		UserID          uint    `json:"user_id"`
+		Amount          float64 `json:"amount"`
+		ProductCode     string  `json:"product_code"`
+		StaffCommission float64 `json:"staff_commission"`
 	}
 
 	if err := json.Unmarshal([]byte(payload), &data); err != nil {
 		return fmt.Errorf("failed to unmarshal transaction.success payload: %w", err)
 	}
 
-	// Logic for commission distribution would go here if not handled by Transaction Service.
-	// As per blueprint Section 4.2: "Wallet Service: (Event) Credits staff commission."
-	// Note: Currently transaction-service's CommissionWorker also does this via gRPC. 
-	// To fully align with Section 4.2, we should move commission calculation/distribution here.
-	
-	log.Printf("Transaction %s success event received for user %d", data.TransactionID, data.UserID)
+	if data.StaffCommission > 0 {
+		log.Printf("Crediting commission of %.2f to user %d for transaction %s", data.StaffCommission, data.UserID, data.TransactionID)
+		// We use level 1 as default for direct staff commission
+		return h.walletService.CreateCommission(ctx, data.UserID, data.StaffCommission, data.TransactionID, "MarginShare", 1)
+	}
+
+	log.Printf("Transaction %s success event received for user %d (no commission)", data.TransactionID, data.UserID)
 	return nil
 }

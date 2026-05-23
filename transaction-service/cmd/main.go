@@ -106,7 +106,6 @@ func main() {
 	defer redisClient.Close()
 
 	transactionRepo := repository.NewTransactionRepository(db)
-	marginRepo := repository.NewMarginRepository(db)
 
 	// Clients
 	walletClient, err := clients.NewWalletClient(cfg.WalletGRPCAddr)
@@ -125,7 +124,7 @@ func main() {
 
 	integrationClient := clients.NewIntegrationClient("http://integration-service:8080")
 
-	transactionService := services.NewTransactionService(transactionRepo, marginRepo, redisClient, cfg, db, walletClient, productClient, integrationClient)
+	transactionService := services.NewTransactionService(transactionRepo, marginService, redisClient, cfg, db, walletClient, productClient, integrationClient)
 	transactionHandler := handlers.NewTransactionHandler(transactionService)
 
 	// Commission System Wiring (Async)
@@ -133,7 +132,7 @@ func main() {
 	commissionWorker := services.NewCommissionWorker(redisClient, transactionRepo, marginService, commissionService)
 	go commissionWorker.Start(context.Background())
 
-	reconciliationService := services.NewReconciliationService(db)
+	reconciliationService := services.NewReconciliationService(db, walletClient)
 	startReconciliationCron(reconciliationService)
 
 	r := gin.Default()

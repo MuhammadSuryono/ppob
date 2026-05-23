@@ -99,7 +99,7 @@ func (s *AuthService) InitiateAuth(ctx context.Context, req *dto.InitiateAuthReq
 
 	device, err := s.deviceRepo.FindByFingerprint(user.ID, req.DeviceID)
 	isTrusted := false
-	if err == nil && device != nil && device.IsTrusted {
+	if err == nil && device != nil && device.TrustScore >= 70 {
 		isTrusted = true
 	}
 
@@ -197,18 +197,30 @@ func (s *AuthService) upsertDeviceTrust(ctx context.Context, userID uint, device
 
 	device, err := s.deviceRepo.FindByFingerprint(userID, deviceID)
 	if err != nil {
-		// New device
+		// New device starts with a base score
+		newScore := 20
 		if createErr := s.deviceRepo.Create(&models.DeviceFingerprint{
 			UserID:          userID,
 			FingerprintHash: deviceID,
-			IsTrusted:       true,
+			TrustScore:      newScore,
+			IsTrusted:       false, // Starts untrusted
 			FirstSeen:       time.Now(),
 			LastSeen:        time.Now(),
 		}); createErr != nil {
 			fmt.Printf("Failed to create device trust record for user %d: %v\n", userID, createErr)
 		}
-	} else if !device.IsTrusted {
-		device.IsTrusted = true
+	} else {
+		// Increase score for recurring successful login
+		device.TrustScore += 30
+		if device.TrustScore > 100 {
+			device.TrustScore = 100
+		}
+
+		// Promotion threshold check
+		if device.TrustScore >= 70 {
+			device.IsTrusted = true
+		}
+
 		device.LastSeen = time.Now()
 		if updateErr := s.deviceRepo.Update(device); updateErr != nil {
 			fmt.Printf("Failed to update device trust for user %d: %v\n", userID, updateErr)

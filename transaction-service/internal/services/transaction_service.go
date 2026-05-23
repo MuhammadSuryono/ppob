@@ -56,7 +56,7 @@ type Transaction = models.Transaction
 
 type TransactionService struct {
 	transactionRepo *repository.TransactionRepository
-	marginRepo      *repository.MarginRepository
+	marginService   *MarginService
 	redis           *redis.Client
 	cfg             *config.Config
 	db              *gorm.DB
@@ -69,7 +69,7 @@ type TransactionService struct {
 
 func NewTransactionService(
 	transactionRepo *repository.TransactionRepository,
-	marginRepo *repository.MarginRepository,
+	marginService *MarginService,
 	redis *redis.Client,
 	cfg *config.Config,
 	db *gorm.DB,
@@ -79,7 +79,7 @@ func NewTransactionService(
 ) *TransactionService {
 	return &TransactionService{
 		transactionRepo:   transactionRepo,
-		marginRepo:         marginRepo,
+		marginService:     marginService,
 		redis:             redis,
 		cfg:               cfg,
 		db:                db,
@@ -286,14 +286,22 @@ func (s *TransactionService) UpdateTransactionStatus(ctx context.Context, id uin
 			}
 		}
 
-		// Publish transaction.success event
+		// Calculate commissions for the event
+		var staffCommission float64
+		if s.marginService != nil {
+			_, staffCommission, _ = s.marginService.CalculateTransactionMargin(tx.UserID, tx.ProductCode, tx.SellingPrice)
+		}
+
+		// Publish transaction.success event with commission info
 		s.eventPublisher.Publish(ctx, "transaction_stream", "transaction.success", map[string]interface{}{
-			"transaction_id": tx.TransactionID,
-			"user_id":        tx.UserID,
-			"amount":         tx.SellingPrice,
-			"product_code":   tx.ProductCode,
+			"transaction_id":   tx.TransactionID,
+			"user_id":          tx.UserID,
+			"amount":           tx.SellingPrice,
+			"product_code":     tx.ProductCode,
+			"staff_commission": staffCommission,
 		})
 
+		// Legacy task - we'll eventually remove this
 		s.publishCommissionTask(ctx, tx.TransactionID)
 	} else if newState == StateFailed || newState == StateCancelled || newState == StateExpired {
 		if s.walletClient != nil {
