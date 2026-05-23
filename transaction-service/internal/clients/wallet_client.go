@@ -86,3 +86,83 @@ func (c *WalletClient) DebitWallet(walletID uint, amount float64, referenceID, r
 	
 	return nil
 }
+
+func (c *WalletClient) PlaceHoldForTransaction(ctx context.Context, userID uint, amount float64, transactionID string) error {
+	url := fmt.Sprintf("%s/api/v1/wallets/transactions/%s/hold", c.BaseURL, transactionID)
+	
+	payload := map[string]interface{}{
+		"amount": amount,
+	}
+	
+	body, _ := json.Marshal(payload)
+	req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	
+	// Internal service calls should have a way to bypass or provide auth
+	// For now we assume the ctx might have the original auth header or we use a service token
+	if token, ok := ctx.Value("auth_token").(string); ok {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("wallet service returned status %d", resp.StatusCode)
+	}
+	
+	return nil
+}
+
+func (c *WalletClient) ReleaseHoldForTransaction(ctx context.Context, userID uint, transactionID string) error {
+	url := fmt.Sprintf("%s/api/v1/wallets/transactions/%s/hold", c.BaseURL, transactionID)
+	
+	req, _ := http.NewRequestWithContext(ctx, "DELETE", url, nil)
+	
+	if token, ok := ctx.Value("auth_token").(string); ok {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
+		return fmt.Errorf("wallet service returned status %d", resp.StatusCode)
+	}
+	
+	return nil
+}
+
+func (c *WalletClient) DebitForTransaction(ctx context.Context, userID uint, amount float64, transactionID string) error {
+	url := fmt.Sprintf("%s/api/v1/wallets/transactions/%s/debit", c.BaseURL, transactionID)
+	
+	payload := map[string]interface{}{
+		"amount": amount,
+	}
+	
+	body, _ := json.Marshal(payload)
+	req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	
+	if token, ok := ctx.Value("auth_token").(string); ok {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("wallet service returned status %d", resp.StatusCode)
+	}
+	
+	return nil
+}

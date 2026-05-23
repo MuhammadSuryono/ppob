@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -36,6 +37,12 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 
 		c.Set("user_id", uint(claims["user_id"].(float64)))
 		c.Set("role", claims["role"])
+		c.Set("auth_token", tokenString)
+		
+		// Add to request context for downstream services
+		ctx := context.WithValue(c.Request.Context(), "auth_token", tokenString)
+		c.Request = c.Request.WithContext(ctx)
+		
 		c.Next()
 	}
 }

@@ -59,6 +59,8 @@ type TransactionService struct {
 	cfg             *config.Config
 	db              *gorm.DB
 	webhookSecret   string
+	walletClient    *clients.WalletClient
+	integrationClient *clients.IntegrationClient
 }
 
 func NewTransactionService(
@@ -67,14 +69,18 @@ func NewTransactionService(
 	redis *redis.Client,
 	cfg *config.Config,
 	db *gorm.DB,
+	walletClient *clients.WalletClient,
+	integrationClient *clients.IntegrationClient,
 ) *TransactionService {
 	return &TransactionService{
-		transactionRepo: transactionRepo,
-		marginRepo:      marginRepo,
-		redis:           redis,
-		cfg:             cfg,
-		db:              db,
-		webhookSecret:   cfg.DigiflazzWebhookSecret,
+		transactionRepo:   transactionRepo,
+		marginRepo:         marginRepo,
+		redis:             redis,
+		cfg:               cfg,
+		db:                db,
+		webhookSecret:     cfg.DigiflazzWebhookSecret,
+		walletClient:      walletClient,
+		integrationClient: integrationClient,
 	}
 }
 
@@ -137,6 +143,14 @@ func (s *TransactionService) InitiateTransaction(ctx context.Context, userID uin
 
 	transactionID := uuid.New().String()
 
+	// 1. Place Hold on Wallet
+	if s.walletClient != nil {
+		if err := s.walletClient.PlaceHoldForTransaction(ctx, userID, sellingPrice, transactionID); err != nil {
+			log.Printf("Failed to place hold for user %d: %v", userID, err)
+			return nil, ErrHoldFailed
+		}
+	}
+
 	tx := &models.Transaction{
 		TransactionID:  transactionID,
 		UserID:         userID,
@@ -151,6 +165,10 @@ func (s *TransactionService) InitiateTransaction(ctx context.Context, userID uin
 	}
 
 	if err := s.transactionRepo.Create(tx); err != nil {
+		// Compensate: release hold
+		if s.walletClient != nil {
+			_ = s.walletClient.ReleaseHoldForTransaction(ctx, userID, transactionID)
+		}
 		return nil, err
 	}
 
@@ -159,7 +177,45 @@ func (s *TransactionService) InitiateTransaction(ctx context.Context, userID uin
 		s.redis.Set(ctx, key, transactionID, 24*time.Hour)
 	}
 
+	// 2. Call Integration Service (Async)
+	go s.processExternalTransaction(context.Background(), tx)
+
 	return s.toResponse(tx), nil
+}
+
+func (s *TransactionService) processExternalTransaction(ctx context.Context, tx *models.Transaction) {
+	if s.integrationClient == nil {
+		return
+	}
+
+	// For prepaid, we use TopUp
+	resp, err := s.integrationClient.TopUp(ctx, &clients.TopUpRequest{
+		Code:  tx.ProductCode,
+		Phone: tx.CustomerNumber,
+		RefID: tx.TransactionID,
+	})
+
+	if err != nil {
+		log.Printf("Integration request failed for %s: %v", tx.TransactionID, err)
+		s.UpdateTransactionStatus(ctx, tx.ID, &dto.UpdateStatusRequest{
+			Status:  string(StateFailed),
+			Message: "Provider communication failed",
+		})
+		return
+	}
+
+	if resp.Success {
+		s.UpdateTransactionStatus(ctx, tx.ID, &dto.UpdateStatusRequest{
+			Status:      string(StatePending),
+			ProviderRef: resp.Data.TrxID,
+			Message:     resp.Message,
+		})
+	} else {
+		s.UpdateTransactionStatus(ctx, tx.ID, &dto.UpdateStatusRequest{
+			Status:  string(StateFailed),
+			Message: resp.Message,
+		})
+	}
 }
 
 func (s *TransactionService) GetTransaction(ctx context.Context, id uint) (*dto.TransactionResponse, error) {
@@ -203,7 +259,7 @@ func (s *TransactionService) UpdateTransactionStatus(ctx context.Context, id uin
 		tx.Message = req.Message
 	}
 
-	if newState == StateSuccess || newState == StateFailed {
+	if newState == StateSuccess || newState == StateFailed || newState == StateCancelled || newState == StateExpired {
 		now := time.Now()
 		tx.CompletedAt = &now
 	}
@@ -212,14 +268,27 @@ func (s *TransactionService) UpdateTransactionStatus(ctx context.Context, id uin
 		return nil, err
 	}
 
+	// 3. Wallet Operations based on final state
 	if newState == StateSuccess {
+		if s.walletClient != nil {
+			if err := s.walletClient.DebitForTransaction(ctx, tx.UserID, tx.SellingPrice, tx.TransactionID); err != nil {
+				log.Printf("CRITICAL: Failed to debit wallet for successful transaction %s: %v", tx.TransactionID, err)
+			}
+		}
 		s.publishCommissionTask(ctx, tx.TransactionID)
+	} else if newState == StateFailed || newState == StateCancelled || newState == StateExpired {
+		if s.walletClient != nil {
+			if err := s.walletClient.ReleaseHoldForTransaction(ctx, tx.UserID, tx.TransactionID); err != nil {
+				log.Printf("Failed to release hold for transaction %s: %v", tx.TransactionID, err)
+			}
+		}
 	}
 
 	s.logStateTransition(ctx, tx, oldStatus, string(newState), "api_update")
 
 	return s.toResponse(tx), nil
 }
+
 
 func (s *TransactionService) UpdateTransactionStatusByProviderRef(ctx context.Context, providerRef string, status string, providerStatus string, message string) (*dto.TransactionResponse, error) {
 	tx, err := s.transactionRepo.FindByProviderRef(providerRef)

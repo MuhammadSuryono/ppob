@@ -129,7 +129,7 @@ fun GenericProductScreen(
             transactionViewModel.checkBalance(product.price)
         },
         onConfirmPayment = { product, pin -> 
-            transactionViewModel.selectedProductId = product.id
+            transactionViewModel.selectedProductCode = product.code
             transactionViewModel.customerNo = customerId
             transactionViewModel.initiateTransaction(pin)
         }

@@ -59,6 +59,25 @@ func (c *DigiflazzClient) generateWebhookSignature(payload string, timestamp str
 	return hex.EncodeToString(hash[:])
 }
 
+func (c *DigiflazzClient) maskData(data map[string]interface{}) map[string]interface{} {
+	masked := make(map[string]interface{})
+	for k, v := range data {
+		switch k {
+		case "username", "sign", "key", "secret":
+			masked[k] = "****"
+		case "phone", "customer_no", "customer_id", "hp":
+			if str, ok := v.(string); ok && len(str) > 8 {
+				masked[k] = str[:4] + "****" + str[len(str)-4:]
+			} else {
+				masked[k] = "****"
+			}
+		default:
+			masked[k] = v
+		}
+	}
+	return masked
+}
+
 func (c *DigiflazzClient) doRequest(ctx context.Context, endpoint string, payload map[string]interface{}) ([]byte, error) {
 	payload["username"] = c.cfg.DigiflazzKey
 	payload["sign"] = c.generateSignature(payload)
@@ -68,16 +87,25 @@ func (c *DigiflazzClient) doRequest(ctx context.Context, endpoint string, payloa
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", c.cfg.DigiflazzURL+endpoint, bytes.NewBuffer(jsonPayload))
+	fullURL := c.cfg.DigiflazzURL + endpoint
+	req, err := http.NewRequestWithContext(ctx, "POST", fullURL, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
+	// Log Request
+	maskedPayload := c.maskData(payload)
+	log.Printf("[Digiflazz] Outbound Request: URL=%s, Payload=%v", fullURL, maskedPayload)
+
 	result, err := c.breaker.Execute(func() (interface{}, error) {
+		start := time.Now()
 		resp, err := c.client.Do(req)
+		duration := time.Since(start)
+
 		if err != nil {
+			log.Printf("[Digiflazz] Request Failed: URL=%s, Error=%v, Duration=%v", fullURL, err, duration)
 			return nil, err
 		}
 		defer resp.Body.Close()
@@ -86,6 +114,19 @@ func (c *DigiflazzClient) doRequest(ctx context.Context, endpoint string, payloa
 		if err != nil {
 			return nil, fmt.Errorf("failed to read response: %w", err)
 		}
+
+		// Log Response
+		var respData interface{}
+		_ = json.Unmarshal(body, &respData)
+		
+		var maskedResp interface{}
+		if m, ok := respData.(map[string]interface{}); ok {
+			maskedResp = c.maskData(m)
+		} else {
+			maskedResp = respData
+		}
+		
+		log.Printf("[Digiflazz] Inbound Response: Status=%d, Duration=%v, Body=%v", resp.StatusCode, duration, maskedResp)
 
 		if resp.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("digiflazz API error: status=%d, body=%s", resp.StatusCode, string(body))

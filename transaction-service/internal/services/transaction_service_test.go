@@ -101,7 +101,7 @@ func TestTransactionService_InitiateTransaction(t *testing.T) {
 	transactionRepo := repository.NewTransactionRepository(db)
 	marginRepo := repository.NewMarginRepository(db)
 
-	transactionService := NewTransactionService(transactionRepo, marginRepo, nil, cfg, db)
+	transactionService := NewTransactionService(transactionRepo, marginRepo, nil, cfg, db, nil, nil)
 
 	// Add product to test DB
 	product := &models.Product{
@@ -155,7 +155,7 @@ func TestTransactionService_InitiateTransaction_AuthorizeID_Success(t *testing.T
 	transactionRepo := repository.NewTransactionRepository(db)
 	marginRepo := repository.NewMarginRepository(db)
 
-	transactionService := NewTransactionService(transactionRepo, marginRepo, redisClient, cfg, db)
+	transactionService := NewTransactionService(transactionRepo, marginRepo, redisClient, cfg, db, nil, nil)
 
 	// Add product to test DB
 	product := &models.Product{
@@ -210,7 +210,7 @@ func TestTransactionService_InitiateTransaction_AuthorizeID_Invalid(t *testing.T
 	transactionRepo := repository.NewTransactionRepository(db)
 	marginRepo := repository.NewMarginRepository(db)
 
-	transactionService := NewTransactionService(transactionRepo, marginRepo, redisClient, cfg, db)
+	transactionService := NewTransactionService(transactionRepo, marginRepo, redisClient, cfg, db, nil, nil)
 
 	userID := uint(1)
 	authorizeID := "invalid-auth-id"
@@ -240,7 +240,7 @@ func TestTransactionService_UpdateStatus_ValidTransition(t *testing.T) {
 	transactionRepo := repository.NewTransactionRepository(db)
 	marginRepo := repository.NewMarginRepository(db)
 
-	transactionService := NewTransactionService(transactionRepo, marginRepo, nil, cfg, db)
+	transactionService := NewTransactionService(transactionRepo, marginRepo, nil, cfg, db, nil, nil)
 
 	tx := &models.Transaction{
 		TransactionID:  "test-123",
@@ -277,7 +277,7 @@ func TestTransactionService_UpdateStatus_InvalidTransition(t *testing.T) {
 	transactionRepo := repository.NewTransactionRepository(db)
 	marginRepo := repository.NewMarginRepository(db)
 
-	transactionService := NewTransactionService(transactionRepo, marginRepo, nil, cfg, db)
+	transactionService := NewTransactionService(transactionRepo, marginRepo, nil, cfg, db, nil, nil)
 
 	tx := &models.Transaction{
 		TransactionID:  "test-123",
@@ -307,7 +307,7 @@ func TestTransactionService_ListTransactions(t *testing.T) {
 	transactionRepo := repository.NewTransactionRepository(db)
 	marginRepo := repository.NewMarginRepository(db)
 
-	transactionService := NewTransactionService(transactionRepo, marginRepo, nil, cfg, db)
+	transactionService := NewTransactionService(transactionRepo, marginRepo, nil, cfg, db, nil, nil)
 
 	for i := 0; i < 5; i++ {
 		tx := &models.Transaction{

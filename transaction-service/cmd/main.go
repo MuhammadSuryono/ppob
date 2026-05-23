@@ -109,11 +109,14 @@ func main() {
 	marginRepo := repository.NewMarginRepository(db)
 	marginService := services.NewMarginService(db, cfg)
 
-	transactionService := services.NewTransactionService(transactionRepo, marginRepo, redisClient, cfg, db)
+	// Clients
+	walletClient := clients.NewWalletClient("http://wallet-service:8080") // Internal URL
+	integrationClient := clients.NewIntegrationClient("http://integration-service:8080")
+
+	transactionService := services.NewTransactionService(transactionRepo, marginRepo, redisClient, cfg, db, walletClient, integrationClient)
 	transactionHandler := handlers.NewTransactionHandler(transactionService)
 
 	// Commission System Wiring (Async)
-	walletClient := clients.NewWalletClient("http://wallet-service:8080") // Internal URL
 	commissionService := services.NewCommissionService(db, marginService, walletClient)
 	commissionWorker := services.NewCommissionWorker(redisClient, transactionRepo, marginService, commissionService)
 	go commissionWorker.Start(context.Background())
