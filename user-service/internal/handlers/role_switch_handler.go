@@ -86,8 +86,8 @@ func (h *RoleSwitchHandler) SwitchRole(c *gin.Context) {
 		"exp":      time.Now().Add(h.cfg.JWTExpire).Unix(),
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(h.cfg.JWTSecret))
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	tokenString, err := token.SignedString(h.cfg.PrivateKey)
 	if err != nil {
 		errors.RespondWithError(c, errors.NewAppError("SYSTEM_INTERNAL", nil))
 		return

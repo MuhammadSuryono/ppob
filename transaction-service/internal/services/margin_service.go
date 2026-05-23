@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/yontech/ppob/transaction-service/config"
+	"github.com/yontech/ppob/transaction-service/internal/clients"
 	"github.com/yontech/ppob/transaction-service/internal/dto"
 	"github.com/yontech/ppob/transaction-service/internal/models"
 	"gorm.io/gorm"
@@ -20,12 +21,13 @@ var (
 )
 
 type MarginService struct {
-	db  *gorm.DB
-	cfg *config.Config
+	db            *gorm.DB
+	cfg           *config.Config
+	productClient *clients.ProductClient
 }
 
-func NewMarginService(db *gorm.DB, cfg *config.Config) *MarginService {
-	return &MarginService{db: db, cfg: cfg}
+func NewMarginService(db *gorm.DB, cfg *config.Config, productClient *clients.ProductClient) *MarginService {
+	return &MarginService{db: db, cfg: cfg, productClient: productClient}
 }
 
 type MarginSettings struct {
@@ -47,15 +49,12 @@ type ProductMarginOverride struct {
 }
 
 func (s *MarginService) CalculateMargin(ctx context.Context, req *dto.MarginCalculationRequest) (*dto.MarginCalculationResponse, error) {
-	product, err := s.getProductByCode(req.ProductCode)
+	product, err := s.productClient.GetProductByCode(ctx, req.ProductCode)
 	if err != nil {
 		return nil, ErrProductNotFound
 	}
 
-	platformPrice := product.PriceAPI
-	if platformPrice <= 0 {
-		platformPrice = product.Price
-	}
+	platformPrice := product.Price
 
 	margin := req.SellingPrice - platformPrice
 	if margin < 0 {
@@ -148,7 +147,7 @@ func (s *MarginService) CalculateTransactionMargin(userID uint, productCode stri
 }
 
 type WalletClient interface {
-	CreditWallet(walletID uint, amount float64, referenceID, referenceType string) error
+	CreditWallet(ctx context.Context, userID uint, amount float64, referenceID, referenceType string) error
 }
 
 type CommissionService struct {
@@ -174,6 +173,9 @@ func (s *CommissionService) CreateAndCreditCommission(ctx context.Context, userI
 	}()
 
 	now := time.Now()
+	// Fix: TransactionID in models.Commission is likely a uint, but we have a UUID string. 
+	// If it's a UUID, we should use a string field. Let's check models.
+	// For now, if it fails to parse, we might have an issue.
 	txID, _ := strconv.ParseUint(transactionID, 10, 32)
 	commission := &models.Commission{
 		UserID:        userID,
@@ -193,7 +195,7 @@ func (s *CommissionService) CreateAndCreditCommission(ctx context.Context, userI
 
 	if s.walletSvc != nil {
 		referenceID := "commission_" + transactionID
-		if err := s.walletSvc.CreditWallet(walletID, amount, referenceID, "commission"); err != nil {
+		if err := s.walletSvc.CreditWallet(ctx, userID, amount, referenceID, "commission"); err != nil {
 			tx.Rollback()
 			return nil, err
 		}

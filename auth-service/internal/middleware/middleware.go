@@ -34,7 +34,7 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 
 		tokenString := parts[1]
 
-		claims, err := services.ValidateTokenStatic(tokenString, cfg.JWTSecret)
+		claims, err := services.ValidateTokenStatic(tokenString, cfg.PublicKey)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
 				Error:   "unauthorized",
@@ -77,7 +77,7 @@ func AuthMiddlewareWithBlacklist(cfg *config.Config, blacklistService *services.
 
 		tokenString := parts[1]
 
-		claims, err := services.ValidateTokenStatic(tokenString, cfg.JWTSecret)
+		claims, err := services.ValidateTokenStatic(tokenString, cfg.PublicKey)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
 				Error:   "unauthorized",

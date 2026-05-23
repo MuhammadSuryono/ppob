@@ -1,168 +1,81 @@
 package clients
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
 	"fmt"
-	"net/http"
-	"time"
+
+	"github.com/yontech/ppob/shared/proto/wallet"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type WalletClient struct {
-	BaseURL    string
-	HTTPClient *http.Client
+	client wallet.WalletServiceClient
+	conn   *grpc.ClientConn
 }
 
-func NewWalletClient(baseURL string) *WalletClient {
+func NewWalletClient(address string) (*WalletClient, error) {
+	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to wallet service: %w", err)
+	}
+
 	return &WalletClient{
-		BaseURL: baseURL,
-		HTTPClient: &http.Client{
-			Timeout: 10 * time.Second,
-		},
-	}
+		client: wallet.NewWalletServiceClient(conn),
+		conn:   conn,
+	}, nil
 }
 
-func (c *WalletClient) Credit(amount float64, referenceID, referenceType string) error {
-	// Based on wallet-service/cmd/main.go:
-	// wallets.POST("/:id/credit", walletHandler.Credit)
-	// Wait, the credit endpoint in wallet-service requires a wallet ID.
-	// But in CommissionService, we only have userID? 
-	// No, we need to know WHICH wallet to credit.
-	// Usually, for commission, it's the staff's wallet.
-	
-	return fmt.Errorf("use CreditWallet instead with specific ID")
+func (c *WalletClient) Close() error {
+	return c.conn.Close()
 }
 
-func (c *WalletClient) CreditWallet(walletID uint, amount float64, referenceID, referenceType string) error {
-	url := fmt.Sprintf("%s/api/v1/wallets/%d/credit", c.BaseURL, walletID)
-	
-	payload := map[string]interface{}{
-		"amount":         amount,
-		"reference_id":   referenceID,
-		"reference_type": referenceType,
-	}
-	
-	body, _ := json.Marshal(payload)
-	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	
-	// Note: Internal service calls should ideally have a shared secret or be in a private network
-	
-	resp, err := c.HTTPClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("wallet service returned status %d", resp.StatusCode)
-	}
-	
-	return nil
+func (c *WalletClient) CreditWallet(ctx context.Context, userID uint, amount float64, referenceID, referenceType string) error {
+	_, err := c.client.Credit(ctx, &wallet.CreditRequest{
+		UserId:        uint32(userID),
+		Amount:        amount,
+		ReferenceId:   referenceID,
+		ReferenceType: referenceType,
+	})
+	return err
 }
 
-func (c *WalletClient) DebitWallet(walletID uint, amount float64, referenceID, referenceType string) error {
-	url := fmt.Sprintf("%s/api/v1/wallets/%d/debit", c.BaseURL, walletID)
-	
-	payload := map[string]interface{}{
-		"amount":         amount,
-		"reference_id":   referenceID,
-		"reference_type": referenceType,
-	}
-	
-	body, _ := json.Marshal(payload)
-	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	
-	resp, err := c.HTTPClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("wallet service returned status %d", resp.StatusCode)
-	}
-	
-	return nil
+func (c *WalletClient) DebitWallet(ctx context.Context, userID uint, amount float64, referenceID, referenceType string) error {
+	_, err := c.client.Debit(ctx, &wallet.DebitRequest{
+		UserId:        uint32(userID),
+		Amount:        amount,
+		ReferenceId:   referenceID,
+		ReferenceType: referenceType,
+	})
+	return err
 }
 
 func (c *WalletClient) PlaceHoldForTransaction(ctx context.Context, userID uint, amount float64, transactionID string) error {
-	url := fmt.Sprintf("%s/api/v1/wallets/transactions/%s/hold", c.BaseURL, transactionID)
-	
-	payload := map[string]interface{}{
-		"amount": amount,
-	}
-	
-	body, _ := json.Marshal(payload)
-	req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	
-	// Internal service calls should have a way to bypass or provide auth
-	// For now we assume the ctx might have the original auth header or we use a service token
-	if token, ok := ctx.Value("auth_token").(string); ok {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-	
-	resp, err := c.HTTPClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("wallet service returned status %d", resp.StatusCode)
-	}
-	
-	return nil
+	_, err := c.client.PlaceHold(ctx, &wallet.PlaceHoldRequest{
+		UserId:        uint32(userID),
+		Amount:        amount,
+		ReferenceId:   fmt.Sprintf("hold_tx_%s", transactionID),
+		ReferenceType: "transaction",
+	})
+	return err
 }
 
 func (c *WalletClient) ReleaseHoldForTransaction(ctx context.Context, userID uint, transactionID string) error {
-	url := fmt.Sprintf("%s/api/v1/wallets/transactions/%s/hold", c.BaseURL, transactionID)
-	
-	req, _ := http.NewRequestWithContext(ctx, "DELETE", url, nil)
-	
-	if token, ok := ctx.Value("auth_token").(string); ok {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-	
-	resp, err := c.HTTPClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
-		return fmt.Errorf("wallet service returned status %d", resp.StatusCode)
-	}
-	
-	return nil
+	_, err := c.client.ReleaseHold(ctx, &wallet.ReleaseHoldRequest{
+		UserId:        uint32(userID),
+		ReferenceId:   fmt.Sprintf("hold_tx_%s", transactionID),
+		ReferenceType: "transaction",
+	})
+	return err
 }
 
 func (c *WalletClient) DebitForTransaction(ctx context.Context, userID uint, amount float64, transactionID string) error {
-	url := fmt.Sprintf("%s/api/v1/wallets/transactions/%s/debit", c.BaseURL, transactionID)
-	
-	payload := map[string]interface{}{
-		"amount": amount,
-	}
-	
-	body, _ := json.Marshal(payload)
-	req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	
-	if token, ok := ctx.Value("auth_token").(string); ok {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-	
-	resp, err := c.HTTPClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("wallet service returned status %d", resp.StatusCode)
-	}
-	
-	return nil
+	_, err := c.client.Debit(ctx, &wallet.DebitRequest{
+		UserId:        uint32(userID),
+		Amount:        amount,
+		ReferenceId:   fmt.Sprintf("debit_tx_%s", transactionID),
+		ReferenceType: "transaction",
+		ReleaseHold:   true,
+	})
+	return err
 }

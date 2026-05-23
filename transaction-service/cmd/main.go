@@ -107,13 +107,25 @@ func main() {
 
 	transactionRepo := repository.NewTransactionRepository(db)
 	marginRepo := repository.NewMarginRepository(db)
-	marginService := services.NewMarginService(db, cfg)
 
 	// Clients
-	walletClient := clients.NewWalletClient("http://wallet-service:8080") // Internal URL
+	walletClient, err := clients.NewWalletClient(cfg.WalletGRPCAddr)
+	if err != nil {
+		log.Fatalf("failed to create wallet client: %v", err)
+	}
+	defer walletClient.Close()
+
+	productClient, err := clients.NewProductClient(cfg.ProductGRPCAddr)
+	if err != nil {
+		log.Fatalf("failed to create product client: %v", err)
+	}
+	defer productClient.Close()
+
+	marginService := services.NewMarginService(db, cfg, productClient)
+
 	integrationClient := clients.NewIntegrationClient("http://integration-service:8080")
 
-	transactionService := services.NewTransactionService(transactionRepo, marginRepo, redisClient, cfg, db, walletClient, integrationClient)
+	transactionService := services.NewTransactionService(transactionRepo, marginRepo, redisClient, cfg, db, walletClient, productClient, integrationClient)
 	transactionHandler := handlers.NewTransactionHandler(transactionService)
 
 	// Commission System Wiring (Async)

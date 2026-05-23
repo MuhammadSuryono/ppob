@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"crypto/rand"
+	"crypto/rsa"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -17,6 +18,8 @@ import (
 	"github.com/yontech/ppob/auth-service/internal/dto"
 	"github.com/yontech/ppob/auth-service/internal/models"
 	"github.com/yontech/ppob/auth-service/internal/repository"
+	"github.com/yontech/ppob/shared/events"
+	"github.com/yontech/ppob/shared/security"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -34,12 +37,15 @@ var (
 )
 
 type AuthService struct {
-	userRepo   *repository.UserRepository
-	otpRepo    *repository.OTPRepository
-	walletRepo *repository.WalletRepository
-	deviceRepo *repository.DeviceRepository
-	redis      *redis.Client
-	cfg        *config.Config
+	userRepo       *repository.UserRepository
+	otpRepo        *repository.OTPRepository
+	walletRepo     *repository.WalletRepository
+	deviceRepo     *repository.DeviceRepository
+	redis          *redis.Client
+	cfg            *config.Config
+	privateKey     *rsa.PrivateKey
+	publicKey      *rsa.PublicKey
+	eventPublisher *events.EventPublisher
 }
 
 func NewAuthService(
@@ -50,14 +56,35 @@ func NewAuthService(
 	redis *redis.Client,
 	cfg *config.Config,
 ) *AuthService {
-	return &AuthService{
-		userRepo:   userRepo,
-		otpRepo:    otpRepo,
-		walletRepo: walletRepo,
-		deviceRepo: deviceRepo,
-		redis:      redis,
-		cfg:        cfg,
+	svc := &AuthService{
+		userRepo:       userRepo,
+		otpRepo:        otpRepo,
+		walletRepo:     walletRepo,
+		deviceRepo:     deviceRepo,
+		redis:          redis,
+		cfg:            cfg,
+		eventPublisher: events.NewEventPublisher(redis),
 	}
+
+	if cfg.JWTPrivateKey != "" {
+		pk, err := security.ParseRSAPrivateKey(cfg.JWTPrivateKey)
+		if err != nil {
+			fmt.Printf("Warning: failed to parse JWT private key: %v\n", err)
+		} else {
+			svc.privateKey = pk
+		}
+	}
+
+	if cfg.JWTPublicKey != "" {
+		pub, err := security.ParseRSAPublicKey(cfg.JWTPublicKey)
+		if err != nil {
+			fmt.Printf("Warning: failed to parse JWT public key: %v\n", err)
+		} else {
+			svc.publicKey = pub
+		}
+	}
+
+	return svc
 }
 
 func (s *AuthService) InitiateAuth(ctx context.Context, req *dto.InitiateAuthRequest) (*dto.InitiateAuthResponse, error) {
@@ -121,7 +148,7 @@ func (s *AuthService) VerifyPINLogin(ctx context.Context, phone, pin, deviceID s
 		return nil, ErrDeviceNotTrusted
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PinHash), []byte(pin)); err != nil {
+	if match, err := security.VerifyPIN(pin, user.PinHash); err != nil || !match {
 		return nil, ErrInvalidCredentials
 	}
 
@@ -147,7 +174,7 @@ func (s *AuthService) VerifyCredential(ctx context.Context, req *dto.VerifyCrede
 			return nil, ErrInvalidCredentials
 		}
 	case "pin":
-		if err := bcrypt.CompareHashAndPassword([]byte(user.PinHash), []byte(req.Value)); err != nil {
+		if match, err := security.VerifyPIN(req.Value, user.PinHash); err != nil || !match {
 			return nil, ErrInvalidCredentials
 		}
 	default:
@@ -236,7 +263,7 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) (*
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	hashedPIN, err := bcrypt.GenerateFromPassword([]byte(req.PIN), bcrypt.DefaultCost)
+	hashedPIN, err := security.HashPIN(req.PIN)
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash PIN: %w", err)
 	}
@@ -246,7 +273,7 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) (*
 		Phone:         req.Phone,
 		PasswordHash:  string(hashedPassword),
 		Name:          req.Name,
-		PinHash:       string(hashedPIN),
+		PinHash:       hashedPIN,
 		Role:          "Mitra",
 		Status:        "active",
 		EmailVerified: true, // OTP already verified
@@ -257,16 +284,6 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) (*
 		txUserRepo := repository.NewUserRepository(tx)
 		if err := txUserRepo.Create(user); err != nil {
 			return fmt.Errorf("failed to create user: %w", err)
-		}
-
-		wallet := &models.Wallet{
-			UserID:  user.ID,
-			Balance: 0,
-			Status:  "active",
-		}
-		txWalletRepo := repository.NewWalletRepository(tx)
-		if err := txWalletRepo.Create(wallet); err != nil {
-			return fmt.Errorf("failed to create wallet: %w", err)
 		}
 
 		if req.DeviceID != "" {
@@ -288,6 +305,14 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) (*
 	if err != nil {
 		return nil, err
 	}
+
+	// Publish user.registered event for asynchronous processing (e.g., wallet creation)
+	s.eventPublisher.Publish(ctx, "user_stream", "user.registered", map[string]interface{}{
+		"user_id": user.ID,
+		"phone":   user.Phone,
+		"email":   user.Email,
+		"role":    user.Role,
+	})
 
 	// Consume verification flag
 	s.redis.Del(ctx, "verified:"+req.RequestID)
@@ -422,7 +447,7 @@ func (s *AuthService) VerifyOTP(ctx context.Context, req *dto.VerifyOTPRequest) 
 }
 
 func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*dto.RefreshTokenResponse, error) {
-	claims, err := ValidateTokenStatic(refreshToken, s.cfg.JWTSecret)
+	claims, err := ValidateTokenStatic(refreshToken, s.publicKey)
 	if err != nil {
 		return nil, ErrInvalidToken
 	}
@@ -489,16 +514,16 @@ func (s *AuthService) ChangePIN(ctx context.Context, userID uint, oldPIN, newPIN
 		return ErrUserNotFound
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PinHash), []byte(oldPIN)); err != nil {
+	if match, err := security.VerifyPIN(oldPIN, user.PinHash); err != nil || !match {
 		return ErrInvalidCredentials
 	}
 
-	hashedPIN, err := bcrypt.GenerateFromPassword([]byte(newPIN), bcrypt.DefaultCost)
+	hashedPIN, err := security.HashPIN(newPIN)
 	if err != nil {
 		return fmt.Errorf("failed to hash PIN: %w", err)
 	}
 
-	user.PinHash = string(hashedPIN)
+	user.PinHash = hashedPIN
 	return s.userRepo.Update(user)
 }
 
@@ -508,7 +533,7 @@ func (s *AuthService) AuthorizeTransaction(ctx context.Context, userID uint, pin
 		return nil, ErrUserNotFound
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PinHash), []byte(pin)); err != nil {
+	if match, err := security.VerifyPIN(pin, user.PinHash); err != nil || !match {
 		return nil, ErrInvalidCredentials
 	}
 
@@ -529,15 +554,19 @@ func (s *AuthService) AuthorizeTransaction(ctx context.Context, userID uint, pin
 }
 
 func (s *AuthService) ValidateToken(tokenString string) (*dto.TokenClaims, error) {
-	return ValidateTokenStatic(tokenString, s.cfg.JWTSecret)
+	return ValidateTokenStatic(tokenString, s.publicKey)
 }
 
-func ValidateTokenStatic(tokenString string, secret string) (*dto.TokenClaims, error) {
+func ValidateTokenStatic(tokenString string, key *rsa.PublicKey) (*dto.TokenClaims, error) {
+	if key == nil {
+		return nil, fmt.Errorf("public key not configured")
+	}
+
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(secret), nil
+		return key, nil
 	})
 
 	if err != nil {
@@ -574,6 +603,10 @@ func ValidateTokenStatic(tokenString string, secret string) (*dto.TokenClaims, e
 }
 
 func (s *AuthService) generateToken(user *models.User) (string, time.Time, error) {
+	if s.privateKey == nil {
+		return "", time.Time{}, fmt.Errorf("private key not configured")
+	}
+
 	expiresAt := time.Now().Add(s.cfg.JWTExpire)
 	claims := jwt.MapClaims{
 		"user_id": user.ID,
@@ -584,8 +617,8 @@ func (s *AuthService) generateToken(user *models.User) (string, time.Time, error
 		"iat":     time.Now().Unix(),
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(s.cfg.JWTSecret))
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	tokenString, err := token.SignedString(s.privateKey)
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to sign token: %w", err)
 	}
@@ -594,6 +627,10 @@ func (s *AuthService) generateToken(user *models.User) (string, time.Time, error
 }
 
 func (s *AuthService) generateRefreshToken(user *models.User) (string, time.Time, error) {
+	if s.privateKey == nil {
+		return "", time.Time{}, fmt.Errorf("private key not configured")
+	}
+
 	expiresAt := time.Now().Add(s.cfg.RefreshExpire)
 	claims := jwt.MapClaims{
 		"user_id": user.ID,
@@ -602,8 +639,8 @@ func (s *AuthService) generateRefreshToken(user *models.User) (string, time.Time
 		"iat":     time.Now().Unix(),
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(s.cfg.JWTSecret))
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	tokenString, err := token.SignedString(s.privateKey)
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to sign refresh token: %w", err)
 	}

@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,6 +19,8 @@ import (
 	"github.com/yontech/ppob/product-service/internal/models"
 	"github.com/yontech/ppob/product-service/internal/repository"
 	"github.com/yontech/ppob/product-service/internal/services"
+	"github.com/yontech/ppob/shared/proto/product"
+	"google.golang.org/grpc"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
@@ -94,6 +98,23 @@ func main() {
 	priceValidationService := services.NewPriceValidationService(db)
 	priceHandler := handlers.NewPriceValidationHandler(priceValidationService)
 
+	grpcHandler := handlers.NewProductGRPCHandler(productService, priceValidationService)
+
+	// gRPC Server
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", cfg.GRPCPort))
+	if err != nil {
+		log.Fatalf("failed to listen for gRPC: %v", err)
+	}
+	grpcServer := grpc.NewServer()
+	product.RegisterProductServiceServer(grpcServer, grpcHandler)
+
+	go func() {
+		log.Printf("Product gRPC Service starting on port %s", cfg.GRPCPort)
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("failed to serve gRPC: %v", err)
+		}
+	}()
+
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware())
 	r.Use(middleware.MetricsMiddleware())
@@ -165,6 +186,7 @@ func main() {
 	<-quit
 
 	log.Println("Shutting down server...")
+	grpcServer.GracefulStop()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {

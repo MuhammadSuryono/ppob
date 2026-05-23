@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package product;
+
+option go_package = "github.com/yontech/ppob/shared/proto/product";
+
+service ProductService {
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse);
+  rpc ValidateProduct(ValidateProductRequest) returns (ValidateProductResponse);
+}
+
+message GetProductRequest {
+  uint32 product_id = 1;
+  string sku_code = 2;
+}
+
+message GetProductResponse {
+  uint32 id = 1;
+  string name = 2;
+  string sku_code = 3;
+  double price = 4;
+  bool is_active = 5;
+  string category_name = 6;
+}
+
+message ValidateProductRequest {
+  uint32 product_id = 1;
+  double expected_price = 2;
+}
+
+message ValidateProductResponse {
+  bool is_valid = 1;
+  string message = 2;
+  double current_price = 3;
+}

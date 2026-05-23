@@ -1,13 +1,14 @@
 package middleware
 
 import (
+	"crypto/rsa"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/yontech/ppob/wallet-service/config"
 	"github.com/yontech/ppob/wallet-service/internal/dto"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
@@ -27,7 +28,7 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 		}
 
 		tokenString := parts[1]
-		claims, err := validateToken(tokenString, cfg.JWTSecret)
+		claims, err := validateToken(tokenString, cfg.PublicKey)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "unauthorized", Message: err.Error()})
 			c.Abort()
@@ -56,12 +57,12 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
-func validateToken(tokenString, secret string) (jwt.MapClaims, error) {
+func validateToken(tokenString string, publicKey *rsa.PublicKey) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, jwt.ErrSignatureInvalid
 		}
-		return []byte(secret), nil
+		return publicKey, nil
 	})
 
 	if err != nil {

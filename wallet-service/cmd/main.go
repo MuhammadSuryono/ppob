@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,12 +13,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/yontech/ppob/shared/events"
+	"github.com/yontech/ppob/shared/proto/wallet"
 	"github.com/yontech/ppob/wallet-service/config"
 	"github.com/yontech/ppob/wallet-service/internal/handlers"
 	"github.com/yontech/ppob/wallet-service/internal/middleware"
 	"github.com/yontech/ppob/wallet-service/internal/models"
 	"github.com/yontech/ppob/wallet-service/internal/repository"
 	"github.com/yontech/ppob/wallet-service/internal/services"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -47,6 +52,40 @@ func main() {
 
 	walletService := services.NewWalletService(walletRepo, eventRepo, redisClient, cfg)
 	walletHandler := handlers.NewWalletHandler(walletService)
+	grpcHandler := handlers.NewWalletGRPCHandler(walletService)
+	eventHandler := services.NewWalletEventHandler(walletService)
+
+	// Event Consumers
+	userConsumer := events.NewEventConsumer(redisClient, "user_stream", "wallet_service_group", "wallet_consumer_1")
+	go func() {
+		log.Println("Starting user_stream consumer...")
+		if err := userConsumer.Start(context.Background(), eventHandler.HandleEvent); err != nil {
+			log.Printf("User stream consumer error: %v", err)
+		}
+	}()
+
+	transactionConsumer := events.NewEventConsumer(redisClient, "transaction_stream", "wallet_service_group", "wallet_consumer_1")
+	go func() {
+		log.Println("Starting transaction_stream consumer...")
+		if err := transactionConsumer.Start(context.Background(), eventHandler.HandleEvent); err != nil {
+			log.Printf("Transaction stream consumer error: %v", err)
+		}
+	}()
+
+	// gRPC Server
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", cfg.GRPCPort))
+	if err != nil {
+		log.Fatalf("failed to listen for gRPC: %v", err)
+	}
+	grpcServer := grpc.NewServer()
+	wallet.RegisterWalletServiceServer(grpcServer, grpcHandler)
+
+	go func() {
+		log.Printf("Wallet gRPC Service starting on port %s", cfg.GRPCPort)
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("failed to serve gRPC: %v", err)
+		}
+	}()
 
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware())
@@ -112,6 +151,7 @@ func main() {
 	<-quit
 
 	log.Println("Shutting down server...")
+	grpcServer.GracefulStop()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {

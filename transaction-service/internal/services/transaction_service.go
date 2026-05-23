@@ -13,7 +13,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"github.com/yontech/ppob/shared/events"
 	"github.com/yontech/ppob/transaction-service/config"
+	"github.com/yontech/ppob/transaction-service/internal/clients"
 	"github.com/yontech/ppob/transaction-service/internal/dto"
 	"github.com/yontech/ppob/transaction-service/internal/models"
 	"github.com/yontech/ppob/transaction-service/internal/repository"
@@ -60,7 +62,9 @@ type TransactionService struct {
 	db              *gorm.DB
 	webhookSecret   string
 	walletClient    *clients.WalletClient
+	productClient   *clients.ProductClient
 	integrationClient *clients.IntegrationClient
+	eventPublisher    *events.EventPublisher
 }
 
 func NewTransactionService(
@@ -70,6 +74,7 @@ func NewTransactionService(
 	cfg *config.Config,
 	db *gorm.DB,
 	walletClient *clients.WalletClient,
+	productClient *clients.ProductClient,
 	integrationClient *clients.IntegrationClient,
 ) *TransactionService {
 	return &TransactionService{
@@ -80,7 +85,9 @@ func NewTransactionService(
 		db:                db,
 		webhookSecret:     cfg.DigiflazzWebhookSecret,
 		walletClient:      walletClient,
+		productClient:     productClient,
 		integrationClient: integrationClient,
+		eventPublisher:    events.NewEventPublisher(redis),
 	}
 }
 
@@ -126,15 +133,18 @@ func (s *TransactionService) InitiateTransaction(ctx context.Context, userID uin
 		}
 	}
 
-	product, err := s.transactionRepo.GetProductByCode(ctx, req.ProductCode)
-	if err != nil || product == nil {
+	var platformPrice float64
+	var productID uint
+
+	if productResp, err := s.productClient.GetProductByCode(ctx, req.ProductCode); err != nil || productResp == nil {
 		return nil, ErrTxProductNotFound
-	}
-	if !product.IsActive || product.Status != "active" {
+	} else if !productResp.IsActive {
 		return nil, ErrProductInactive
+	} else {
+		platformPrice = productResp.Price
+		productID = uint(productResp.Id)
 	}
 
-	platformPrice := product.Price
 	sellingPrice := req.SellingPrice
 	if sellingPrice <= 0 {
 		sellingPrice = platformPrice
@@ -154,7 +164,7 @@ func (s *TransactionService) InitiateTransaction(ctx context.Context, userID uin
 	tx := &models.Transaction{
 		TransactionID:  transactionID,
 		UserID:         userID,
-		ProductID:      product.ID,
+		ProductID:      productID,
 		ProductCode:    req.ProductCode,
 		CustomerNumber: req.CustomerNumber,
 		Amount:         platformPrice,
@@ -275,6 +285,15 @@ func (s *TransactionService) UpdateTransactionStatus(ctx context.Context, id uin
 				log.Printf("CRITICAL: Failed to debit wallet for successful transaction %s: %v", tx.TransactionID, err)
 			}
 		}
+
+		// Publish transaction.success event
+		s.eventPublisher.Publish(ctx, "transaction_stream", "transaction.success", map[string]interface{}{
+			"transaction_id": tx.TransactionID,
+			"user_id":        tx.UserID,
+			"amount":         tx.SellingPrice,
+			"product_code":   tx.ProductCode,
+		})
+
 		s.publishCommissionTask(ctx, tx.TransactionID)
 	} else if newState == StateFailed || newState == StateCancelled || newState == StateExpired {
 		if s.walletClient != nil {

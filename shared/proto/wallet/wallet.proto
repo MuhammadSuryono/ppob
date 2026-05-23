@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package wallet;
+
+option go_package = "github.com/yontech/ppob/shared/proto/wallet";
+
+service WalletService {
+  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse);
+  rpc PlaceHold(PlaceHoldRequest) returns (PlaceHoldResponse);
+  rpc ReleaseHold(ReleaseHoldRequest) returns (ReleaseHoldResponse);
+  rpc Debit(DebitRequest) returns (DebitResponse);
+  rpc Credit(CreditRequest) returns (CreditResponse);
+  rpc Transfer(TransferRequest) returns (TransferResponse);
+}
+
+message GetBalanceRequest {
+  uint32 user_id = 1;
+}
+
+message GetBalanceResponse {
+  uint32 wallet_id = 1;
+  uint32 user_id = 2;
+  double balance = 3;
+  double hold_amount = 4;
+  double available = 5;
+  string currency = 6;
+}
+
+message PlaceHoldRequest {
+  uint32 user_id = 1;
+  double amount = 2;
+  string reference_id = 3;
+  string reference_type = 4;
+  int64 expires_at = 5; // Unix timestamp
+}
+
+message PlaceHoldResponse {
+  uint32 hold_id = 1;
+  uint32 wallet_id = 2;
+  double amount = 3;
+  string reference_id = 4;
+  string reference_type = 5;
+  string status = 6;
+}
+
+message ReleaseHoldRequest {
+  uint32 user_id = 1;
+  string reference_id = 2;
+  string reference_type = 3;
+}
+
+message ReleaseHoldResponse {
+  bool success = 1;
+}
+
+message DebitRequest {
+  uint32 user_id = 1;
+  double amount = 2;
+  string reference_id = 3;
+  string reference_type = 4;
+  bool release_hold = 5;
+}
+
+message DebitResponse {
+  bool success = 1;
+}
+
+message CreditRequest {
+  uint32 user_id = 1;
+  double amount = 2;
+  string reference_id = 3;
+  string reference_type = 4;
+}
+
+message CreditResponse {
+  bool success = 1;
+}
+
+message TransferRequest {
+  uint32 from_user_id = 1;
+  uint32 to_user_id = 2;
+  double amount = 3;
+  string reference_id = 4;
+}
+
+message TransferResponse {
+  bool success = 1;
+}

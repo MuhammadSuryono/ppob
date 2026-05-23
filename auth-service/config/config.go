@@ -2,11 +2,13 @@ package config
 
 import (
 	"context"
+	"crypto/rsa"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -22,7 +24,9 @@ type Config struct {
 	DBName           string
 	RedisHost        string
 	RedisPort        string
-	JWTSecret        string
+	JWTPrivateKey    string // PEM encoded
+	JWTPublicKey     string // PEM encoded
+	PublicKey        *rsa.PublicKey
 	JWTExpire        time.Duration
 	RefreshExpire    time.Duration
 	OTPLength        int
@@ -31,7 +35,7 @@ type Config struct {
 }
 
 func Load() *Config {
-	return &Config{
+	cfg := &Config{
 		ServerPort:       getEnv("SERVER_PORT", "8080"),
 		DBHost:           getEnv("DB_HOST", "localhost"),
 		DBPort:           getEnv("DB_PORT", "5432"),
@@ -40,13 +44,25 @@ func Load() *Config {
 		DBName:           getEnv("DB_NAME", "ppob"),
 		RedisHost:        getEnv("REDIS_HOST", "localhost"),
 		RedisPort:        getEnv("REDIS_PORT", "6379"),
-		JWTSecret:        getEnv("JWT_SECRET", "ppob-secret-key-change-in-production"),
+		JWTPrivateKey:    getEnv("JWT_PRIVATE_KEY", ""),
+		JWTPublicKey:     getEnv("JWT_PUBLIC_KEY", ""),
 		JWTExpire:        15 * time.Minute,
 		RefreshExpire:    7 * 24 * time.Hour,
 		OTPLength:        6,
 		OTPExpireMinutes: 5,
 		GinMode:          getEnv("GIN_MODE", "release"),
 	}
+
+	if cfg.JWTPublicKey != "" {
+		pub, err := jwt.ParseRSAPublicKeyFromPEM([]byte(cfg.JWTPublicKey))
+		if err != nil {
+			log.Printf("Warning: failed to parse JWT public key: %v\n", err)
+		} else {
+			cfg.PublicKey = pub
+		}
+	}
+
+	return cfg
 }
 
 func getEnv(key, defaultValue string) string {

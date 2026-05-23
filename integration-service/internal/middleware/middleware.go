@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"crypto/rsa"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -27,7 +29,7 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 		}
 
 		tokenString := parts[1]
-		claims, err := validateToken(tokenString, cfg.JWTSecret)
+		claims, err := validateToken(tokenString, cfg.PublicKey)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "unauthorized", Message: err.Error()})
 			c.Abort()
@@ -56,12 +58,16 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
-func validateToken(tokenString, secret string) (jwt.MapClaims, error) {
+func validateToken(tokenString string, publicKey *rsa.PublicKey) (jwt.MapClaims, error) {
+	if publicKey == nil {
+		return nil, fmt.Errorf("JWT public key not configured")
+	}
+
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, jwt.ErrSignatureInvalid
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(secret), nil
+		return publicKey, nil
 	})
 
 	if err != nil {
