@@ -30,33 +30,33 @@ test:
 	@echo "Running tests..."
 	@for service in $(SERVICES); do \
 		echo "Testing $$service..."; \
-		cd $$service && go test -v -coverprofile=coverage.out ./... && cd ..; \
+		(cd $$service && go test -v -coverprofile=coverage.out ./...) || exit 1; \
 	done
 	@echo "Running mobile tests..."
-	# cd $(MOBILE_DIR) && ./gradlew test
+	# (cd $(MOBILE_DIR) && ./gradlew test)
 
 test-coverage:
 	@echo "Running tests with coverage..."
 	@for service in $(SERVICES); do \
 		echo "Testing $$service with coverage..."; \
-		cd $$service && go test -coverprofile=coverage.out -covermode=atomic ./... && cd ..; \
+		(cd $$service && go test -coverprofile=coverage.out -covermode=atomic ./...) || exit 1; \
 	done
 
 lint:
 	@echo "Running linters..."
 	@for service in $(SERVICES); do \
 		echo "Linting $$service..."; \
-		cd $$service && go vet ./... && cd ..; \
+		(cd $$service && go vet ./...) || exit 1; \
 	done
 
 build:
 	@echo "Building all services..."
 	@for service in $(SERVICES); do \
 		echo "Building $$service..."; \
-		cd $$service && CGO_ENABLED=0 GOOS=linux go build -o bin/$$service ./cmd && cd ..; \
+		(cd $$service && CGO_ENABLED=0 GOOS=linux go build -o bin/$$service ./cmd) || exit 1; \
 	done
 	@echo "Building mobile app..."
-	# cd $(MOBILE_DIR) && ./gradlew assembleDebug
+	# (cd $(MOBILE_DIR) && ./gradlew assembleDebug)
 
 run:
 	@echo "Starting all services..."

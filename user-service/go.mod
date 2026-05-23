@@ -60,6 +60,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/yontech/ppob/shared => ./shared
+replace github.com/yontech/ppob/shared => ../shared
 
 exclude go.opentelemetry.io/auto/sdk v1.2.1

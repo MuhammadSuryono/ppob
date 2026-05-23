@@ -24,7 +24,6 @@ func setupWalletTestDB(t *testing.T) *gorm.DB {
 
 func setupWalletTestConfig() *config.Config {
 	return &config.Config{
-		JWTSecret: "test-secret-key",
 		ServerPort: "8080",
 		DBHost:     "localhost",
 		DBPort:     "5432",

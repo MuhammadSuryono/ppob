@@ -3,6 +3,9 @@ package services
 import (
 	"context"
 	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"math/big"
 	"testing"
@@ -33,13 +36,25 @@ func setupTestDB(t *testing.T) *gorm.DB {
 }
 
 func setupTestConfig() *config.Config {
+	// Generate temporary RSA key for testing
+	privateKey, _ := rsa.GenerateKey(rand.Reader, 2048)
+	privatePEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+	})
+	publicPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PUBLIC KEY",
+		Bytes: x509.MarshalPKCS1PublicKey(&privateKey.PublicKey),
+	})
+
 	return &config.Config{
-		JWTSecret:        "test-secret-key",
+		JWTPrivateKey:    string(privatePEM),
+		JWTPublicKey:     string(publicPEM),
 		JWTExpire:        15 * time.Minute,
 		RefreshExpire:    7 * 24 * time.Hour,
 		OTPLength:        6,
 		OTPExpireMinutes: 5,
-		ServerPort:        "8080",
+		ServerPort:       "8080",
 		DBHost:           "localhost",
 		DBPort:           "5432",
 		DBUser:           "postgres",
@@ -693,6 +708,7 @@ func TestGenerateOTP(t *testing.T) {
 }
 
 func generateToken(cfg *config.Config, user *models.User) (string, time.Time, error) {
+	pk, _ := jwt.ParseRSAPrivateKeyFromPEM([]byte(cfg.JWTPrivateKey))
 	expiresAt := time.Now().Add(cfg.JWTExpire)
 	claims := jwt.MapClaims{
 		"user_id": user.ID,
@@ -703,8 +719,8 @@ func generateToken(cfg *config.Config, user *models.User) (string, time.Time, er
 		"iat":     time.Now().Unix(),
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(cfg.JWTSecret))
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	tokenString, err := token.SignedString(pk)
 	if err != nil {
 		return "", time.Time{}, err
 	}

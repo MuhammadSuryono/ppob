@@ -27,8 +27,7 @@ func setupTransactionTestDB(t *testing.T) *gorm.DB {
 
 func setupTransactionTestConfig() *config.Config {
 	return &config.Config{
-		JWTSecret:     "test-secret-key",
-		ServerPort:    "8080",
+		ServerPort: "8080",
 		DBHost:        "localhost",
 		DBPort:        "5432",
 		DBUser:        "postgres",
