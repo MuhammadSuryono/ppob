@@ -1,15 +1,38 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizard.settings.xml
-.DS_Store
+# Android and Gradle standard ignore patterns
+
+# Built files and directories
+build/
 /build
-/captures
-.externalNativeBuild
-.cxx
+app/build
+bin/
+gen/
+out/
+
+# Gradle files and cache
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+
+# Local configuration file (SDK paths, etc.)
 local.properties
+
+# Log files
+*.log
+
+# Android Studio / IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+.navigation/
+
+# Android Studio captures folder
+captures/
+
+# External Native Build
+.externalNativeBuild/
+.cxx/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
