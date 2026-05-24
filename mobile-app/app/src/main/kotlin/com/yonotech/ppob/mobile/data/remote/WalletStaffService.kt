@@ -24,13 +24,12 @@ interface StaffService {
     @POST("staff")
     suspend fun createStaff(@Body request: CreateStaffRequest): Response<StaffDto>
 
-    @POST("wallets/{id}/topup")
+    @POST("wallets/staff/topup")
     suspend fun topUpStaff(
-        @Path("id") staffId: String,
         @Body request: TopUpRequest
     ): Response<TransactionHistoryResponse>
 
-    @GET("transactions/v1/history")
+    @GET("transactions/history")
     suspend fun getTransactionHistory(
         @Query("status") status: String? = null,
         @Query("limit") limit: Int = 50,
