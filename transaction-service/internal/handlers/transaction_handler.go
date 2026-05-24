@@ -46,7 +46,8 @@ func (h *TransactionHandler) InitiateTransaction(c *gin.Context) {
 			errors.RespondWithError(c, errors.NewAppError("AUTH_AUTHORIZE_INVALID", nil))
 			return
 		}
-		errors.RespondWithError(c, errors.NewAppError("SYSTEM_INTERNAL", nil))
+		// Debug: return real error message
+		errors.InternalError(c, "SYSTEM_INTERNAL", err.Error())
 		return
 	}
 

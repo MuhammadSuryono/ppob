@@ -40,10 +40,11 @@ func main() {
 
 	userRepo := repository.NewUserRepository(db)
 	otpRepo := repository.NewOTPRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
 	walletRepo := repository.NewWalletRepository(db)
 	deviceRepo := repository.NewDeviceRepository(db)
 
-	authService := services.NewAuthService(userRepo, otpRepo, walletRepo, deviceRepo, redisClient, cfg)
+	authService := services.NewAuthService(userRepo, otpRepo, roleRepo, walletRepo, deviceRepo, redisClient, cfg)
 	authHandler := handlers.NewAuthHandler(authService)
 
 	r := gin.Default()

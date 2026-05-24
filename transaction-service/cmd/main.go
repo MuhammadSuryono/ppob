@@ -122,7 +122,11 @@ func main() {
 
 	marginService := services.NewMarginService(db, cfg, productClient)
 
-	integrationClient := clients.NewIntegrationClient("http://integration-service:8080")
+	integrationClient, err := clients.NewIntegrationClient(cfg.IntegrationGRPCAddr)
+	if err != nil {
+		log.Fatalf("failed to create integration client: %v", err)
+	}
+	defer integrationClient.Close()
 
 	transactionService := services.NewTransactionService(transactionRepo, marginService, redisClient, cfg, db, walletClient, productClient, integrationClient)
 	transactionHandler := handlers.NewTransactionHandler(transactionService)

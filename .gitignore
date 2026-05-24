@@ -1,2 +1,11 @@
 # Stakpak session files
 .stakpak/session*
+
+# RSA Keys & Certs
+*.pem
+auth-service/certs/
+
+# Temp files
+reproduce_issue.go
+auth-service/bin/
+

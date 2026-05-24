@@ -28,6 +28,7 @@ type Wallet struct {
 	Status            string         `gorm:"size:20;default:active" json:"status"`
 	CreatedAt          time.Time      `json:"created_at"`
 	UpdatedAt          time.Time      `json:"updated_at"`
+	DeletedAt          gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type Transaction struct {
@@ -59,15 +60,16 @@ type Transaction struct {
 }
 
 type DailyLimit struct {
-	ID           uint      `gorm:"primaryKey" json:"id"`
-	UserID       uint      `gorm:"uniqueIndex;not null" json:"user_id"`
-	Date         string    `gorm:"size:10;not null" json:"date"`
-	Count        int       `gorm:"default:0" json:"count"`
-	MaxCount     int       `gorm:"default:100" json:"max_count"`
-	TotalAmount  float64   `gorm:"default:0" json:"total_amount"`
-	MaxAmount    float64   `gorm:"default:10000000" json:"max_amount"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID           uint           `gorm:"primaryKey" json:"id"`
+	UserID       uint           `gorm:"uniqueIndex;not null" json:"user_id"`
+	Date         string         `gorm:"size:10;not null" json:"date"`
+	Count        int            `gorm:"default:0" json:"count"`
+	MaxCount     int            `gorm:"default:100" json:"max_count"`
+	TotalAmount  float64        `gorm:"default:0" json:"total_amount"`
+	MaxAmount    float64        `gorm:"default:10000000" json:"max_amount"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type Commission struct {
@@ -85,6 +87,8 @@ type Commission struct {
 	PaidAt         *time.Time     `json:"paid_at"`
 	EarnedAt       *time.Time     `json:"earned_at"`
 	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type Product struct {
@@ -101,6 +105,7 @@ type Product struct {
 	ProductType   string    `gorm:"size:20" json:"product_type"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
+	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type PostpaidInquiry struct {

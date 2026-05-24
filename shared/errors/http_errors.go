@@ -74,23 +74,43 @@ func RespondWithErrorJSON(w http.ResponseWriter, appErr *AppError) {
 }
 
 func BadRequest(c *gin.Context, code, message string) {
-	RespondWithError(c, NewAppError(code, map[string]interface{}{"message": message}))
+	appErr := NewAppError(code, map[string]interface{}{"message": message})
+	if message != "" {
+		appErr.Message = message
+	}
+	RespondWithError(c, appErr)
 }
 
 func Unauthorized(c *gin.Context, code, message string) {
-	RespondWithError(c, NewAppError(code, nil).WithStatus(http.StatusUnauthorized))
+	appErr := NewAppError(code, nil).WithStatus(http.StatusUnauthorized)
+	if message != "" {
+		appErr.Message = message
+	}
+	RespondWithError(c, appErr)
 }
 
 func Forbidden(c *gin.Context, code, message string) {
-	RespondWithError(c, NewAppError(code, nil).WithStatus(http.StatusForbidden))
+	appErr := NewAppError(code, nil).WithStatus(http.StatusForbidden)
+	if message != "" {
+		appErr.Message = message
+	}
+	RespondWithError(c, appErr)
 }
 
 func NotFound(c *gin.Context, code, message string) {
-	RespondWithError(c, NewAppError(code, nil).WithStatus(http.StatusNotFound))
+	appErr := NewAppError(code, nil).WithStatus(http.StatusNotFound)
+	if message != "" {
+		appErr.Message = message
+	}
+	RespondWithError(c, appErr)
 }
 
 func InternalError(c *gin.Context, code, message string) {
-	RespondWithError(c, NewAppError(code, nil).WithStatus(http.StatusInternalServerError))
+	appErr := NewAppError(code, nil).WithStatus(http.StatusInternalServerError)
+	if message != "" {
+		appErr.Message = message
+	}
+	RespondWithError(c, appErr)
 }
 
 func ServiceUnavailable(c *gin.Context, code, message string) {

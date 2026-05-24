@@ -54,16 +54,18 @@ type Commission struct {
 	ReferenceID   string         `gorm:"size:100" json:"reference_id"`
 	CreatedAt     time.Time      `json:"created_at"`
 	UpdatedAt     time.Time      `json:"updated_at"`
+	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type DailyLimit struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
-	UserID      uint      `gorm:"index;not null" json:"user_id"`
-	Date        string    `gorm:"size:10;not null" json:"date"`
-	Count       int       `gorm:"default:0" json:"count"`
-	TotalAmount float64   `gorm:"default:0" json:"total_amount"`
-	MaxCount    int       `gorm:"default:0" json:"max_count"`
-	MaxAmount   float64   `gorm:"default:0" json:"max_amount"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID          uint           `gorm:"primaryKey" json:"id"`
+	UserID      uint           `gorm:"index;not null" json:"user_id"`
+	Date        string         `gorm:"size:10;not null" json:"date"`
+	Count       int            `gorm:"default:0" json:"count"`
+	TotalAmount float64        `gorm:"default:0" json:"total_amount"`
+	MaxCount    int            `gorm:"default:0" json:"max_count"`
+	MaxAmount   float64        `gorm:"default:0" json:"max_amount"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 }

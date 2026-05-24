@@ -16,6 +16,8 @@ services:
             - REDIS_HOST=redis
             - REDIS_PORT=6379
             - GIN_MODE=debug
+        volumes:
+            - ../auth-service/certs:/app/certs
         # depends_on:
         #     postgres:
         #         condition: service_healthy

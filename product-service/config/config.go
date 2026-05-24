@@ -53,6 +53,12 @@ func Load() *Config {
 		JaegerEndpoint: getEnv("JAEGER_ENDPOINT", ""),
 	}
 
+	if cfg.JWTPublicKey == "" {
+		if b, err := os.ReadFile("certs/public.pem"); err == nil {
+			cfg.JWTPublicKey = string(b)
+		}
+	}
+
 	if cfg.JWTPublicKey != "" {
 		pub, err := jwt.ParseRSAPublicKeyFromPEM([]byte(cfg.JWTPublicKey))
 		if err != nil {

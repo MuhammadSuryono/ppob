@@ -138,6 +138,7 @@ services:
         environment:
             - KONG_DATABASE=off
             - KONG_DECLARATIVE_CONFIG=/etc/kong/kong.yml
+            - KONG_ROUTER_FLAVOR=traditional
             - KONG_PROXY_ACCESS_LOG=/dev/stdout
             - KONG_ADMIN_ACCESS_LOG=/dev/stdout
             - KONG_PROXY_ERROR_LOG=/dev/stderr

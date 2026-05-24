@@ -30,6 +30,15 @@ For every task that involves modifying code, follow this strict lifecycle:
 2.  **Build & Test:** You **MUST** always run the build process (e.g., `make build`) and any relevant tests (e.g., `make test` or `go test ./...`) to ensure the code compiles and tests pass.
 3.  **Commit:** If the build and tests are successful, and the subagent review (if applicable) is positive, you **MUST** stage the changes and commit them using `git add` and `git commit`. Use clear, descriptive commit messages.
 
+## 5. Database Migration Workflow
+
+To maintain schema consistency across environments, you **MUST** follow these rules for any database changes:
+- **Migration Files:** Every schema change (ADD/ALTER/DROP) must be defined in a new SQL migration file within the `migrations/` directory using the naming convention `0XX_description.sql`.
+- **Goose Synchronization:** You **MUST** run migrations officially using the `goose` tool to ensure the `goose_db_version` table is updated.
+  - **Docker Workflow:** Use `docker run --rm -v $(pwd)/migrations:/migrations --network <internal_network> -e GOOSE_DRIVER=postgres -e GOOSE_DBSTRING="..." gomicro/goose:latest goose -dir /migrations up`.
+- **Model Sync:** When a database column is added or modified, you **MUST** immediately update the corresponding Go models in all relevant microservices (e.g., adding `DeletedAt` for soft delete support, or using pointers for nullable fields).
+- **No Manual SQL Only:** Never perform "SQL only" updates to the database without a corresponding migration file and official `goose` execution.
+
 ## 6. Plan Tracking & Monitoring
 
 All complex architectural changes or features must have an implementation plan.

@@ -39,6 +39,7 @@ var (
 type AuthService struct {
 	userRepo       *repository.UserRepository
 	otpRepo        *repository.OTPRepository
+	roleRepo       *repository.RoleRepository
 	walletRepo     *repository.WalletRepository
 	deviceRepo     *repository.DeviceRepository
 	redis          *redis.Client
@@ -51,6 +52,7 @@ type AuthService struct {
 func NewAuthService(
 	userRepo *repository.UserRepository,
 	otpRepo *repository.OTPRepository,
+	roleRepo *repository.RoleRepository,
 	walletRepo *repository.WalletRepository,
 	deviceRepo *repository.DeviceRepository,
 	redis *redis.Client,
@@ -59,6 +61,7 @@ func NewAuthService(
 	svc := &AuthService{
 		userRepo:       userRepo,
 		otpRepo:        otpRepo,
+		roleRepo:       roleRepo,
 		walletRepo:     walletRepo,
 		deviceRepo:     deviceRepo,
 		redis:          redis,
@@ -249,13 +252,20 @@ func (s *AuthService) completeAuth(ctx context.Context, user *models.User) (*dto
 
 	return &dto.LoginResponse{
 		UserID:       user.ID,
-		Email:        user.Email,
+		Email:        getPointerValue(user.Email),
 		Phone:        user.Phone,
 		Name:         user.Name,
 		Token:        accessToken,
 		RefreshToken: refreshToken,
 		ExpiresAt:    accessExpiresAt.Unix(),
 	}, nil
+}
+
+func getPointerValue(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) (*dto.RegisterResponse, error) {
@@ -265,7 +275,7 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) (*
 		return nil, ErrVerificationRequired
 	}
 
-	existingUser, _ := s.userRepo.FindByEmailOrPhone(req.Email, req.Phone)
+	existingUser, _ := s.userRepo.FindByPhone(req.Phone)
 	if existingUser != nil {
 		return nil, ErrUserExists
 	}
@@ -280,8 +290,13 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) (*
 		return nil, fmt.Errorf("failed to hash PIN: %w", err)
 	}
 
+	var userEmail *string
+	if req.Email != "" {
+		userEmail = &req.Email
+	}
+
 	user := &models.User{
-		Email:         req.Email,
+		Email:         userEmail,
 		Phone:         req.Phone,
 		PasswordHash:  string(hashedPassword),
 		Name:          req.Name,
@@ -296,6 +311,16 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) (*
 		txUserRepo := repository.NewUserRepository(tx)
 		if err := txUserRepo.Create(user); err != nil {
 			return fmt.Errorf("failed to create user: %w", err)
+		}
+
+		// Assign default 'Mitra' role in user_roles table
+		txRoleRepo := repository.NewRoleRepository(tx)
+		role, err := txRoleRepo.FindByName("Mitra")
+		if err != nil {
+			return fmt.Errorf("failed to find 'Mitra' role: %w", err)
+		}
+		if err := txRoleRepo.AssignRole(user.ID, role.ID); err != nil {
+			return fmt.Errorf("failed to assign 'Mitra' role: %w", err)
 		}
 
 		if req.DeviceID != "" {
@@ -319,12 +344,14 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) (*
 	}
 
 	// Publish user.registered event for asynchronous processing (e.g., wallet creation)
-	s.eventPublisher.Publish(ctx, "user_stream", "user.registered", map[string]interface{}{
+	if err := s.eventPublisher.Publish(ctx, "user_stream", "user.registered", map[string]interface{}{
 		"user_id": user.ID,
 		"phone":   user.Phone,
-		"email":   user.Email,
+		"email":   getPointerValue(user.Email),
 		"role":    user.Role,
-	})
+	}); err != nil {
+		return nil, fmt.Errorf("failed to publish registration event: %w", err)
+	}
 
 	// Consume verification flag
 	s.redis.Del(ctx, "verified:"+req.RequestID)
@@ -343,7 +370,7 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) (*
 
 	return &dto.RegisterResponse{
 		UserID:           user.ID,
-		Email:            user.Email,
+		Email:            getPointerValue(user.Email),
 		Phone:            user.Phone,
 		Name:             user.Name,
 		Token:            accessToken,
@@ -391,7 +418,7 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Lo
 
 	return &dto.LoginResponse{
 		UserID:       user.ID,
-		Email:        user.Email,
+		Email:        getPointerValue(user.Email),
 		Phone:        user.Phone,
 		Name:         user.Name,
 		Token:        accessToken,

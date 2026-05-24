@@ -51,12 +51,3 @@ func (r *UserRepository) FindByID(id uint) (*models.User, error) {
 func (r *UserRepository) Update(user *models.User) error {
 	return r.db.Save(user).Error
 }
-
-func (r *UserRepository) FindByEmailOrPhone(email, phone string) (*models.User, error) {
-	var user models.User
-	err := r.db.Where("email = ? OR phone = ?", email, phone).First(&user).Error
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
-}
