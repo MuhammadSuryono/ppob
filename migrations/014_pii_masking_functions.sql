@@ -4,6 +4,7 @@
 -- ============================================
 
 -- Mask phone number: +62 812-345-***-****
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION mask_phone(phone TEXT) RETURNS TEXT AS $$
 BEGIN
     IF phone IS NULL THEN
@@ -23,8 +24,10 @@ BEGIN
     RETURN '***';
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
+-- +goose StatementEnd
 
 -- Mask customer number: Show last 4 digits
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION mask_customer_no(no TEXT) RETURNS TEXT AS $$
 BEGIN
     IF no IS NULL THEN
@@ -41,8 +44,10 @@ BEGIN
     RETURN '****';
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
+-- +goose StatementEnd
 
 -- Mask name: Show only first letter
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION mask_name(name TEXT) RETURNS TEXT AS $$
 BEGIN
     IF name IS NULL THEN
@@ -58,8 +63,10 @@ BEGIN
     RETURN substr(name, 1, 1) || repeat('*', length(name) - 1);
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
+-- +goose StatementEnd
 
 -- Mask email
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION mask_email(email TEXT) RETURNS TEXT AS $$
 DECLARE
     at_pos INTEGER;
@@ -85,6 +92,7 @@ BEGIN
     RETURN substr(email, 1, 2) || repeat('*', at_pos - 3) || domain_part;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS mask_phone(TEXT);

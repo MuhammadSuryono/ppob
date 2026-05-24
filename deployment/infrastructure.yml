@@ -5,18 +5,16 @@ services:
         container_name: ppob-postgres
         environment:
             POSTGRES_USER: postgres
-            POSTGRES_PASSWORD: postgres
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ppob_secure_password_2024}
             POSTGRES_DB: ppob
         ports:
-            - "5432:5432"
+            - "5432:5432" # Exposed for local access, restricted via pg_hba.conf
         volumes:
             # Volume untuk data cluster
             - postgres_data:/var/lib/postgresql/data
             # Mount config ke folder terpisah
             - ./config/postgres/postgresql.conf:/etc/postgresql/postgresql.conf
             - ./config/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf
-            # Migration scripts
-            - ../migrations:/docker-entrypoint-initdb.d
         command:
             ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
         networks:
@@ -27,12 +25,28 @@ services:
             timeout: 5s
             retries: 5
 
+    # Database Migration
+    db-migration:
+        image: gomicro/goose:latest
+        container_name: ppob-db-migration
+        volumes:
+            - ../migrations:/migrations
+        environment:
+            - GOOSE_DRIVER=postgres
+            - GOOSE_DBSTRING=host=postgres port=5432 user=postgres password=${POSTGRES_PASSWORD:-ppob_secure_password_2024} dbname=ppob sslmode=disable
+        command: ["goose", "-dir", "/migrations", "up"]
+        depends_on:
+            postgres:
+                condition: service_healthy
+        networks:
+            - deployment_deployment_ppob-internal
+
     # Redis
     redis:
         image: redis:7-alpine
         container_name: ppob-redis
-        ports:
-            - "6379:6379"
+        # ports:
+        #     - "6379:6379" # Removed public exposure
         volumes:
             - redis_data:/data
         networks:
@@ -47,10 +61,10 @@ services:
     jaeger:
         image: jaegertracing/all-in-one:1.45
         container_name: ppob-jaeger
-        ports:
-            - "16686:16686"
-            - "14268:14268"
-            - "14250:14250"
+        # ports:
+        #     - "16686:16686" # UI
+        #     - "14268:14268"
+        #     - "14250:14250"
         environment:
             - COLLECTOR_OTLP_ENABLED=true
         networks:
@@ -60,8 +74,8 @@ services:
     prometheus:
         image: prom/prometheus:latest
         container_name: ppob-prometheus
-        ports:
-            - "9091:9090"
+        # ports:
+        #     - "9091:9090"
         volumes:
             - ../prometheus.yml:/etc/prometheus/prometheus.yml
         networks:
@@ -74,7 +88,7 @@ services:
         ports:
             - "3000:3000"
         environment:
-            - GF_SECURITY_ADMIN_PASSWORD=admin
+            - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-ppob_admin_secure_2024}
         volumes:
             - grafana_data:/var/lib/grafana
         networks:

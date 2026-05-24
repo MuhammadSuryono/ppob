@@ -1,3 +1,4 @@
+-- +goose Up
 -- Migration: 010_product_sync_tracking.sql
 -- Description: Add product sync tracking and enhance product tables
 
@@ -47,3 +48,7 @@ CREATE INDEX IF NOT EXISTS idx_transactions_provider_ref ON transactions(provide
 
 -- Create index on customer_number in transactions for history lookup
 CREATE INDEX IF NOT EXISTS idx_transactions_customer ON transactions(customer_number);
+
+-- +goose Down
+DROP TABLE IF EXISTS idempotency_keys CASCADE;
+DROP TABLE IF EXISTS product_sync_logs CASCADE;

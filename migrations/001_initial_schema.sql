@@ -171,6 +171,7 @@ CREATE INDEX IF NOT EXISTS idx_transactions_pending_timeout
 -- ============================================
 -- Triggers for auto-updating timestamps
 -- ============================================
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -178,27 +179,42 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
+-- +goose StatementBegin
 CREATE OR REPLACE TRIGGER update_roles_updated_at BEFORE UPDATE ON roles
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- +goose StatementEnd
 
+-- +goose StatementBegin
 CREATE OR REPLACE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- +goose StatementEnd
 
+-- +goose StatementBegin
 CREATE OR REPLACE TRIGGER update_user_roles_updated_at BEFORE UPDATE ON user_roles
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- +goose StatementEnd
 
+-- +goose StatementBegin
 CREATE OR REPLACE TRIGGER update_wallets_updated_at BEFORE UPDATE ON wallets
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- +goose StatementEnd
 
+-- +goose StatementBegin
 CREATE OR REPLACE TRIGGER update_categories_updated_at BEFORE UPDATE ON categories
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- +goose StatementEnd
 
+-- +goose StatementBegin
 CREATE OR REPLACE TRIGGER update_products_updated_at BEFORE UPDATE ON products
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- +goose StatementEnd
 
+-- +goose StatementBegin
 CREATE OR REPLACE TRIGGER update_transactions_updated_at BEFORE UPDATE ON transactions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- +goose StatementEnd
 
 -- +goose Down
 DROP TABLE IF EXISTS transactions CASCADE;

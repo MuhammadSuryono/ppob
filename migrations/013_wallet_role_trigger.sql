@@ -4,6 +4,7 @@
 -- ============================================
 
 -- Function to create wallet for role
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION create_wallet_for_role()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -42,11 +43,14 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
 -- Create trigger
+-- +goose StatementBegin
 CREATE TRIGGER trg_create_wallet_on_role_assign
 AFTER INSERT ON user_roles
 FOR EACH ROW EXECUTE FUNCTION create_wallet_for_role();
+-- +goose StatementEnd
 
 -- +goose Down
 DROP TRIGGER IF EXISTS trg_create_wallet_on_role_assign ON user_roles;

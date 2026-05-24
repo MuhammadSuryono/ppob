@@ -1,3 +1,4 @@
+-- +goose Up
 -- Description: Platform margin configuration and Product price enhancements
 -- Author: Gemini CLI
 
@@ -19,3 +20,8 @@ ALTER TABLE products
 
 -- 3. Seed initial platform margin (Global Rp 200 per transaction)
 INSERT INTO platform_margin_settings (margin_type, margin_value) VALUES ('FIXED', 200);
+
+-- +goose Down
+DROP TABLE IF EXISTS platform_margin_settings CASCADE;
+-- ALTER TABLE products DROP COLUMN IF EXISTS original_price;
+-- ALTER TABLE products DROP COLUMN IF EXISTS platform_margin;

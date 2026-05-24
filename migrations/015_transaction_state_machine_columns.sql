@@ -1,3 +1,4 @@
+-- +goose Up
 -- Migration: Add transaction state machine columns
 -- Created: 2026-05-07
 -- Purpose: Add columns required for state machine tracking per TRANSACTION_STATE_MACHINE.md
@@ -29,3 +30,12 @@ COMMENT ON COLUMN transactions.status_change_reason IS 'Reason for status change
 COMMENT ON COLUMN transactions.reconciled_at IS 'Timestamp when transaction was last reconciled by background job';
 COMMENT ON COLUMN transactions.digiflazz_rc IS 'Raw response code from Digiflazz';
 COMMENT ON COLUMN transactions.webhook_received_at IS 'Timestamp when webhook was received from Digiflazz';
+
+-- +goose Down
+-- ALTER TABLE transactions DROP COLUMN IF EXISTS wallet_id;
+-- ALTER TABLE transactions DROP COLUMN IF EXISTS hold_released_at;
+-- ALTER TABLE transactions DROP COLUMN IF EXISTS previous_status;
+-- ALTER TABLE transactions DROP COLUMN IF EXISTS status_change_reason;
+-- ALTER TABLE transactions DROP COLUMN IF EXISTS reconciled_at;
+-- ALTER TABLE transactions DROP COLUMN IF EXISTS digiflazz_rc;
+-- ALTER TABLE transactions DROP COLUMN IF EXISTS webhook_received_at;

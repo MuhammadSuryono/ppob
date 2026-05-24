@@ -5,6 +5,9 @@
 -- Add brand column
 ALTER TABLE products ADD COLUMN IF NOT EXISTS brand VARCHAR(100);
 
+-- Add code column to categories
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS code VARCHAR(100) UNIQUE;
+
 -- Insert Categories
 INSERT INTO categories (name, code, is_active) VALUES
     ('Aktivasi Perdana', 'aktivasi_perdana', TRUE),

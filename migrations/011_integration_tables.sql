@@ -1,3 +1,4 @@
+-- +goose Up
 -- Migration: 011_integration_enhancements.sql
 -- Description: Add compensation jobs and webhook tracking tables
 
@@ -18,10 +19,10 @@ CREATE TABLE IF NOT EXISTS compensation_jobs (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_compensation_job_id ON compensation_jobs(job_id);
-CREATE INDEX idx_compensation_transaction ON compensation_jobs(transaction_id);
-CREATE INDEX idx_compensation_status ON compensation_jobs(status);
-CREATE INDEX idx_compensation_next_retry ON compensation_jobs(next_retry_at);
+CREATE INDEX IF NOT EXISTS idx_compensation_job_id ON compensation_jobs(job_id);
+CREATE INDEX IF NOT EXISTS idx_compensation_transaction ON compensation_jobs(transaction_id);
+CREATE INDEX IF NOT EXISTS idx_compensation_status ON compensation_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_compensation_next_retry ON compensation_jobs(next_retry_at);
 
 -- Webhook Processing Log Table
 CREATE TABLE IF NOT EXISTS webhook_logs (
@@ -38,9 +39,9 @@ CREATE TABLE IF NOT EXISTS webhook_logs (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_webhook_ref_id ON webhook_logs(ref_id);
-CREATE INDEX idx_webhook_provider ON webhook_logs(provider);
-CREATE INDEX idx_webhook_processed ON webhook_logs(processed_at);
+CREATE INDEX IF NOT EXISTS idx_webhook_ref_id ON webhook_logs(ref_id);
+CREATE INDEX IF NOT EXISTS idx_webhook_provider ON webhook_logs(provider);
+CREATE INDEX IF NOT EXISTS idx_webhook_processed ON webhook_logs(processed_at);
 
 -- Add provider_ref to transactions table if not exists
 -- ALTER TABLE transactions ADD COLUMN IF NOT EXISTS provider_ref VARCHAR(100);
@@ -68,3 +69,7 @@ INSERT INTO digiflazz_error_codes (rc_code, error_type, message, user_message_id
 ('69', 'error', 'System error occurred', 'system_error', 'Please try again in a few minutes'),
 ('99', 'error', 'Transaction timeout', 'timeout', 'Please try again or contact support')
 ON CONFLICT (rc_code) DO NOTHING;
+
+-- +goose Down
+DROP TABLE IF EXISTS digiflazz_error_codes CASCADE;
+DROP TABLE IF EXISTS webhook_logs CASCADE;

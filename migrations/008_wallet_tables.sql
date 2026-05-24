@@ -1,3 +1,4 @@
+-- +goose Up
 -- Migration: 008_wallet_tables.sql
 -- Holds and mitra_product_prices (duplicates removed — consolidated into 003/004)
 
@@ -32,6 +33,7 @@ CREATE TABLE IF NOT EXISTS mitra_product_prices (
 CREATE INDEX IF NOT EXISTS idx_mitra_product_mitra ON mitra_product_prices(mitra_id);
 CREATE INDEX IF NOT EXISTS idx_mitra_product ON mitra_product_prices(product_id);
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION validate_mitra_price()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -53,7 +55,16 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
+-- +goose StatementBegin
 CREATE OR REPLACE TRIGGER trg_validate_mitra_price
     BEFORE INSERT OR UPDATE ON mitra_product_prices
     FOR EACH ROW EXECUTE FUNCTION validate_mitra_price();
+-- +goose StatementEnd
+
+-- +goose Down
+DROP TRIGGER IF EXISTS trg_validate_mitra_price ON mitra_product_prices;
+DROP FUNCTION IF EXISTS validate_mitra_price();
+DROP TABLE IF EXISTS mitra_product_prices CASCADE;
+DROP TABLE IF EXISTS holds CASCADE;
