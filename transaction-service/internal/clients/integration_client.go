@@ -1,26 +1,33 @@
 package clients
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"time"
+
+	"github.com/yontech/ppob/shared/proto/integration"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type IntegrationClient struct {
-	BaseURL    string
-	HTTPClient *http.Client
+	client integration.IntegrationServiceClient
+	conn   *grpc.ClientConn
 }
 
-func NewIntegrationClient(baseURL string) *IntegrationClient {
-	return &IntegrationClient{
-		BaseURL: baseURL,
-		HTTPClient: &http.Client{
-			Timeout: 60 * time.Second,
-		},
+func NewIntegrationClient(address string) (*IntegrationClient, error) {
+	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to integration service: %w", err)
 	}
+
+	return &IntegrationClient{
+		client: integration.NewIntegrationServiceClient(conn),
+		conn:   conn,
+	}, nil
+}
+
+func (c *IntegrationClient) Close() error {
+	return c.conn.Close()
 }
 
 type TopUpRequest struct {
@@ -42,22 +49,28 @@ type IntegrationResponse struct {
 }
 
 func (c *IntegrationClient) TopUp(ctx context.Context, req *TopUpRequest) (*IntegrationResponse, error) {
-	url := fmt.Sprintf("%s/v1/transaction/topup", c.BaseURL)
-	
-	body, _ := json.Marshal(req)
-	hReq, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(body))
-	hReq.Header.Set("Content-Type", "application/json")
-	
-	resp, err := c.HTTPClient.Do(hReq)
+	resp, err := c.client.TopUp(ctx, &integration.TopUpRequest{
+		ProductCode:    req.Code,
+		CustomerNumber: req.Phone,
+		RefId:          req.RefID,
+	})
+
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-	
-	var result IntegrationResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
+
+	result := &IntegrationResponse{
+		Success: resp.Success,
+		Message: resp.Message,
 	}
-	
-	return &result, nil
+
+	if resp.Data != nil {
+		result.Data.RefID = resp.Data.RefId
+		result.Data.TrxID = resp.Data.TrxId
+		result.Data.Status = resp.Data.Status
+		result.Data.ScCode = resp.Data.ScCode
+		result.Data.ScMessage = resp.Data.ScMessage
+	}
+
+	return result, nil
 }

@@ -42,6 +42,13 @@ func (h *WalletEventHandler) handleUserRegistered(ctx context.Context, payload s
 		return fmt.Errorf("failed to unmarshal user.registered payload: %w", err)
 	}
 
+	// Check if wallet already exists (might be created by DB trigger)
+	existing, _ := h.walletService.walletRepo.FindByUserID(data.UserID)
+	if existing != nil {
+		log.Printf("Wallet already exists for user %d, skipping creation", data.UserID)
+		return nil
+	}
+
 	// Create initial wallet for user
 	wallet := &models.Wallet{
 		UserID:  data.UserID,

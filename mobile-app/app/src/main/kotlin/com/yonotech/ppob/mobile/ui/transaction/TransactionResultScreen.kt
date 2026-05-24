@@ -25,9 +25,21 @@ fun TransactionResultScreen(
 ) {
     val transactionState by viewModel.transactionState.collectAsState()
 
-    LaunchedEffect(txId) {
-        // In a real app, we might poll for status if it's pending
-        // For now, we just show the initial result
+    var status by remember { mutableStateOf("initiated") }
+    var message by remember { mutableStateOf("") }
+
+    LaunchedEffect(transactionState) {
+        if (transactionState is Resource.Success) {
+            val data = (transactionState as Resource.Success).data
+            status = data.status
+            message = data.message ?: ""
+        }
+    }
+
+    val statusConfig = when (status.lowercase()) {
+        "success" -> Triple(Icons.Default.CheckCircle, Color(0xFF4CAF50), "Transaksi Berhasil")
+        "failed" -> Triple(Icons.Default.Error, Color(0xFFF44336), "Transaksi Gagal")
+        else -> Triple(Icons.Default.HourglassEmpty, Color(0xFFFF9800), "Sedang Diproses")
     }
 
     Column(
@@ -38,25 +50,35 @@ fun TransactionResultScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Icon(
-            imageVector = Icons.Default.CheckCircle,
+            imageVector = statusConfig.first,
             contentDescription = null,
             modifier = Modifier.size(120.dp),
-            tint = Color(0xFF4CAF50)
+            tint = statusConfig.second
         )
         
         Spacer(modifier = Modifier.height(24.dp))
         
         Text(
-            text = "Transaksi Berhasil",
+            text = statusConfig.third,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )
+
+        if (message.isNotEmpty()) {
+            Text(
+                text = message,
+                fontSize = 14.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.padding(top = 8.dp, horizontal = 16.dp),
+                color = Color.Gray
+            )
+        }
         
         Text(
             text = "ID Transaksi: $txId",
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = 16.dp)
         )
 
         Spacer(modifier = Modifier.height(48.dp))

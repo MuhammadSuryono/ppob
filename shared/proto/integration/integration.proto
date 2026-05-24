@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package integration;
+
+option go_package = "github.com/yontech/ppob/shared/proto/integration";
+
+service IntegrationService {
+  rpc TopUp(TopUpRequest) returns (TopUpResponse);
+}
+
+message TopUpRequest {
+  string product_code = 1;
+  string customer_number = 2;
+  string ref_id = 3;
+}
+
+message TopUpResponse {
+  bool success = 1;
+  string message = 2;
+  TopUpData data = 3;
+}
+
+message TopUpData {
+  string ref_id = 1;
+  string trx_id = 2;
+  string status = 3;
+  string sc_code = 4;
+  string sc_message = 5;
+}

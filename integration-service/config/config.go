@@ -17,6 +17,7 @@ import (
 
 type Config struct {
 	ServerPort      string
+	GRPCPort        string
 	DBHost          string
 	DBPort          string
 	DBUser          string
@@ -36,6 +37,7 @@ type Config struct {
 func Load() *Config {
 	cfg := &Config{
 		ServerPort:      getEnv("SERVER_PORT", "8080"),
+		GRPCPort:        getEnv("GRPC_PORT", "50086"),
 		DBHost:          getEnv("DB_HOST", "localhost"),
 		DBPort:          getEnv("DB_PORT", "5432"),
 		DBUser:          getEnv("DB_USER", "postgres"),
@@ -49,6 +51,12 @@ func Load() *Config {
 		DigiflazzSecret: getEnv("DIGIFLAZZ_SECRET", ""),
 		GinMode:         getEnv("GIN_MODE", "release"),
 		JaegerEndpoint: getEnv("JAEGER_ENDPOINT", ""),
+	}
+
+	if cfg.JWTPublicKey == "" {
+		if b, err := os.ReadFile("certs/public.pem"); err == nil {
+			cfg.JWTPublicKey = string(b)
+		}
 	}
 
 	if cfg.JWTPublicKey != "" {

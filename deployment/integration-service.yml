@@ -6,8 +6,10 @@ services:
         container_name: ppob-integration-service
         ports:
             - "8086:8080"
+            - "50086:50086"
         environment:
             - SERVER_PORT=8080
+            - GRPC_PORT=50086
             - DB_HOST=postgres
             - DB_PORT=5432
             - DB_USER=postgres
@@ -20,6 +22,8 @@ services:
             - DigiflazzURL=https://api.digiflazz.com/v1
             - DigiflazzKey=your_digiflazz_key_here
             - DigiflazzSecret=your_digiflazz_secret_here
+        volumes:
+            - ../auth-service/certs:/app/certs
         networks:
             - deployment_deployment_deployment_ppob-internal
         restart: unless-stopped

@@ -16,6 +16,11 @@ services:
             - REDIS_HOST=redis
             - REDIS_PORT=6379
             - GIN_MODE=debug
+            - WALLET_GRPC_ADDR=ppob-wallet-service:50083
+            - PRODUCT_GRPC_ADDR=ppob-product-service:50085
+            - INTEGRATION_GRPC_ADDR=ppob-integration-service:50086
+        volumes:
+            - ../auth-service/certs:/app/certs
         networks:
             - deployment_deployment_deployment_ppob-internal
         restart: unless-stopped

@@ -17,6 +17,8 @@ services:
             - REDIS_PORT=6379
             - GIN_MODE=debug
             - JaegerEndpoint=http://jaeger:14268/api/traces
+        volumes:
+            - ../auth-service/certs:/app/certs
         networks:
             - deployment_deployment_deployment_ppob-internal
         restart: unless-stopped

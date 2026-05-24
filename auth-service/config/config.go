@@ -53,6 +53,18 @@ func Load() *Config {
 		GinMode:          getEnv("GIN_MODE", "release"),
 	}
 
+	// Fallback to files if env not set
+	if cfg.JWTPrivateKey == "" {
+		if b, err := os.ReadFile("certs/private.pem"); err == nil {
+			cfg.JWTPrivateKey = string(b)
+		}
+	}
+	if cfg.JWTPublicKey == "" {
+		if b, err := os.ReadFile("certs/public.pem"); err == nil {
+			cfg.JWTPublicKey = string(b)
+		}
+	}
+
 	if cfg.JWTPublicKey != "" {
 		pub, err := jwt.ParseRSAPublicKeyFromPEM([]byte(cfg.JWTPublicKey))
 		if err != nil {

@@ -8,7 +8,7 @@ import (
 
 type User struct {
 	ID            uint           `gorm:"primaryKey" json:"id"`
-	Email         string         `gorm:"uniqueIndex;size:255;not null" json:"email"`
+	Email         *string        `gorm:"uniqueIndex;size:255" json:"email"`
 	Phone         string         `gorm:"uniqueIndex;size:20;not null" json:"phone"`
 	Name          string         `gorm:"size:255;not null" json:"full_name"`
 	PasswordHash  string         `gorm:"size:255;not null" json:"-"`
@@ -39,12 +39,13 @@ type Role struct {
 }
 
 type UserRole struct {
-	ID         uint      `gorm:"primaryKey" json:"id"`
-	UserID     uint      `gorm:"index;not null" json:"user_id"`
-	RoleID     uint      `gorm:"index;not null" json:"role_id"`
-	AssignedBy *uint     `gorm:"index" json:"assigned_by"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ID         uint           `gorm:"primaryKey" json:"id"`
+	UserID     uint           `gorm:"index;not null" json:"user_id"`
+	RoleID     uint           `gorm:"index;not null" json:"role_id"`
+	AssignedBy *uint          `gorm:"index" json:"assigned_by"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at"`
+	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type StaffGlobalMarginSetting struct {
@@ -57,6 +58,7 @@ type StaffGlobalMarginSetting struct {
 	IsActive        bool           `gorm:"default:true" json:"is_active"`
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at"`
+	DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type StaffProductMarginOverride struct {
@@ -70,16 +72,18 @@ type StaffProductMarginOverride struct {
 	IsActive        bool           `gorm:"default:true" json:"is_active"`
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at"`
+	DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type Notification struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	UserID    uint      `gorm:"index;not null" json:"user_id"` // recipient
-	Type      string    `gorm:"size:50" json:"type"` // e.g., "staff_invite", "transaction", "system"
-	Title     string    `gorm:"size:255" json:"title"`
-	Message   string    `gorm:"type:text" json:"message"`
-	IsRead    bool      `gorm:"default:false" json:"is_read"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	UserID    uint           `gorm:"index;not null" json:"user_id"` // recipient
+	Type      string         `gorm:"size:50" json:"type"` // e.g., "staff_invite", "transaction", "system"
+	Title     string         `gorm:"size:255" json:"title"`
+	Message   string         `gorm:"type:text" json:"message"`
+	IsRead    bool           `gorm:"default:false" json:"is_read"`
+	CreatedAt time.Time      `json:"created_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type DailyLimit struct {
@@ -90,6 +94,7 @@ type DailyLimit struct {
 	MaxCount     int       `gorm:"default:100" json:"max_count"`
 	TotalAmount  float64   `gorm:"default:0" json:"total_amount"`
 	MaxAmount    float64   `gorm:"default:10000000" json:"max_amount"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
+	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
 }

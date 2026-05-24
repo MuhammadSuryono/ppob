@@ -28,6 +28,7 @@ type Config struct {
 	PublicKey         *rsa.PublicKey
 	WalletGRPCAddr    string
 	ProductGRPCAddr   string
+	IntegrationGRPCAddr string
 	DigiflazzURL      string
 	DigiflazzKey      string
 	DigiflazzSecret   string
@@ -49,12 +50,19 @@ func Load() *Config {
 		JWTPublicKey:    getEnv("JWT_PUBLIC_KEY", ""),
 		WalletGRPCAddr:  getEnv("WALLET_GRPC_ADDR", "localhost:50083"),
 		ProductGRPCAddr: getEnv("PRODUCT_GRPC_ADDR", "localhost:50085"),
+		IntegrationGRPCAddr: getEnv("INTEGRATION_GRPC_ADDR", "localhost:50086"),
 		DigiflazzURL:      getEnv("DIGIFLAZZ_URL", "https://api.digiflazz.com/v1"),
 		DigiflazzKey:      getEnv("DIGIFLAZZ_KEY", ""),
 		DigiflazzSecret:   getEnv("DIGIFLAZZ_SECRET", ""),
 		GinMode:           getEnv("GIN_MODE", "release"),
 		JaegerEndpoint:    getEnv("JAEGER_ENDPOINT", ""),
 		DigiflazzWebhookSecret: getEnv("DIGIFLAZZ_WEBHOOK_SECRET", ""),
+	}
+
+	if cfg.JWTPublicKey == "" {
+		if b, err := os.ReadFile("certs/public.pem"); err == nil {
+			cfg.JWTPublicKey = string(b)
+		}
 	}
 
 	if cfg.JWTPublicKey != "" {

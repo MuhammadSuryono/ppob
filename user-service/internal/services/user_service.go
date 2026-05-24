@@ -50,6 +50,13 @@ func (s *UserService) SetDB(db *gorm.DB) {
 	s.db = db
 }
 
+func getPointerValue(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
 // GetUser retrieves a user by ID
 func (s *UserService) GetUser(ctx context.Context, userID uint) (*dto.UserResponse, error) {
 	user, err := s.userRepo.FindByID(userID)
@@ -59,7 +66,7 @@ func (s *UserService) GetUser(ctx context.Context, userID uint) (*dto.UserRespon
 
 	return &dto.UserResponse{
 		ID:            user.ID,
-		Email:         user.Email,
+		Email:         getPointerValue(user.Email),
 		Phone:         user.Phone,
 		Name:          user.Name,
 		Role:          user.Role,
@@ -103,7 +110,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userID uint, req *dto.Upda
 
 	return &dto.UserResponse{
 		ID:            user.ID,
-		Email:         user.Email,
+		Email:         getPointerValue(user.Email),
 		Phone:         user.Phone,
 		Name:          user.Name,
 		Role:          user.Role,
@@ -127,7 +134,7 @@ func (s *UserService) ListUsers(ctx context.Context, limit, offset int) (*dto.Li
 	for i, user := range users {
 		userResponses[i] = dto.UserResponse{
 			ID:            user.ID,
-			Email:         user.Email,
+			Email:         getPointerValue(user.Email),
 			Phone:         user.Phone,
 			Name:          user.Name,
 			Role:          user.Role,
@@ -262,7 +269,7 @@ func (s *UserService) ListStaff(ctx context.Context, mitraID uint, limit, offset
 
 		staffResponses[i] = dto.StaffResponse{
 			ID:                        user.ID,
-			Email:                     user.Email,
+			Email:                     getPointerValue(user.Email),
 			Phone:                     user.Phone,
 			Name:                      user.Name,
 			Status:                    user.Status,
@@ -313,7 +320,7 @@ func (s *UserService) GetStaff(ctx context.Context, staffID uint) (*dto.StaffDet
 
 	resp := &dto.StaffDetailResponse{
 		ID:                        user.ID,
-		Email:                     user.Email,
+		Email:                     getPointerValue(user.Email),
 		Phone:                     user.Phone,
 		Name:                      user.Name,
 		Status:                    user.Status,
@@ -358,18 +365,25 @@ func (s *UserService) GetStaff(ctx context.Context, staffID uint) (*dto.StaffDet
 
 // CreateStaff creates a new staff user (Mitra only)
 func (s *UserService) CreateStaff(ctx context.Context, mitraID uint, req *dto.StaffCreateRequest) (*dto.StaffDetailResponse, error) {
-	// Check if email exists
-	existing, _ := s.userRepo.FindByEmail(req.Email)
-	if existing != nil {
-		return nil, errors.New("email already exists")
+	// Check if email exists if provided
+	if req.Email != "" {
+		existing, _ := s.userRepo.FindByEmail(req.Email)
+		if existing != nil {
+			return nil, errors.New("email already exists")
+		}
 	}
-	existing, _ = s.userRepo.FindByPhone(req.Phone)
+	existing, _ := s.userRepo.FindByPhone(req.Phone)
 	if existing != nil {
 		return nil, errors.New("phone already exists")
 	}
 
+	var userEmail *string
+	if req.Email != "" {
+		userEmail = &req.Email
+	}
+
 	user := &models.User{
-		Email:         req.Email,
+		Email:         userEmail,
 		Phone:         req.Phone,
 		Name:          req.Name,
 		Role:          "staff",
