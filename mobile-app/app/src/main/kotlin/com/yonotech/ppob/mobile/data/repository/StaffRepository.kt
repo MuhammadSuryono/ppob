@@ -41,7 +41,7 @@ class StaffRepository @Inject constructor(
 
     suspend fun topUpStaff(staffId: String, amount: Double, pin: String): Resource<TransactionHistoryResponse> {
         return try {
-            val response = staffService.topUpStaff(staffId, TopUpRequest(staffId, amount, pin))
+            val response = staffService.topUpStaff(TopUpRequest(staffId, amount, pin))
             if (response.isSuccessful) {
                 Resource.Success(response.body()!!)
             } else {
