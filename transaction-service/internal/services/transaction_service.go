@@ -430,6 +430,7 @@ func (s *TransactionService) toResponse(tx *models.Transaction) *dto.Transaction
 		CustomerNumber: tx.CustomerNumber,
 		Amount:         tx.Amount,
 		Price:          tx.Price,
+		SellingPrice:   tx.SellingPrice,
 		Margin:         tx.Margin,
 		Status:         tx.Status,
 		ProviderRef:    tx.ProviderRef,

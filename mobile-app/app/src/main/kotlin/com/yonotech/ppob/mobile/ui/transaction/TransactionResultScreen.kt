@@ -55,12 +55,24 @@ fun TransactionResultScreen(
     ) {
         Spacer(modifier = Modifier.height(32.dp))
         
-        Icon(
-            imageVector = statusConfig.first,
-            contentDescription = null,
-            modifier = Modifier.size(100.dp),
-            tint = statusConfig.second
-        )
+        if (transactionState is Resource.Loading && transactionData == null) {
+            Box(
+                modifier = Modifier.size(100.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = statusConfig.second,
+                    strokeWidth = 4.dp
+                )
+            }
+        } else {
+            Icon(
+                imageVector = statusConfig.first,
+                contentDescription = null,
+                modifier = Modifier.size(100.dp),
+                tint = statusConfig.second
+            )
+        }
         
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -70,9 +82,10 @@ fun TransactionResultScreen(
             fontWeight = FontWeight.Bold
         )
 
-        if (transactionData?.message != null && transactionData.message.isNotEmpty()) {
+        val message = transactionData?.message ?: if (transactionState is Resource.Error) (transactionState as Resource.Error).message else ""
+        if (message.isNotEmpty()) {
             Text(
-                text = transactionData.message,
+                text = message,
                 fontSize = 14.sp,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp),
@@ -100,14 +113,15 @@ fun TransactionResultScreen(
                 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
                 
-                DetailRow("Produk", transactionData?.productCode ?: "-")
-                DetailRow("Nomor Tujuan", transactionData?.customerNumber ?: "-")
+                DetailRow("Produk", transactionData?.productCode ?: "...")
+                DetailRow("Nomor Tujuan", transactionData?.customerNumber ?: "...")
                 
                 if (transactionData?.amount != null && transactionData.amount > 0) {
-                    DetailRow("Nominal", "Rp ${transactionData.amount}")
+                    DetailRow("Nominal", "Rp ${String.format("%,.0f", transactionData.amount).replace(",", ".")}")
                 }
                 
-                DetailRow("Total Bayar", "Rp ${transactionData?.price ?: 0}")
+                val displayPrice = transactionData?.sellingPrice ?: transactionData?.price ?: 0.0
+                DetailRow("Total Bayar", "Rp ${String.format("%,.0f", displayPrice).replace(",", ".")}")
             }
         }
 
