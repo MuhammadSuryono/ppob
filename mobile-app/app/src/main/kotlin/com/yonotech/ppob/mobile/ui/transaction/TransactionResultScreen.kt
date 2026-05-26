@@ -69,7 +69,7 @@ fun TransactionResultScreen(
                 text = message,
                 fontSize = 14.sp,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.padding(top = 8.dp, horizontal = 16.dp),
+                modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp),
                 color = Color.Gray
             )
         }
