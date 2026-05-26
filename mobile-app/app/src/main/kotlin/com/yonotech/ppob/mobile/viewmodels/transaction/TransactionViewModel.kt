@@ -100,6 +100,45 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
+    fun fetchTransactionStatus(txId: String) {
+        viewModelScope.launch {
+            _transactionState.value = Resource.Loading
+            try {
+                val response = transactionRepository.getStatus(txId)
+                if (response.isSuccessful && response.body() != null) {
+                    _transactionState.value = Resource.Success(response.body()!!)
+                } else {
+                    _transactionState.value = Resource.Error("Gagal mengambil status transaksi")
+                }
+            } catch (e: Exception) {
+                _transactionState.value = Resource.Error(e.message ?: "Terjadi kesalahan")
+            }
+        }
+    }
+
+    fun startPolling(txId: String) {
+        viewModelScope.launch {
+            while (true) {
+                try {
+                    val response = transactionRepository.getStatus(txId)
+                    if (response.isSuccessful && response.body() != null) {
+                        val transaction = response.body()!!
+                        _transactionState.value = Resource.Success(transaction)
+                        
+                        // Stop polling if status is terminal
+                        val status = transaction.status.lowercase()
+                        if (status == "success" || status == "failed") {
+                            break
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Silently ignore polling errors to keep trying
+                }
+                kotlinx.coroutines.delay(3000) // Poll every 3 seconds
+            }
+        }
+    }
+
     fun resetState() {
         _transactionState.value = Resource.Idle
     }
