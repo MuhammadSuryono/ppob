@@ -34,6 +34,11 @@ For every task that involves modifying code, follow this strict lifecycle:
 
 To maintain schema consistency across environments, you **MUST** follow these rules for any database changes:
 - **Migration Files:** Every schema change (ADD/ALTER/DROP) must be defined in a new SQL migration file within the `migrations/` directory using the naming convention `0XX_description.sql`.
+
+## 7. Environment Specific Configuration
+
+To ensure smooth development across different operating systems:
+- **Mobile App Gradle:** If operating on a Linux system, you **MUST** ensure the Linux-specific Java home path (`org.gradle.java.home=/usr/lib/jvm/java-21-openjdk`) is enabled in `mobile-app/gradle.properties` during build/test tasks. However, **DO NOT** commit these local environment changes to the repository; always rollback to the default Windows path before pushing.
 - **Goose Synchronization:** You **MUST** run migrations officially using the `goose` tool to ensure the `goose_db_version` table is updated.
   - **Docker Workflow:** Use `docker run --rm -v $(pwd)/migrations:/migrations --network <internal_network> -e GOOSE_DRIVER=postgres -e GOOSE_DBSTRING="..." gomicro/goose:latest goose -dir /migrations up`.
 - **Model Sync:** When a database column is added or modified, you **MUST** immediately update the corresponding Go models in all relevant microservices (e.g., adding `DeletedAt` for soft delete support, or using pointers for nullable fields).
