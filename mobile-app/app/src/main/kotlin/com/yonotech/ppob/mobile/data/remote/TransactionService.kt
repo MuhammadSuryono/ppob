@@ -17,7 +17,7 @@ interface TransactionService {
         @Body request: InitiateTransactionRequest
     ): Response<TransactionResponse>
 
-    @GET("transactions/{id}")
+    @GET("transactions/by-id/{id}")
     suspend fun getStatus(@Path("id") id: String): Response<TransactionResponse>
 
     @GET("transactions/history")
