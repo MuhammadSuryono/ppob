@@ -99,7 +99,7 @@ fun GenericProductScreen(
     LaunchedEffect(transactionState) {
         if (transactionState is Resource.Success) {
             val data = (transactionState as Resource.Success).data
-            onTransactionSuccess(data.id ?: data.transactionId)
+            onTransactionSuccess(data.transactionId)
             transactionViewModel.resetState()
         }
     }

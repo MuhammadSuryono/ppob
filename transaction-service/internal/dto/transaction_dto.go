@@ -18,6 +18,7 @@ type TransactionResponse struct {
 	CustomerNumber   string     `json:"customer_number"`
 	Amount           float64    `json:"amount"`
 	Price            float64    `json:"price"`
+	SellingPrice     float64    `json:"selling_price"`
 	Margin           float64    `json:"margin"`
 	Status           string     `json:"status"`
 	ProviderRef      string     `json:"provider_ref"`

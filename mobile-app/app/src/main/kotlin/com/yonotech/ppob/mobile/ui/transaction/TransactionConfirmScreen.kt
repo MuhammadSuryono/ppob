@@ -35,7 +35,7 @@ fun TransactionConfirmScreen(
     LaunchedEffect(transactionState) {
         if (transactionState is Resource.Success) {
             val data = (transactionState as Resource.Success).data
-            onSuccess(data.id ?: data.transactionId)
+            onSuccess(data.transactionId)
             viewModel.resetState()
         }
     }
