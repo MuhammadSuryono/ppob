@@ -1,13 +1,10 @@
 package services
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -23,10 +20,11 @@ var (
 )
 
 type IntegrationService struct {
-	logRepo     *repository.IntegrationLogRepository
-	providerRepo *repository.ProviderConfigRepository
-	redis       *redis.Client
-	cfg         *config.Config
+	logRepo         *repository.IntegrationLogRepository
+	providerRepo    *repository.ProviderConfigRepository
+	redis           *redis.Client
+	cfg             *config.Config
+	digiflazzClient *DigiflazzClient
 }
 
 func NewIntegrationService(
@@ -34,12 +32,14 @@ func NewIntegrationService(
 	providerRepo *repository.ProviderConfigRepository,
 	redis *redis.Client,
 	cfg *config.Config,
+	digiflazzClient *DigiflazzClient,
 ) *IntegrationService {
 	return &IntegrationService{
-		logRepo:      logRepo,
-		providerRepo: providerRepo,
-		redis:        redis,
-		cfg:          cfg,
+		logRepo:         logRepo,
+		providerRepo:    providerRepo,
+		redis:           redis,
+		cfg:             cfg,
+		digiflazzClient: digiflazzClient,
 	}
 }
 
@@ -56,15 +56,12 @@ func (s *IntegrationService) InitiateDigiflazzTransaction(ctx context.Context, u
 	}
 	s.logRepo.Create(logEntry)
 
-	payload := map[string]interface{}{
-		"username": s.cfg.DigiflazzKey,
-		"code":     req.ProductCode,
-		"phone":    req.CustomerNumber,
-		"ref_id":   req.RefID,
-		"sign":     s.generateSignature(req.RefID),
-	}
+	resp, err := s.digiflazzClient.TopUp(ctx, &TopUpRequest{
+		Code:  req.ProductCode,
+		Phone: req.CustomerNumber,
+		RefID: req.RefID,
+	})
 
-	body, err := s.callDigiflazzAPI(ctx, "/transaction", payload)
 	if err != nil {
 		logEntry.Status = "failed"
 		logEntry.ErrorMessage = err.Error()
@@ -73,10 +70,19 @@ func (s *IntegrationService) InitiateDigiflazzTransaction(ctx context.Context, u
 		return nil, err
 	}
 
-	var response dto.DigiflazzTransactionResponse
-	json.Unmarshal(body, &response)
+	response := &dto.DigiflazzTransactionResponse{
+		Success:      resp.Success,
+		Message:      resp.Message,
+		RefID:        resp.Data.RefID,
+		TrxID:        resp.Data.TrxID,
+		Status:       resp.Data.Status,
+		Price:        0, // Should be parsed if needed
+		ScCode:       resp.Data.ScCode,
+		ScMessage:    resp.Data.ScMessage,
+		CustomerName: resp.Data.Message,
+	}
 
-	logEntry.ResponseData = string(body)
+	logEntry.ResponseData = s.mustMarshal(resp)
 	if response.Success {
 		logEntry.Status = "success"
 	} else {
@@ -86,7 +92,7 @@ func (s *IntegrationService) InitiateDigiflazzTransaction(ctx context.Context, u
 	logEntry.DurationMs = int(time.Since(startTime).Milliseconds())
 	s.logRepo.Update(logEntry)
 
-	return &response, nil
+	return response, nil
 }
 
 func (s *IntegrationService) InquiryDigiflazz(ctx context.Context, req *dto.DigiflazzTransactionRequest) (*dto.DigiflazzTransactionResponse, error) {
@@ -102,16 +108,12 @@ func (s *IntegrationService) InquiryDigiflazz(ctx context.Context, req *dto.Digi
 	}
 	s.logRepo.Create(logEntry)
 
-	payload := map[string]interface{}{
-		"username": s.cfg.DigiflazzKey,
-		"code":     req.ProductCode,
-		"phone":    req.CustomerNumber,
-		"ref_id":   req.RefID,
-		"sign":     s.generateSignature(req.RefID),
-		"cmd":      "inq-pasca",
-	}
+	resp, err := s.digiflazzClient.PostpaidInquiry(ctx, &TransactionRequest{
+		Code:  req.ProductCode,
+		Phone: req.CustomerNumber,
+		RefID: req.RefID,
+	})
 
-	body, err := s.callDigiflazzAPI(ctx, "/transaction", payload)
 	if err != nil {
 		logEntry.Status = "failed"
 		logEntry.ErrorMessage = err.Error()
@@ -120,10 +122,19 @@ func (s *IntegrationService) InquiryDigiflazz(ctx context.Context, req *dto.Digi
 		return nil, err
 	}
 
-	var response dto.DigiflazzTransactionResponse
-	json.Unmarshal(body, &response)
+	response := &dto.DigiflazzTransactionResponse{
+		Success:      resp.Success,
+		Message:      resp.Message,
+		RefID:        resp.Data.RefID,
+		TrxID:        resp.Data.TrxID,
+		Status:       resp.Data.Status,
+		Price:        0, // Should be bill amount
+		ScCode:       resp.Data.ScCode,
+		ScMessage:    resp.Data.ScMessage,
+		CustomerName: resp.Data.Message,
+	}
 
-	logEntry.ResponseData = string(body)
+	logEntry.ResponseData = s.mustMarshal(resp)
 	if response.Success {
 		logEntry.Status = "success"
 	} else {
@@ -133,7 +144,7 @@ func (s *IntegrationService) InquiryDigiflazz(ctx context.Context, req *dto.Digi
 	logEntry.DurationMs = int(time.Since(startTime).Milliseconds())
 	s.logRepo.Update(logEntry)
 
-	return &response, nil
+	return response, nil
 }
 
 func (s *IntegrationService) HandleDigiflazzCallback(ctx context.Context, req *dto.DigiflazzCallbackRequest) error {
@@ -194,31 +205,6 @@ func (s *IntegrationService) UpdateTransactionStatus(ctx context.Context, refID 
 func (s *IntegrationService) GetTransactionStatus(ctx context.Context, refID string) (string, error) {
 	updateKey := fmt.Sprintf("transaction_status:%s", refID)
 	return s.redis.Get(ctx, updateKey).Result()
-}
-
-func (s *IntegrationService) callDigiflazzAPI(ctx context.Context, endpoint string, payload map[string]interface{}) ([]byte, error) {
-	jsonPayload, _ := json.Marshal(payload)
-
-	req, _ := http.NewRequestWithContext(ctx, "POST", s.cfg.DigiflazzURL+endpoint, bytes.NewBuffer(jsonPayload))
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("digiflazz API error: %s", string(body))
-	}
-
-	return body, nil
-}
-
-func (s *IntegrationService) generateSignature(refID string) string {
-	return fmt.Sprintf("%s%s%s", s.cfg.DigiflazzKey, refID, s.cfg.DigiflazzSecret)
 }
 
 func (s *IntegrationService) mustMarshal(v interface{}) string {

@@ -89,9 +89,9 @@ func main() {
 	integrationLogRepo := repository.NewIntegrationLogRepository(db)
 	providerConfigRepo := repository.NewProviderConfigRepository(db)
 
-	integrationService := services.NewIntegrationService(integrationLogRepo, providerConfigRepo, redisClient, cfg)
-
 	digiflazzClient := services.NewDigiflazzClient(cfg)
+	integrationService := services.NewIntegrationService(integrationLogRepo, providerConfigRepo, redisClient, cfg, digiflazzClient)
+
 	compensationService := services.NewCompensationService(db, redisClient)
 
 	integrationHandler := handlers.NewIntegrationHandlerWithClient(integrationService, digiflazzClient, compensationService)

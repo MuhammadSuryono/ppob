@@ -51,7 +51,6 @@ func (h *IntegrationGRPCHandler) TopUp(ctx context.Context, req *integration.Top
 	}, nil
 }
 
-/*
 func (h *IntegrationGRPCHandler) Inquiry(ctx context.Context, req *integration.InquiryRequest) (*integration.InquiryResponse, error) {
 	resp, err := h.integrationService.InquiryDigiflazz(ctx, &dto.DigiflazzTransactionRequest{
 		ProductCode:    req.ProductCode,
@@ -80,4 +79,3 @@ func (h *IntegrationGRPCHandler) Inquiry(ctx context.Context, req *integration.I
 		},
 	}, nil
 }
-*/
