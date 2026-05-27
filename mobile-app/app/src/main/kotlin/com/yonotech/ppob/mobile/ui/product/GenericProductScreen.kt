@@ -15,6 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -63,6 +64,7 @@ fun GenericProductScreen(
     val walletState by transactionViewModel.walletState.collectAsState()
     val inquiryState by transactionViewModel.inquiryState.collectAsState()
     var selectedProduct by remember { mutableStateOf<ProductDto?>(null) }
+    var inquiryDone by remember { mutableStateOf(false) }
 
     // Find the current category metadata from the loaded categories
     val currentCategory = remember(categoriesState) {
@@ -88,13 +90,23 @@ fun GenericProductScreen(
     }
 
     // Call getProducts based on logic
-    LaunchedEffect(categoryId, operatorInfo, categoryCode, customerId, selectedBrand) {
+    LaunchedEffect(categoryId, operatorInfo, categoryCode, customerId, selectedBrand, inquiryDone) {
         if (showOperator) {
-            if (operatorInfo != null && operatorInfo.first != "Lainnya" && customerId.length <= 4) {
+            if (operatorInfo != null && operatorInfo.first != "Lainnya" && customerId.length >= 4) {
                 productViewModel.getProducts(categoryId = categoryId, brand = operatorInfo.first)
             }
         } else if (selectedBrand != null) {
-            productViewModel.getProducts(categoryId = categoryId, brand = selectedBrand)
+            // For categories that need inquiry, only fetch products AFTER inquiry is successful (for prepaid)
+            if (currentCategory?.needsInquiry == true) {
+                if (inquiryDone) {
+                    val inquiryData = (inquiryState as? Resource.Success)?.data
+                    if (inquiryData?.isPostpaid != true) {
+                        productViewModel.getProducts(categoryId = categoryId, brand = selectedBrand)
+                    }
+                }
+            } else {
+                productViewModel.getProducts(categoryId = categoryId, brand = selectedBrand)
+            }
         } else if (currentCategory?.needsInquiry != true) {
             // For non-operator and non-inquiry categories, load all products
             productViewModel.getProducts(categoryId = categoryId)
@@ -117,7 +129,11 @@ fun GenericProductScreen(
             // Apply validation regex if provided
             val regex = currentCategory?.validationRegex
             if (regex == null || newValue.isEmpty() || Regex(regex).matches(newValue) || newValue.length < customerId.length) {
-                if (newValue.length <= 20) customerId = newValue
+                if (newValue.length <= 20) {
+                    customerId = newValue
+                    // Reset inquiry if customer ID changes
+                    inquiryDone = false
+                }
             }
         },
         inputLabel = label,
@@ -126,23 +142,37 @@ fun GenericProductScreen(
         showOperator = showOperator,
         operatorInfo = operatorInfo,
         selectedBrand = selectedBrand,
-        onBrandSelect = { selectedBrand = if (it.isEmpty()) null else it },
+        onBrandSelect = { 
+            selectedBrand = if (it.isEmpty()) null else it
+            inquiryDone = false
+            selectedProduct = null
+        },
         productsState = productsState,
         selectedProduct = selectedProduct,
         transactionState = transactionState,
         walletState = walletState,
         inquiryState = inquiryState,
+        needsInquiry = currentCategory?.needsInquiry == true,
+        inquiryDone = inquiryDone,
+        onInquiryDoneChange = { inquiryDone = it },
         onProductSelect = { selectedProduct = it },
         onBackClick = onBackClick,
+        onInquiryClick = {
+            transactionViewModel.performInquiry(categoryId.toLong(), selectedBrand ?: "", customerId)
+        },
         onLanjutPembayaran = { product ->
-            if (currentCategory?.needsInquiry == true) {
-                transactionViewModel.performInquiry(categoryId.toLong(), product.brand, customerId)
-            } else {
-                transactionViewModel.checkBalance(product.price)
-            }
+            transactionViewModel.checkBalance(product.price)
+        },
+        onInquiryConfirm = { inquiry ->
+            transactionViewModel.selectedProductCode = inquiry.productCode ?: ""
+            transactionViewModel.amount = inquiry.totalAmount
+            transactionViewModel.checkBalance(inquiry.totalAmount)
         },
         onConfirmPayment = { product, pin -> 
-            transactionViewModel.selectedProductCode = product.code
+            if (product != null) {
+                transactionViewModel.selectedProductCode = product.code
+                transactionViewModel.amount = product.price
+            }
             transactionViewModel.customerNo = customerId
             transactionViewModel.initiateTransaction(pin)
         }
@@ -168,10 +198,15 @@ fun GenericProductContent(
     transactionState: Resource<TransactionResponse>,
     walletState: Resource<WalletResponse>,
     inquiryState: Resource<InquiryResponse>,
+    needsInquiry: Boolean,
+    inquiryDone: Boolean,
+    onInquiryDoneChange: (Boolean) -> Unit,
     onProductSelect: (ProductDto) -> Unit,
     onBackClick: () -> Unit,
+    onInquiryClick: () -> Unit,
+    onInquiryConfirm: (InquiryResponse) -> Unit,
     onLanjutPembayaran: (ProductDto) -> Unit,
-    onConfirmPayment: (ProductDto, String) -> Unit
+    onConfirmPayment: (ProductDto?, String) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showCheckoutSheet by remember { mutableStateOf(false) }
@@ -193,7 +228,7 @@ fun GenericProductContent(
         }
     }
 
-    if (showCheckoutSheet && selectedProduct != null) {
+    if (showCheckoutSheet && (selectedProduct != null || (inquiryState as? Resource.Success)?.data?.isPostpaid == true)) {
         ModalBottomSheet(
             onDismissRequest = { 
                 showCheckoutSheet = false
@@ -228,18 +263,26 @@ fun GenericProductContent(
                                 SummaryItem("Tagihan", currencyFormat.format(inquiryData?.billAmount ?: 0.0)),
                                 SummaryItem("Admin Fee", currencyFormat.format(inquiryData?.adminFee ?: 0.0))
                             ),
-                            totalValue = currencyFormat.format(inquiryData?.totalAmount ?: selectedProduct.price),
-                            buttonLabel = "KONFIRMASI & BAYAR",
+                            totalValue = currencyFormat.format(inquiryData?.totalAmount ?: selectedProduct?.price ?: 0.0),
+                            buttonLabel = if (inquiryData?.isPostpaid == true) "KONFIRMASI & BAYAR" else "LANJUT",
                             isLoading = walletState is Resource.Loading,
-                            onButtonClick = { onLanjutPembayaran(selectedProduct) }
+                            onButtonClick = { 
+                                if (inquiryData?.isPostpaid == true) {
+                                    onInquiryConfirm(inquiryData)
+                                } else {
+                                    onInquiryDoneChange(true)
+                                    showCheckoutSheet = false
+                                }
+                            }
                         )
                     }
                 }
                 CheckoutStep.SUMMARY -> {
                     // Pricing breakdown (simulated for UI)
-                    val basePrice = selectedProduct.price + 1500.0
+                    val price = selectedProduct?.price ?: 0.0
+                    val basePrice = price + 1500.0
                     val discount = 1500.0
-                    val total = selectedProduct.price
+                    val total = price
 
                     Column {
                         if (walletState is Resource.Error) {
@@ -268,7 +311,11 @@ fun GenericProductContent(
                             totalValue = currencyFormat.format(total),
                             buttonLabel = "BAYAR",
                             isLoading = walletState is Resource.Loading,
-                            onButtonClick = { onLanjutPembayaran(selectedProduct) }
+                            onButtonClick = { 
+                                if (selectedProduct != null) {
+                                    onLanjutPembayaran(selectedProduct)
+                                }
+                            }
                         )
                     }
                 }
@@ -333,24 +380,44 @@ fun GenericProductContent(
             )
         },
         bottomBar = {
-            AnimatedVisibility(
-                visible = selectedProduct != null,
-                enter = slideInVertically { it } + fadeIn(),
-                exit = slideOutVertically { it } + fadeOut()
-            ) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shadowElevation = 8.dp,
-                    color = Color.White
-                ) {
-                    PpoButton(
-                        label = "LANJUT PEMBAYARAN",
-                        onClick = { 
-                            currentStep = CheckoutStep.SUMMARY
-                            showCheckoutSheet = true 
-                        },
-                        modifier = Modifier.padding(16.dp)
-                    )
+            val showInquiryButton = needsInquiry && !inquiryDone && customerId.length >= 5
+            val showPaymentButton = selectedProduct != null
+
+            Column {
+                if (showInquiryButton) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shadowElevation = 8.dp,
+                        color = Color.White
+                    ) {
+                        PpoButton(
+                            label = if (categoryCode == "pln" || categoryCode == "bpjs") "CEK TAGIHAN" else "CEK NAMA",
+                            onClick = onInquiryClick,
+                            isLoading = inquiryState is Resource.Loading,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                } else if (showPaymentButton) {
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = slideInVertically { it } + fadeIn(),
+                        exit = slideOutVertically { it } + fadeOut()
+                    ) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shadowElevation = 8.dp,
+                            color = Color.White
+                        ) {
+                            PpoButton(
+                                label = "LANJUT PEMBAYARAN",
+                                onClick = { 
+                                    currentStep = CheckoutStep.SUMMARY
+                                    showCheckoutSheet = true 
+                                },
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
+                    }
                 }
             }
         },
@@ -493,58 +560,81 @@ fun GenericProductContent(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Text(
-                    "PILIH PRODUK",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF424242),
-                    letterSpacing = 1.5.sp,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 16.dp)
-                )
+                if (!needsInquiry || inquiryDone) {
+                    Text(
+                        "PILIH PRODUK",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF424242),
+                        letterSpacing = 1.5.sp,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 16.dp)
+                    )
 
-                when (productsState) {
-                    is Resource.Loading -> {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().height(200.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                        }
-                    }
-
-                    is Resource.Success -> {
-                        val productCollection = productsState.data
-                        if (productCollection.products.isEmpty()) {
+                    when (productsState) {
+                        is Resource.Loading -> {
                             Box(
-                                modifier = Modifier.fillMaxWidth().height(100.dp),
+                                modifier = Modifier.fillMaxWidth().height(200.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("Tidak ada produk tersedia", color = Color.Gray)
+                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                             }
-                        } else {
-                            LazyVerticalGrid(
-                                columns = GridCells.Fixed(2),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                items(productCollection.products) { product ->
-                                    DenomCard(
-                                        product = product,
-                                        categoryName = categoryName,
-                                        isSelected = selectedProduct?.id == product.id,
-                                        onClick = { onProductSelect(product) }
-                                    )
+                        }
+
+                        is Resource.Success -> {
+                            val productCollection = productsState.data
+                            if (productCollection.products.isEmpty()) {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("Tidak ada produk tersedia", color = Color.Gray)
+                                }
+                            } else {
+                                LazyVerticalGrid(
+                                    columns = GridCells.Fixed(2),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    items(productCollection.products) { product ->
+                                        DenomCard(
+                                            product = product,
+                                            categoryName = categoryName,
+                                            isSelected = selectedProduct?.id == product.id,
+                                            onClick = { onProductSelect(product) }
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    is Resource.Error -> {
-                        Text(text = productsState.message, color = MaterialTheme.colorScheme.error)
-                    }
+                        is Resource.Error -> {
+                            Text(text = productsState.message, color = MaterialTheme.colorScheme.error)
+                        }
 
-                    else -> {}
+                        else -> {}
+                    }
+                } else {
+                    // Show a message to perform inquiry first
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Default.Info, 
+                                contentDescription = null, 
+                                tint = Color.LightGray,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "Silakan cek data pelanggan terlebih dahulu",
+                                color = Color.Gray,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -678,8 +768,13 @@ fun GenericProductScreenPreview() {
             transactionState = Resource.Idle,
             walletState = Resource.Idle,
             inquiryState = Resource.Idle,
+            needsInquiry = true,
+            inquiryDone = false,
+            onInquiryDoneChange = {},
             onProductSelect = {},
             onBackClick = {},
+            onInquiryClick = {},
+            onInquiryConfirm = {},
             onLanjutPembayaran = {},
             onConfirmPayment = { _, _ -> }
         )

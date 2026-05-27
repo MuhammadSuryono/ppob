@@ -31,6 +31,12 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	db.AutoMigrate(&models.User{})
 	db.AutoMigrate(&models.OTP{})
 	db.AutoMigrate(&models.Wallet{})
+	db.AutoMigrate(&models.Role{})
+	db.AutoMigrate(&models.UserRole{})
+	db.AutoMigrate(&models.DeviceFingerprint{})
+
+	// Seed required roles
+	db.Create(&models.Role{Name: "Mitra", Status: "active"})
 
 	return db
 }
@@ -198,8 +204,10 @@ func TestAuthService_Register(t *testing.T) {
 	userRepo := repository.NewUserRepository(db)
 	otpRepo := repository.NewOTPRepository(db)
 	walletRepo := repository.NewWalletRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	deviceRepo := repository.NewDeviceRepository(db)
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
+	authService := NewAuthService(userRepo, otpRepo, roleRepo, walletRepo, deviceRepo, redisClient, cfg)
 
 	ctx := context.Background()
 	req := &dto.RegisterRequest{
@@ -250,8 +258,10 @@ func TestAuthService_Register_DuplicateEmail(t *testing.T) {
 	userRepo := repository.NewUserRepository(db)
 	otpRepo := repository.NewOTPRepository(db)
 	walletRepo := repository.NewWalletRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	deviceRepo := repository.NewDeviceRepository(db)
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
+	authService := NewAuthService(userRepo, otpRepo, roleRepo, walletRepo, deviceRepo, redisClient, cfg)
 
 	ctx := context.Background()
 	req := &dto.RegisterRequest{
@@ -298,8 +308,10 @@ func TestAuthService_Login_Success(t *testing.T) {
 	userRepo := repository.NewUserRepository(db)
 	otpRepo := repository.NewOTPRepository(db)
 	walletRepo := repository.NewWalletRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	deviceRepo := repository.NewDeviceRepository(db)
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
+	authService := NewAuthService(userRepo, otpRepo, roleRepo, walletRepo, deviceRepo, redisClient, cfg)
 
 	ctx := context.Background()
 
@@ -355,8 +367,10 @@ func TestAuthService_Login_InvalidCredentials(t *testing.T) {
 	userRepo := repository.NewUserRepository(db)
 	otpRepo := repository.NewOTPRepository(db)
 	walletRepo := repository.NewWalletRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	deviceRepo := repository.NewDeviceRepository(db)
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
+	authService := NewAuthService(userRepo, otpRepo, roleRepo, walletRepo, deviceRepo, redisClient, cfg)
 
 	ctx := context.Background()
 
@@ -394,8 +408,10 @@ func TestAuthService_Login_NonExistentUser(t *testing.T) {
 	userRepo := repository.NewUserRepository(db)
 	otpRepo := repository.NewOTPRepository(db)
 	walletRepo := repository.NewWalletRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	deviceRepo := repository.NewDeviceRepository(db)
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, nil, cfg)
+	authService := NewAuthService(userRepo, otpRepo, roleRepo, walletRepo, deviceRepo, nil, cfg)
 
 	ctx := context.Background()
 
@@ -432,8 +448,10 @@ func TestAuthService_VerifyOTP_Success(t *testing.T) {
 	userRepo := repository.NewUserRepository(db)
 	otpRepo := repository.NewOTPRepository(db)
 	walletRepo := repository.NewWalletRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	deviceRepo := repository.NewDeviceRepository(db)
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
+	authService := NewAuthService(userRepo, otpRepo, roleRepo, walletRepo, deviceRepo, redisClient, cfg)
 
 	ctx := context.Background()
 
@@ -490,8 +508,10 @@ func TestAuthService_VerifyOTP_InvalidCode(t *testing.T) {
 	userRepo := repository.NewUserRepository(db)
 	otpRepo := repository.NewOTPRepository(db)
 	walletRepo := repository.NewWalletRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	deviceRepo := repository.NewDeviceRepository(db)
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
+	authService := NewAuthService(userRepo, otpRepo, roleRepo, walletRepo, deviceRepo, redisClient, cfg)
 
 	ctx := context.Background()
 
@@ -537,8 +557,10 @@ func TestAuthService_ValidateToken(t *testing.T) {
 	userRepo := repository.NewUserRepository(db)
 	otpRepo := repository.NewOTPRepository(db)
 	walletRepo := repository.NewWalletRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	deviceRepo := repository.NewDeviceRepository(db)
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
+	authService := NewAuthService(userRepo, otpRepo, roleRepo, walletRepo, deviceRepo, redisClient, cfg)
 
 	ctx := context.Background()
 
@@ -571,7 +593,7 @@ func TestAuthService_ValidateToken(t *testing.T) {
 func TestAuthService_ValidateToken_Invalid(t *testing.T) {
 	cfg := setupTestConfig()
 
-	authService := NewAuthService(nil, nil, nil, nil, nil, cfg)
+	authService := NewAuthService(nil, nil, nil, nil, nil, nil, cfg)
 
 	_, err := authService.ValidateToken("invalid-token")
 
@@ -597,8 +619,10 @@ func TestAuthService_ChangePassword_Success(t *testing.T) {
 	userRepo := repository.NewUserRepository(db)
 	otpRepo := repository.NewOTPRepository(db)
 	walletRepo := repository.NewWalletRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	deviceRepo := repository.NewDeviceRepository(db)
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
+	authService := NewAuthService(userRepo, otpRepo, roleRepo, walletRepo, deviceRepo, redisClient, cfg)
 
 	ctx := context.Background()
 
@@ -647,8 +671,10 @@ func TestAuthService_ChangePassword_WrongOldPassword(t *testing.T) {
 	userRepo := repository.NewUserRepository(db)
 	otpRepo := repository.NewOTPRepository(db)
 	walletRepo := repository.NewWalletRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	deviceRepo := repository.NewDeviceRepository(db)
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
+	authService := NewAuthService(userRepo, otpRepo, roleRepo, walletRepo, deviceRepo, redisClient, cfg)
 
 	ctx := context.Background()
 
@@ -673,9 +699,10 @@ func TestAuthService_ChangePassword_WrongOldPassword(t *testing.T) {
 func TestGenerateToken(t *testing.T) {
 	cfg := setupTestConfig()
 
+	email := "test@example.com"
 	user := &models.User{
 		ID:    1,
-		Email: "test@example.com",
+		Email: &email,
 		Phone: "081234567890",
 		Role:  "user",
 	}
@@ -745,8 +772,10 @@ func TestAuthService_AuthorizeTransaction_Success(t *testing.T) {
 	userRepo := repository.NewUserRepository(db)
 	otpRepo := repository.NewOTPRepository(db)
 	walletRepo := repository.NewWalletRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	deviceRepo := repository.NewDeviceRepository(db)
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
+	authService := NewAuthService(userRepo, otpRepo, roleRepo, walletRepo, deviceRepo, redisClient, cfg)
 
 	ctx := context.Background()
 
@@ -796,8 +825,10 @@ func TestAuthService_AuthorizeTransaction_InvalidPIN(t *testing.T) {
 	userRepo := repository.NewUserRepository(db)
 	otpRepo := repository.NewOTPRepository(db)
 	walletRepo := repository.NewWalletRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	deviceRepo := repository.NewDeviceRepository(db)
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
+	authService := NewAuthService(userRepo, otpRepo, roleRepo, walletRepo, deviceRepo, redisClient, cfg)
 
 	ctx := context.Background()
 
@@ -836,8 +867,10 @@ func TestAuthService_RefreshToken_Success(t *testing.T) {
 	userRepo := repository.NewUserRepository(db)
 	otpRepo := repository.NewOTPRepository(db)
 	walletRepo := repository.NewWalletRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	deviceRepo := repository.NewDeviceRepository(db)
 
-	authService := NewAuthService(userRepo, otpRepo, walletRepo, nil, redisClient, cfg)
+	authService := NewAuthService(userRepo, otpRepo, roleRepo, walletRepo, deviceRepo, redisClient, cfg)
 
 	ctx := context.Background()
 
