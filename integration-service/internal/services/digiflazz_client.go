@@ -17,9 +17,9 @@ import (
 )
 
 type DigiflazzClient struct {
-	cfg      *config.Config
-	client   *http.Client
-	breaker  *gobreaker.CircuitBreaker
+	cfg     *config.Config
+	client  *http.Client
+	breaker *gobreaker.CircuitBreaker
 }
 
 func NewDigiflazzClient(cfg *config.Config) *DigiflazzClient {
@@ -41,17 +41,12 @@ func NewDigiflazzClient(cfg *config.Config) *DigiflazzClient {
 	}
 }
 
-func (c *DigiflazzClient) generateSignature(payload map[string]interface{}) string {
-	delete(payload, "sign")
-	delete(payload, "username")
-
-	jsonBytes, _ := json.Marshal(payload)
-	hash := md5.Sum(jsonBytes)
-	md5String := hex.EncodeToString(hash[:])
-
-	signature := fmt.Sprintf("%s%s%s", c.cfg.DigiflazzKey, md5String, c.cfg.DigiflazzSecret)
-	signatureHash := md5.Sum([]byte(signature))
-	return hex.EncodeToString(signatureHash[:])
+func (c *DigiflazzClient) generateSignature(command string) string {
+	// Formula: md5(username + apiKey + command)
+	// DigiflazzKey is username, DigiflazzSecret is apiKey
+	data := fmt.Sprintf("%s%s%s", c.cfg.DigiflazzKey, c.cfg.DigiflazzSecret, command)
+	hash := md5.Sum([]byte(data))
+	return hex.EncodeToString(hash[:])
 }
 
 func (c *DigiflazzClient) generateWebhookSignature(payload string, timestamp string) string {
@@ -64,7 +59,7 @@ func (c *DigiflazzClient) maskData(data map[string]interface{}) map[string]inter
 	masked := make(map[string]interface{})
 	for k, v := range data {
 		switch k {
-		case "username", "sign", "key", "secret":
+		case "key", "secret":
 			masked[k] = "****"
 		case "phone", "customer_no", "customer_id", "hp":
 			if str, ok := v.(string); ok && len(str) > 8 {
@@ -79,9 +74,9 @@ func (c *DigiflazzClient) maskData(data map[string]interface{}) map[string]inter
 	return masked
 }
 
-func (c *DigiflazzClient) doRequest(ctx context.Context, endpoint string, payload map[string]interface{}) ([]byte, error) {
+func (c *DigiflazzClient) doRequest(ctx context.Context, endpoint string, payload map[string]interface{}, signatureCommand string) ([]byte, error) {
 	payload["username"] = c.cfg.DigiflazzKey
-	payload["sign"] = c.generateSignature(payload)
+	payload["sign"] = c.generateSignature(signatureCommand)
 
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
@@ -119,14 +114,14 @@ func (c *DigiflazzClient) doRequest(ctx context.Context, endpoint string, payloa
 		// Log Response
 		var respData interface{}
 		_ = json.Unmarshal(body, &respData)
-		
+
 		var maskedResp interface{}
 		if m, ok := respData.(map[string]interface{}); ok {
 			maskedResp = c.maskData(m)
 		} else {
 			maskedResp = respData
 		}
-		
+
 		log.Printf("[Digiflazz] Inbound Response: Status=%d, Duration=%v, Body=%v", resp.StatusCode, duration, maskedResp)
 
 		if resp.StatusCode != http.StatusOK {
@@ -155,14 +150,14 @@ type PriceListResponse struct {
 }
 
 type DigiflazzProduct struct {
-	Code         string  `json:"code"`
-	Name         string  `json:"name"`
-	Price        float64 `json:"price"`
-	Provider     string  `json:"provider"`
-	Status       string  `json:"status"`
-	Category     string  `json:"category"`
-	Description  string  `json:"description"`
-	Brand        string  `json:"brand"`
+	Code        string  `json:"code"`
+	Name        string  `json:"name"`
+	Price       float64 `json:"price"`
+	Provider    string  `json:"provider"`
+	Status      string  `json:"status"`
+	Category    string  `json:"category"`
+	Description string  `json:"description"`
+	Brand       string  `json:"brand"`
 }
 
 type DigiflazzErrorResponse struct {
@@ -175,7 +170,7 @@ func (c *DigiflazzClient) GetPriceList(ctx context.Context, productType string) 
 		"cmd": productType,
 	}
 
-	body, err := c.doRequest(ctx, "/pricelist", payload)
+	body, err := c.doRequest(ctx, "/pricelist", payload, "pricelist")
 	if err != nil {
 		return nil, err
 	}
@@ -200,37 +195,32 @@ type TransactionRequest struct {
 }
 
 type TransactionResponse struct {
-	Success   bool                `json:"success"`
-	Data      DigiflazzTransaction `json:"data"`
-	Message   string              `json:"message"`
-	Error     DigiflazzErrorResponse `json:"error"`
+	Success bool                   `json:"success"`
+	Data    DigiflazzTransaction   `json:"data"`
+	Message string                 `json:"message"`
+	Error   DigiflazzErrorResponse `json:"error"`
 }
 
 type DigiflazzTransaction struct {
-	RefID      string `json:"ref_id"`
-	TrxID      string `json:"trx_id"`
-	Status     string `json:"status"`
-	Code       string `json:"code"`
-	Price      string `json:"price"`
-	ScCode     string `json:"sc_code"`
-	ScMessage  string `json:"sc_message"`
-	Message    string `json:"message"`
-	Timestamp  string `json:"timestamp"`
+	RefID      string  `json:"ref_id"`
+	TrxID      string  `json:"trx_id"`
+	Status     string  `json:"status"`
+	Code       string  `json:"code"`
+	Price      float64 `json:"price"`
+	ScCode     string  `json:"sc_code"`
+	ScMessage  string  `json:"sc_message"`
+	Message    string  `json:"message"`
+	Timestamp  string  `json:"timestamp"`
 }
 
 func (c *DigiflazzClient) CreateTransaction(ctx context.Context, req *TransactionRequest) (*TransactionResponse, error) {
 	payload := map[string]interface{}{
-		"cmd":    "inq-pasca",
-		"code":   req.Code,
-		"phone":  req.Phone,
-		"ref_id": req.RefID,
+		"buyer_sku_code": req.Code,
+		"customer_no":    req.Phone,
+		"ref_id":         req.RefID,
 	}
 
-	if req.CustomerNo != "" {
-		payload["customer_no"] = req.CustomerNo
-	}
-
-	body, err := c.doRequest(ctx, "/transaction", payload)
+	body, err := c.doRequest(ctx, "/transaction", payload, req.RefID)
 	if err != nil {
 		return nil, err
 	}
@@ -251,13 +241,12 @@ type TopUpRequest struct {
 
 func (c *DigiflazzClient) TopUp(ctx context.Context, req *TopUpRequest) (*TransactionResponse, error) {
 	payload := map[string]interface{}{
-		"cmd":    "topup",
-		"code":   req.Code,
-		"phone":  req.Phone,
-		"ref_id": req.RefID,
+		"buyer_sku_code": req.Code,
+		"customer_no":    req.Phone,
+		"ref_id":         req.RefID,
 	}
 
-	body, err := c.doRequest(ctx, "/transaction", payload)
+	body, err := c.doRequest(ctx, "/transaction", payload, req.RefID)
 	if err != nil {
 		return nil, err
 	}
@@ -272,13 +261,14 @@ func (c *DigiflazzClient) TopUp(ctx context.Context, req *TopUpRequest) (*Transa
 
 func (c *DigiflazzClient) PostpaidInquiry(ctx context.Context, req *TransactionRequest) (*TransactionResponse, error) {
 	payload := map[string]interface{}{
-		"cmd":    "inq-pasca",
-		"code":   req.Code,
-		"phone":  req.Phone,
-		"ref_id": req.RefID,
+		"commands":       "inq-pasca",
+		"buyer_sku_code": req.Code,
+		"customer_no":    req.Phone,
+		"ref_id":         req.RefID,
+		"sign":           c.generateSignature(req.RefID),
 	}
 
-	body, err := c.doRequest(ctx, "/transaction", payload)
+	body, err := c.doRequest(ctx, "/transaction", payload, "inq-pasca"+req.RefID)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +299,7 @@ func (c *DigiflazzClient) GetBalance(ctx context.Context) (*BalanceResponse, err
 		"cmd": "deposit",
 	}
 
-	body, err := c.doRequest(ctx, "/profile", payload)
+	body, err := c.doRequest(ctx, "/cek-saldo", payload, "depo")
 	if err != nil {
 		return nil, err
 	}
@@ -330,12 +320,12 @@ func (c *DigiflazzClient) VerifyWebhookSignature(payload string, timestamp strin
 type DigiflazzRC int
 
 const (
-	RCSuccess       DigiflazzRC = 00
-	RCPending       DigiflazzRC = 03
-	RCInvalidPhone  DigiflazzRC = 02
-	RCInsufficient  DigiflazzRC = 39
-	RCSystemError   DigiflazzRC = 69
-	RCTimeout       DigiflazzRC = 99
+	RCSuccess      DigiflazzRC = 00
+	RCPending      DigiflazzRC = 03
+	RCInvalidPhone DigiflazzRC = 02
+	RCInsufficient DigiflazzRC = 39
+	RCSystemError  DigiflazzRC = 69
+	RCTimeout      DigiflazzRC = 99
 )
 
 func MapRCToStatus(rc string) (string, string) {
