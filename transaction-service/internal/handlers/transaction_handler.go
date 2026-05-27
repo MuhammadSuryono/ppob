@@ -85,8 +85,19 @@ func (h *TransactionHandler) Inquiry(c *gin.Context) {
 		return
 	}
 
-	userID, _ := c.Get("userID")
-	resp, err := h.transactionService.Inquiry(c.Request.Context(), userID.(uint), &req)
+	userIDVal, exists := c.Get("user_id")
+	if !exists {
+		errors.RespondWithError(c, errors.NewAppError("AUTH_UNAUTHORIZED", nil))
+		return
+	}
+
+	userID, ok := userIDVal.(uint)
+	if !ok {
+		errors.RespondWithError(c, errors.NewAppError("SYSTEM_INTERNAL", nil))
+		return
+	}
+
+	resp, err := h.transactionService.Inquiry(c.Request.Context(), userID, &req)
 	if err != nil {
 		if appErr, ok := err.(*errors.AppError); ok {
 			errors.RespondWithError(c, appErr)
