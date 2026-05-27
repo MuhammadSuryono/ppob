@@ -66,6 +66,11 @@ fun GenericProductScreen(
     var selectedProduct by remember { mutableStateOf<ProductDto?>(null) }
     var inquiryDone by remember { mutableStateOf(false) }
 
+    // Ensure categories are loaded for metadata
+    LaunchedEffect(Unit) {
+        productViewModel.getCategories()
+    }
+
     // Find the current category metadata from the loaded categories
     val currentCategory = remember(categoriesState) {
         if (categoriesState is Resource.Success) {
@@ -74,6 +79,7 @@ fun GenericProductScreen(
     }
 
     // Logic for UI behavior
+    val needsInquiry = currentCategory?.needsInquiry == true || categoryCode in listOf("pln", "e-money", "bpjs", "pdam")
     val showOperator = categoryCode in listOf("pulsa", "data", "masa_aktif", "paket_sms_and_telpon")
     
     // Use metadata from API if available, otherwise fallback to hardcoded defaults
@@ -97,7 +103,7 @@ fun GenericProductScreen(
             }
         } else if (selectedBrand != null) {
             // For categories that need inquiry, only fetch products AFTER inquiry is successful (for prepaid)
-            if (currentCategory?.needsInquiry == true) {
+            if (needsInquiry) {
                 if (inquiryDone) {
                     val inquiryData = (inquiryState as? Resource.Success)?.data
                     if (inquiryData?.isPostpaid != true) {
@@ -107,7 +113,7 @@ fun GenericProductScreen(
             } else {
                 productViewModel.getProducts(categoryId = categoryId, brand = selectedBrand)
             }
-        } else if (currentCategory?.needsInquiry != true) {
+        } else if (!needsInquiry) {
             // For non-operator and non-inquiry categories, load all products
             productViewModel.getProducts(categoryId = categoryId)
         }
@@ -152,7 +158,7 @@ fun GenericProductScreen(
         transactionState = transactionState,
         walletState = walletState,
         inquiryState = inquiryState,
-        needsInquiry = currentCategory?.needsInquiry == true,
+        needsInquiry = needsInquiry,
         inquiryDone = inquiryDone,
         onInquiryDoneChange = { inquiryDone = it },
         onProductSelect = { selectedProduct = it },
