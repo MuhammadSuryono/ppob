@@ -6,6 +6,29 @@ option go_package = "github.com/yontech/ppob/shared/proto/integration";
 
 service IntegrationService {
   rpc TopUp(TopUpRequest) returns (TopUpResponse);
+  rpc Inquiry(InquiryRequest) returns (InquiryResponse);
+}
+
+message InquiryRequest {
+  string product_code = 1;
+  string customer_number = 2;
+  string ref_id = 3;
+}
+
+message InquiryResponse {
+  bool success = 1;
+  string message = 2;
+  InquiryData data = 3;
+}
+
+message InquiryData {
+  string ref_id = 1;
+  string customer_name = 2;
+  double bill_amount = 3;
+  double admin_fee = 4;
+  double total_amount = 5;
+  string status = 6;
+  string message = 7;
 }
 
 message TopUpRequest {

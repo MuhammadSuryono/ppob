@@ -6,7 +6,13 @@ option go_package = "github.com/yontech/ppob/shared/proto/product";
 
 service ProductService {
   rpc GetProduct(GetProductRequest) returns (GetProductResponse);
+  rpc GetInquiryProduct(GetInquiryProductRequest) returns (GetProductResponse);
   rpc ValidateProduct(ValidateProductRequest) returns (ValidateProductResponse);
+}
+
+message GetInquiryProductRequest {
+  string brand = 1;
+  uint32 category_id = 2;
 }
 
 message GetProductRequest {

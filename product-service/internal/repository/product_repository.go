@@ -37,6 +37,15 @@ func (r *ProductRepository) FindByCode(code string) (*models.Product, error) {
 	return &product, nil
 }
 
+func (r *ProductRepository) FindInquiryProduct(categoryID uint, brand string) (*models.Product, error) {
+	var product models.Product
+	err := r.db.Where("category_id = ? AND lower(brand) = ? AND is_inquiry = TRUE", categoryID, strings.ToLower(brand)).First(&product).Error
+	if err != nil {
+		return nil, err
+	}
+	return &product, nil
+}
+
 func (r *ProductRepository) Update(product *models.Product) error {
 	return r.db.Save(product).Error
 }
