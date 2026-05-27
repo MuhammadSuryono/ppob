@@ -19,6 +19,7 @@ type Product struct {
 	PlatformMargin float64        `gorm:"default:0" json:"platform_margin"`
 	Stock          int            `gorm:"default:-1" json:"stock"`
 	Status         string         `gorm:"size:20;default:active" json:"status"`
+	IsInquiry      bool           `gorm:"default:false" json:"is_inquiry"`
 	Description    string         `gorm:"type:text" json:"description"`
 	LastSyncAt     *time.Time     `json:"last_sync_at"`
 	CreatedAt      time.Time      `json:"created_at"`
@@ -44,6 +45,7 @@ type Category struct {
 	Icon            string         `gorm:"size:255" json:"icon"`
 	SortOrder       int            `gorm:"default:0" json:"sort_order"`
 	Status          string         `gorm:"size:20;default:active" json:"status"`
+	NeedsInquiry    bool           `gorm:"default:false" json:"needs_inquiry"`
 	InputType       string         `gorm:"size:50;default:TEXT" json:"input_type"`
 	InputLabel      string         `gorm:"size:100" json:"input_label"`
 	Placeholder     string         `gorm:"size:255" json:"placeholder"`

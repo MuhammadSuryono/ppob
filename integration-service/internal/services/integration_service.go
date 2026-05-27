@@ -89,6 +89,53 @@ func (s *IntegrationService) InitiateDigiflazzTransaction(ctx context.Context, u
 	return &response, nil
 }
 
+func (s *IntegrationService) InquiryDigiflazz(ctx context.Context, req *dto.DigiflazzTransactionRequest) (*dto.DigiflazzTransactionResponse, error) {
+	startTime := time.Now()
+
+	logEntry := &models.IntegrationLog{
+		Provider:      "digiflazz",
+		Action:        "inquiry",
+		RequestID:     req.RefID,
+		TransactionID: req.RefID,
+		Status:        "pending",
+		RequestData:   s.mustMarshal(req),
+	}
+	s.logRepo.Create(logEntry)
+
+	payload := map[string]interface{}{
+		"username": s.cfg.DigiflazzKey,
+		"code":     req.ProductCode,
+		"phone":    req.CustomerNumber,
+		"ref_id":   req.RefID,
+		"sign":     s.generateSignature(req.RefID),
+		"cmd":      "inq-pasca",
+	}
+
+	body, err := s.callDigiflazzAPI(ctx, "/transaction", payload)
+	if err != nil {
+		logEntry.Status = "failed"
+		logEntry.ErrorMessage = err.Error()
+		logEntry.DurationMs = int(time.Since(startTime).Milliseconds())
+		s.logRepo.Update(logEntry)
+		return nil, err
+	}
+
+	var response dto.DigiflazzTransactionResponse
+	json.Unmarshal(body, &response)
+
+	logEntry.ResponseData = string(body)
+	if response.Success {
+		logEntry.Status = "success"
+	} else {
+		logEntry.Status = "failed"
+		logEntry.ErrorMessage = response.Message
+	}
+	logEntry.DurationMs = int(time.Since(startTime).Milliseconds())
+	s.logRepo.Update(logEntry)
+
+	return &response, nil
+}
+
 func (s *IntegrationService) HandleDigiflazzCallback(ctx context.Context, req *dto.DigiflazzCallbackRequest) error {
 	logEntry, err := s.logRepo.FindByRequestID(req.RefID)
 	if err != nil {

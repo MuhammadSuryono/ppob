@@ -8,23 +8,25 @@ type DigiflazzTransactionRequest struct {
 }
 
 type DigiflazzTransactionResponse struct {
-	Success   bool   `json:"success"`
-	RefID     string `json:"ref_id"`
-	TrxID     string `json:"trx_id"`
-	Message   string `json:"message"`
-	Price     string `json:"price"`
-	ScCode    string `json:"sc_code"`
-	ScMessage string `json:"sc_message"`
+	Success      bool    `json:"success"`
+	RefID        string  `json:"ref_id"`
+	TrxID        string  `json:"trx_id"`
+	Message      string  `json:"message"`
+	Price        float64 `json:"price"`
+	CustomerName string  `json:"customer_name"`
+	Status       string  `json:"status"`
+	ScCode       string  `json:"sc_code"`
+	ScMessage    string  `json:"sc_message"`
 }
 
 type DigiflazzCallbackRequest struct {
-	RefID     string `json:"ref_id"`
-	TrxID     string `json:"trx_id"`
-	Status    string `json:"status"`
-	Message   string `json:"message"`
-	Price     string `json:"price"`
-	ScCode    string `json:"sc_code"`
-	ScMessage string `json:"sc_message"`
+	RefID     string  `json:"ref_id"`
+	TrxID     string  `json:"trx_id"`
+	Status    string  `json:"status"`
+	Message   string  `json:"message"`
+	Price     float64 `json:"price"`
+	ScCode    string  `json:"sc_code"`
+	ScMessage string  `json:"sc_message"`
 }
 
 type UpdateStatusRequest struct {

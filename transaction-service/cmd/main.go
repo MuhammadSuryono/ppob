@@ -164,7 +164,7 @@ func main() {
 	api := r.Group("/api/v1")
 
 	api.POST("/transactions/initiate", middleware.AuthMiddleware(cfg), transactionHandler.InitiateTransaction)
-	api.GET("/transactions", middleware.AuthMiddleware(cfg), transactionHandler.ListTransactions)
+	api.POST("/transactions/inquiry", middleware.AuthMiddleware(cfg), transactionHandler.Inquiry)
 	api.GET("/transactions/history", middleware.AuthMiddleware(cfg), transactionHandler.GetTransactionHistory)
 	api.GET("/transactions/:id", middleware.AuthMiddleware(cfg), transactionHandler.GetTransaction)
 	api.GET("/transactions/by-id/:id", middleware.AuthMiddleware(cfg), transactionHandler.GetTransactionByID)

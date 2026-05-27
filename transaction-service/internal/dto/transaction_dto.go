@@ -108,6 +108,26 @@ type CancelTransactionRequest struct {
 	Reason string `json:"reason"`
 }
 
+type InquiryRequest struct {
+	CategoryID      uint   `json:"category_id"`
+	Brand           string `json:"brand"`
+	ProductCode     string `json:"product_code"`
+	CustomerNumber  string `json:"customer_number" binding:"required"`
+}
+
+type InquiryResponse struct {
+	InquiryID       string                 `json:"inquiry_id"`
+	CustomerNumber  string                 `json:"customer_number"`
+	CustomerName    string                 `json:"customer_name"`
+	BillAmount      float64                `json:"bill_amount"`
+	AdminFee        float64                `json:"admin_fee"`
+	TotalAmount     float64                `json:"total_amount"`
+	Description     string                 `json:"description,omitempty"`
+	BillDetails     map[string]interface{} `json:"bill_details,omitempty"`
+	IsPostpaid      bool                   `json:"is_postpaid"`
+	ProductCode     string                 `json:"product_code,omitempty"`
+}
+
 type DigiflazzWebhookRequest struct {
 	RefID      string `json:"ref_id"`
 	TrxID      string `json:"trx_id"`

@@ -78,6 +78,27 @@ func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 	c.JSON(http.StatusCreated, resp)
 }
 
+func (h *TransactionHandler) Inquiry(c *gin.Context) {
+	var req dto.InquiryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errors.RespondWithError(c, errors.NewAppError("INVALID_REQUEST", nil))
+		return
+	}
+
+	userID, _ := c.Get("userID")
+	resp, err := h.transactionService.Inquiry(c.Request.Context(), userID.(uint), &req)
+	if err != nil {
+		if appErr, ok := err.(*errors.AppError); ok {
+			errors.RespondWithError(c, appErr)
+		} else {
+			errors.RespondWithError(c, errors.NewAppError("INTERNAL_ERROR", nil))
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
 func (h *TransactionHandler) GetTransaction(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)

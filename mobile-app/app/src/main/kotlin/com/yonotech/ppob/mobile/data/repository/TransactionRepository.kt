@@ -17,6 +17,10 @@ class TransactionRepository @Inject constructor(
         return transactionService.initiate(idempotencyKey, request)
     }
 
+    suspend fun inquiry(request: InquiryRequest): Response<InquiryResponse> {
+        return transactionService.inquiry(request)
+    }
+
     suspend fun getStatus(id: String): Response<TransactionResponse> {
         return transactionService.getStatus(id)
     }

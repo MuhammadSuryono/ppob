@@ -54,6 +54,7 @@ func (s *ProductService) GetProduct(ctx context.Context, id uint) (*dto.ProductR
 		PriceAPI:    product.PriceAPI,
 		Stock:       product.Stock,
 		Status:      product.Status,
+		IsInquiry:   product.IsInquiry,
 		Description: product.Description,
 		CreatedAt:   product.CreatedAt,
 	}, nil
@@ -76,6 +77,30 @@ func (s *ProductService) GetProductByCode(ctx context.Context, code string) (*dt
 		PriceAPI:    product.PriceAPI,
 		Stock:       product.Stock,
 		Status:      product.Status,
+		IsInquiry:   product.IsInquiry,
+		Description: product.Description,
+		CreatedAt:   product.CreatedAt,
+	}, nil
+}
+
+func (s *ProductService) GetInquiryProduct(ctx context.Context, categoryID uint, brand string) (*dto.ProductResponse, error) {
+	product, err := s.productRepo.FindInquiryProduct(categoryID, brand)
+	if err != nil {
+		return nil, ErrProductNotFound
+	}
+
+	return &dto.ProductResponse{
+		ID:          product.ID,
+		Code:        product.Code,
+		Name:        product.Name,
+		Brand:       product.Brand,
+		CategoryID:  product.CategoryID,
+		Provider:    product.Provider,
+		Price:       product.Price,
+		PriceAPI:    product.PriceAPI,
+		Stock:       product.Stock,
+		Status:      product.Status,
+		IsInquiry:   product.IsInquiry,
 		Description: product.Description,
 		CreatedAt:   product.CreatedAt,
 	}, nil
@@ -142,9 +167,10 @@ func (s *ProductService) ListProducts(ctx context.Context, categoryID uint, bran
 			Provider:    p.Provider,
 			Price:       p.Price,
 			PriceAPI:    p.PriceAPI,
-			Stock:       p.Stock,
-			Status:      p.Status,
-			Description: p.Description,
+			Stock:          p.Stock,
+			Status:         p.Status,
+			IsInquiry:      p.IsInquiry,
+			Description:    p.Description,
 			CreatedAt:   p.CreatedAt,
 		}
 	}
@@ -174,9 +200,10 @@ func (s *ProductService) SearchProducts(ctx context.Context, keyword string, lim
 			Provider:    p.Provider,
 			Price:       p.Price,
 			PriceAPI:    p.PriceAPI,
-			Stock:       p.Stock,
-			Status:      p.Status,
-			Description: p.Description,
+			Stock:          p.Stock,
+			Status:         p.Status,
+			IsInquiry:      p.IsInquiry,
+			Description:    p.Description,
 			CreatedAt:   p.CreatedAt,
 		}
 	}
@@ -198,6 +225,7 @@ func (s *ProductService) CreateProduct(ctx context.Context, req *dto.CreateProdu
 		Provider:    req.Provider,
 		Price:       req.Price,
 		Stock:       req.Stock,
+		IsInquiry:   req.IsInquiry,
 		Description: req.Description,
 		Status:      "active",
 	}
@@ -216,6 +244,7 @@ func (s *ProductService) CreateProduct(ctx context.Context, req *dto.CreateProdu
 		Price:       product.Price,
 		Stock:       product.Stock,
 		Status:      product.Status,
+		IsInquiry:   product.IsInquiry,
 		Description: product.Description,
 		CreatedAt:   product.CreatedAt,
 	}, nil
@@ -248,6 +277,7 @@ func (s *ProductService) UpdateProduct(ctx context.Context, id uint, req *dto.Up
 	if req.Status != "" {
 		product.Status = req.Status
 	}
+	product.IsInquiry = req.IsInquiry
 	if req.Description != "" {
 		product.Description = req.Description
 	}
@@ -266,6 +296,7 @@ func (s *ProductService) UpdateProduct(ctx context.Context, id uint, req *dto.Up
 		Price:       product.Price,
 		Stock:       product.Stock,
 		Status:      product.Status,
+		IsInquiry:   product.IsInquiry,
 		Description: product.Description,
 		CreatedAt:   product.CreatedAt,
 	}, nil
@@ -296,6 +327,7 @@ func (s *ProductService) ListCategories(ctx context.Context) ([]dto.CategoryResp
 			Icon:            c.Icon,
 			SortOrder:       c.SortOrder,
 			Status:          c.Status,
+			NeedsInquiry:    c.NeedsInquiry,
 			InputType:       c.InputType,
 			InputLabel:      c.InputLabel,
 			Placeholder:     c.Placeholder,
@@ -320,6 +352,7 @@ func (s *ProductService) GetCategory(ctx context.Context, id uint) (*dto.Categor
 		Icon:            category.Icon,
 		SortOrder:       category.SortOrder,
 		Status:          category.Status,
+		NeedsInquiry:    category.NeedsInquiry,
 		InputType:       category.InputType,
 		InputLabel:      category.InputLabel,
 		Placeholder:     category.Placeholder,
@@ -351,6 +384,7 @@ func (s *ProductService) UpdateCategory(ctx context.Context, id uint, req *dto.U
 	if req.Status != "" {
 		category.Status = req.Status
 	}
+	category.NeedsInquiry = req.NeedsInquiry
 	if req.InputType != "" {
 		category.InputType = req.InputType
 	}
@@ -376,6 +410,7 @@ func (s *ProductService) UpdateCategory(ctx context.Context, id uint, req *dto.U
 		Icon:            category.Icon,
 		SortOrder:       category.SortOrder,
 		Status:          category.Status,
+		NeedsInquiry:    category.NeedsInquiry,
 		InputType:       category.InputType,
 		InputLabel:      category.InputLabel,
 		Placeholder:     category.Placeholder,
@@ -399,6 +434,7 @@ func (s *ProductService) CreateCategory(ctx context.Context, req *dto.CreateCate
 		Description:     req.Description,
 		Icon:            req.Icon,
 		SortOrder:       req.SortOrder,
+		NeedsInquiry:    req.NeedsInquiry,
 		Status:          "active",
 		InputType:       req.InputType,
 		InputLabel:      req.InputLabel,
@@ -418,6 +454,7 @@ func (s *ProductService) CreateCategory(ctx context.Context, req *dto.CreateCate
 		Icon:            category.Icon,
 		SortOrder:       category.SortOrder,
 		Status:          category.Status,
+		NeedsInquiry:    category.NeedsInquiry,
 		InputType:       category.InputType,
 		InputLabel:      category.InputLabel,
 		Placeholder:     category.Placeholder,

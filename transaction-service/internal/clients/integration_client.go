@@ -74,3 +74,11 @@ func (c *IntegrationClient) TopUp(ctx context.Context, req *TopUpRequest) (*Inte
 
 	return result, nil
 }
+
+func (c *IntegrationClient) PostpaidInquiry(ctx context.Context, productCode, customerNumber, refID string) (*IntegrationResponse, error) {
+	// Temporarily returning mock while waiting for gRPC regeneration
+	return &IntegrationResponse{
+		Success: true,
+		Message: "Inquiry Success (Mock)",
+	}, nil
+}

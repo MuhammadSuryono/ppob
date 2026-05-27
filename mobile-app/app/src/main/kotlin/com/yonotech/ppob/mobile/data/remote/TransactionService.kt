@@ -17,6 +17,11 @@ interface TransactionService {
         @Body request: InitiateTransactionRequest
     ): Response<TransactionResponse>
 
+    @POST("transactions/inquiry")
+    suspend fun inquiry(
+        @Body request: InquiryRequest
+    ): Response<InquiryResponse>
+
     @GET("transactions/by-id/{id}")
     suspend fun getStatus(@Path("id") id: String): Response<TransactionResponse>
 

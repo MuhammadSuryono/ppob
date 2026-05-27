@@ -29,6 +29,9 @@ class TransactionViewModel @Inject constructor(
     private val _transactionState = MutableStateFlow<Resource<TransactionResponse>>(Resource.Idle)
     val transactionState = _transactionState.asStateFlow()
 
+    private val _inquiryState = MutableStateFlow<Resource<InquiryResponse>>(Resource.Idle)
+    val inquiryState = _inquiryState.asStateFlow()
+
     private val _walletState = MutableStateFlow<Resource<WalletResponse>>(Resource.Idle)
     val walletState = _walletState.asStateFlow()
 
@@ -56,6 +59,23 @@ class TransactionViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _walletState.value = Resource.Error(e.message ?: "Terjadi kesalahan sistem saat cek saldo")
+            }
+        }
+    }
+
+    fun performInquiry(categoryId: Long, brand: String, customerNo: String) {
+        this.customerNo = customerNo
+        viewModelScope.launch {
+            _inquiryState.value = Resource.Loading
+            try {
+                val response = transactionRepository.inquiry(InquiryRequest(categoryId, brand, customerNo))
+                if (response.isSuccessful && response.body() != null) {
+                    _inquiryState.value = Resource.Success(response.body()!!)
+                } else {
+                    _inquiryState.value = Resource.Error("Gagal cek data pelanggan: ${response.message()}")
+                }
+            } catch (e: Exception) {
+                _inquiryState.value = Resource.Error(e.message ?: "Terjadi kesalahan saat inquiry")
             }
         }
     }

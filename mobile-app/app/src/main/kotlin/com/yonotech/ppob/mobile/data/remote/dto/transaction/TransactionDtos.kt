@@ -24,3 +24,24 @@ data class TransactionResponse(
     @Json(name = "message") val message: String? = null,
     @Json(name = "created_at") val createdAt: String? = null
 )
+
+@JsonClass(generateAdapter = true)
+data class InquiryRequest(
+    @Json(name = "category_id") val categoryId: Long,
+    @Json(name = "brand") val brand: String,
+    @Json(name = "customer_number") val customerNumber: String,
+    @Json(name = "product_code") val productCode: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class InquiryResponse(
+    @Json(name = "inquiry_id") val inquiryId: String,
+    @Json(name = "customer_number") val customerNumber: String,
+    @Json(name = "customer_name") val customerName: String,
+    @Json(name = "bill_amount") val billAmount: Double = 0.0,
+    @Json(name = "admin_fee") val adminFee: Double = 0.0,
+    @Json(name = "total_amount") val totalAmount: Double = 0.0,
+    @Json(name = "description") val description: String? = null,
+    @Json(name = "is_postpaid") val isPostpaid: Boolean = false,
+    @Json(name = "product_code") val productCode: String? = null
+)

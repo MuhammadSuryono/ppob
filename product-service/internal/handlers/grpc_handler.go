@@ -48,6 +48,23 @@ func (h *ProductGRPCHandler) GetProduct(ctx context.Context, req *product.GetPro
 	}, nil
 }
 
+/*
+func (h *ProductGRPCHandler) GetInquiryProduct(ctx context.Context, req *product.GetInquiryProductRequest) (*product.GetProductResponse, error) {
+	p, err := h.productService.GetInquiryProduct(ctx, uint(req.CategoryId), req.Brand)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "inquiry product not found for brand %s: %v", req.Brand, err)
+	}
+
+	return &product.GetProductResponse{
+		Id:       uint32(p.ID),
+		Name:     p.Name,
+		SkuCode:  p.Code,
+		Price:    p.Price,
+		IsActive: p.Status == "active",
+	}, nil
+}
+*/
+
 func (h *ProductGRPCHandler) ValidateProduct(ctx context.Context, req *product.ValidateProductRequest) (*product.ValidateProductResponse, error) {
 	p, err := h.productService.GetProduct(ctx, uint(req.ProductId))
 	if err != nil {
