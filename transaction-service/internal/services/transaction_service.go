@@ -193,6 +193,61 @@ func (s *TransactionService) InitiateTransaction(ctx context.Context, userID uin
 	return s.toResponse(tx), nil
 }
 
+func (s *TransactionService) Inquiry(ctx context.Context, userID uint, req *dto.InquiryRequest) (*dto.InquiryResponse, error) {
+	// 1. Get Inquiry Product for Brand/Category
+	productResp, err := s.productClient.GetInquiryProduct(ctx, req.CategoryID, req.Brand)
+	if err != nil {
+		// Fallback: If no specific inquiry product, it might be a direct postpaid command
+		// or we might need to use a generic one. For now, let's assume we need it.
+		log.Printf("Inquiry product not found for brand %s: %v", req.Brand, err)
+	}
+
+	transactionID := uuid.New().String()
+	
+	// Case A: Postpaid (PLN Pasca, BPJS, etc.)
+	// Usually determined by category metadata. For now let's use a simple check.
+	isPostpaid := req.Brand == "PLN Pasca" || req.Brand == "BPJS" || req.Brand == "PDAM"
+	
+	if isPostpaid {
+		resp, err := s.integrationClient.PostpaidInquiry(ctx, req.ProductCode, req.CustomerNumber, transactionID)
+		if err != nil {
+			return nil, err
+		}
+		
+		return &dto.InquiryResponse{
+			InquiryID:      transactionID,
+			CustomerNumber: req.CustomerNumber,
+			CustomerName:   resp.Message, // Digiflazz returns customer name in message for success inq
+			BillAmount:     0,             // Needs mapping from Digiflazz
+			TotalAmount:    0,
+			IsPostpaid:     true,
+		}, nil
+	}
+
+	// Case B: Prepaid with Inquiry SKU (E-Money: gopaycek, dana20, etc.)
+	if productResp != nil {
+		resp, err := s.integrationClient.TopUp(ctx, &clients.TopUpRequest{
+			Code:  productResp.SkuCode,
+			Phone: req.CustomerNumber,
+			RefID: transactionID,
+		})
+		if err != nil {
+			return nil, err
+		}
+		
+		// For SKU like 'gopaycek', name is usually in the Message
+		return &dto.InquiryResponse{
+			InquiryID:      transactionID,
+			CustomerNumber: req.CustomerNumber,
+			CustomerName:   resp.Message,
+			IsPostpaid:     false,
+			ProductCode:    productResp.SkuCode,
+		}, nil
+	}
+
+	return nil, errors.New("inquiry not supported for this product")
+}
+
 func (s *TransactionService) processExternalTransaction(ctx context.Context, tx *models.Transaction) {
 	if s.integrationClient == nil {
 		return

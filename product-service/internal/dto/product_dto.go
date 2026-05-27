@@ -15,6 +15,7 @@ type ProductResponse struct {
 	PlatformMargin float64   `json:"platform_margin"`
 	Stock          int       `json:"stock"`
 	Status         string    `json:"status"`
+	IsInquiry      bool      `json:"is_inquiry"`
 	Description    string    `json:"description"`
 	CreatedAt      time.Time `json:"created_at"`
 }
@@ -27,6 +28,7 @@ type CreateProductRequest struct {
 	Provider    string  `json:"provider"`
 	Price       float64 `json:"price" binding:"required,gt=0"`
 	Stock       int     `json:"stock"`
+	IsInquiry   bool    `json:"is_inquiry"`
 	Description string  `json:"description"`
 }
 
@@ -38,6 +40,7 @@ type UpdateProductRequest struct {
 	Price       float64 `json:"price"`
 	Stock       int     `json:"stock"`
 	Status      string  `json:"status"`
+	IsInquiry   bool    `json:"is_inquiry"`
 	Description string  `json:"description"`
 }
 
@@ -56,6 +59,7 @@ type CategoryResponse struct {
 	Icon            string `json:"icon"`
 	SortOrder       int    `json:"sort_order"`
 	Status          string `json:"status"`
+	NeedsInquiry    bool   `json:"needs_inquiry"`
 	InputType       string `json:"input_type"`
 	InputLabel      string `json:"input_label"`
 	Placeholder     string `json:"placeholder"`
@@ -68,6 +72,7 @@ type CreateCategoryRequest struct {
 	Description     string `json:"description"`
 	Icon            string `json:"icon"`
 	SortOrder       int    `json:"sort_order"`
+	NeedsInquiry    bool   `json:"needs_inquiry"`
 	InputType       string `json:"input_type"`
 	InputLabel      string `json:"input_label"`
 	Placeholder     string `json:"placeholder"`
@@ -81,6 +86,7 @@ type UpdateCategoryRequest struct {
 	Icon            string `json:"icon"`
 	SortOrder       int    `json:"sort_order"`
 	Status          string `json:"status"`
+	NeedsInquiry    bool   `json:"needs_inquiry"`
 	InputType       string `json:"input_type"`
 	InputLabel      string `json:"input_label"`
 	Placeholder     string `json:"placeholder"`

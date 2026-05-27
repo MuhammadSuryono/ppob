@@ -50,3 +50,34 @@ func (h *IntegrationGRPCHandler) TopUp(ctx context.Context, req *integration.Top
 		},
 	}, nil
 }
+
+/*
+func (h *IntegrationGRPCHandler) Inquiry(ctx context.Context, req *integration.InquiryRequest) (*integration.InquiryResponse, error) {
+	resp, err := h.integrationService.InquiryDigiflazz(ctx, &dto.DigiflazzTransactionRequest{
+		ProductCode:    req.ProductCode,
+		CustomerNumber: req.CustomerNumber,
+		RefID:          req.RefId,
+	})
+
+	if err != nil {
+		return &integration.InquiryResponse{
+			Success: false,
+			Message: err.Error(),
+		}, nil
+	}
+
+	return &integration.InquiryResponse{
+		Success: resp.Success,
+		Message: resp.Message,
+		Data: &integration.InquiryData{
+			RefId:        resp.RefID,
+			CustomerName: resp.CustomerName,
+			BillAmount:   resp.Price, // In Digiflazz postpaid, price is usually the bill amount
+			AdminFee:     0,          // Admin fee might need separate mapping if available
+			TotalAmount:  resp.Price,
+			Status:       resp.Status,
+			Message:      resp.Message,
+		},
+	}, nil
+}
+*/

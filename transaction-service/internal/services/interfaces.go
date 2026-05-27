@@ -8,6 +8,7 @@ import (
 
 type ProductClient interface {
 	GetProductByCode(ctx context.Context, skuCode string) (*product.GetProductResponse, error)
+	GetInquiryProduct(ctx context.Context, categoryID uint, brand string) (*product.GetProductResponse, error)
 	ValidateProduct(ctx context.Context, productID uint, expectedPrice float64) (*product.ValidateProductResponse, error)
 }
 
@@ -21,4 +22,5 @@ type WalletClient interface {
 
 type IntegrationClient interface {
 	TopUp(ctx context.Context, req *clients.TopUpRequest) (*clients.IntegrationResponse, error)
+	PostpaidInquiry(ctx context.Context, productCode, customerNumber, refID string) (*clients.IntegrationResponse, error)
 }

@@ -9,6 +9,7 @@ data class CategoryDto(
     @Json(name = "name") val name: String,
     @Json(name = "code") val code: String,
     @Json(name = "icon_url") val iconUrl: String? = null,
+    @Json(name = "needs_inquiry") val needsInquiry: Boolean? = false,
     @Json(name = "input_type") val inputType: String? = null,
     @Json(name = "input_label") val inputLabel: String? = null,
     @Json(name = "placeholder") val placeholder: String? = null,
@@ -28,6 +29,7 @@ data class ProductDto(
     @Json(name = "category_id") val categoryId: String,
     @Json(name = "brand") val brand: String,
     @Json(name = "price") val price: Double,
+    @Json(name = "is_inquiry") val isInquiry: Boolean? = false,
     @Json(name = "description") val description: String? = null,
     @Json(name = "status") val status: String
 )

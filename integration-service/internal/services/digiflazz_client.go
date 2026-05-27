@@ -270,6 +270,27 @@ func (c *DigiflazzClient) TopUp(ctx context.Context, req *TopUpRequest) (*Transa
 	return &response, nil
 }
 
+func (c *DigiflazzClient) PostpaidInquiry(ctx context.Context, req *TransactionRequest) (*TransactionResponse, error) {
+	payload := map[string]interface{}{
+		"cmd":    "inq-pasca",
+		"code":   req.Code,
+		"phone":  req.Phone,
+		"ref_id": req.RefID,
+	}
+
+	body, err := c.doRequest(ctx, "/transaction", payload)
+	if err != nil {
+		return nil, err
+	}
+
+	var response TransactionResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	return &response, nil
+}
+
 type BalanceResponse struct {
 	Success bool    `json:"success"`
 	Data    Balance `json:"data"`

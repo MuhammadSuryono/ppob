@@ -41,7 +41,7 @@ import java.text.NumberFormat
 import java.util.*
 
 private enum class CheckoutStep {
-    SUMMARY, PIN
+    INQUIRY, SUMMARY, PIN
 }
 
 @Composable
@@ -55,10 +55,12 @@ fun GenericProductScreen(
     transactionViewModel: TransactionViewModel = hiltViewModel()
 ) {
     var customerId by remember { mutableStateOf("") }
+    var selectedBrand by remember { mutableStateOf<String?>(null) }
     val categoriesState by productViewModel.categories.collectAsState()
     val productsState by productViewModel.products.collectAsState()
     val transactionState by transactionViewModel.transactionState.collectAsState()
     val walletState by transactionViewModel.walletState.collectAsState()
+    val inquiryState by transactionViewModel.inquiryState.collectAsState()
     var selectedProduct by remember { mutableStateOf<ProductDto?>(null) }
 
     // Find the current category metadata from the loaded categories
@@ -85,13 +87,15 @@ fun GenericProductScreen(
     }
 
     // Call getProducts based on logic
-    LaunchedEffect(categoryId, operatorInfo, categoryCode, customerId) {
+    LaunchedEffect(categoryId, operatorInfo, categoryCode, customerId, selectedBrand) {
         if (showOperator) {
             if (operatorInfo != null && operatorInfo.first != "Lainnya" && customerId.length <= 4) {
                 productViewModel.getProducts(categoryId = categoryId, brand = operatorInfo.first)
             }
-        } else {
-            // For non-operator dependent categories, we just load products by category
+        } else if (selectedBrand != null) {
+            productViewModel.getProducts(categoryId = categoryId, brand = selectedBrand)
+        } else if (currentCategory?.needsInquiry != true) {
+            // For non-operator and non-inquiry categories, load all products
             productViewModel.getProducts(categoryId = categoryId)
         }
     }
@@ -120,14 +124,21 @@ fun GenericProductScreen(
         keyboardType = keyboardType,
         showOperator = showOperator,
         operatorInfo = operatorInfo,
+        selectedBrand = selectedBrand,
+        onBrandSelect = { selectedBrand = if (it.isEmpty()) null else it },
         productsState = productsState,
         selectedProduct = selectedProduct,
         transactionState = transactionState,
         walletState = walletState,
+        inquiryState = inquiryState,
         onProductSelect = { selectedProduct = it },
         onBackClick = onBackClick,
         onLanjutPembayaran = { product ->
-            transactionViewModel.checkBalance(product.price)
+            if (currentCategory?.needsInquiry == true) {
+                transactionViewModel.performInquiry(categoryId.toLong(), product.brand, customerId)
+            } else {
+                transactionViewModel.checkBalance(product.price)
+            }
         },
         onConfirmPayment = { product, pin -> 
             transactionViewModel.selectedProductCode = product.code
@@ -149,10 +160,13 @@ fun GenericProductContent(
     keyboardType: KeyboardType,
     showOperator: Boolean,
     operatorInfo: Pair<String, Color>?,
+    selectedBrand: String?,
+    onBrandSelect: (String) -> Unit,
     productsState: Resource<ProductCollection>,
     selectedProduct: ProductDto?,
     transactionState: Resource<TransactionResponse>,
     walletState: Resource<WalletResponse>,
+    inquiryState: Resource<InquiryResponse>,
     onProductSelect: (ProductDto) -> Unit,
     onBackClick: () -> Unit,
     onLanjutPembayaran: (ProductDto) -> Unit,
@@ -162,10 +176,19 @@ fun GenericProductContent(
     var showCheckoutSheet by remember { mutableStateOf(false) }
     var currentStep by remember { mutableStateOf(CheckoutStep.SUMMARY) }
 
-    // Navigate to PIN step only if balance check is successful
+    // Logic to open sheet and navigate steps
+    LaunchedEffect(inquiryState) {
+        if (inquiryState is Resource.Success && !showCheckoutSheet) {
+            currentStep = CheckoutStep.INQUIRY
+            showCheckoutSheet = true
+        }
+    }
+
     LaunchedEffect(walletState) {
-        if (walletState is Resource.Success && currentStep == CheckoutStep.SUMMARY && showCheckoutSheet) {
-            currentStep = CheckoutStep.PIN
+        if (walletState is Resource.Success && showCheckoutSheet) {
+            if (currentStep == CheckoutStep.SUMMARY || currentStep == CheckoutStep.INQUIRY) {
+                currentStep = CheckoutStep.PIN
+            }
         }
     }
 
@@ -183,6 +206,34 @@ fun GenericProductContent(
             currencyFormat.maximumFractionDigits = 0
 
             when (currentStep) {
+                CheckoutStep.INQUIRY -> {
+                    val inquiryData = (inquiryState as? Resource.Success)?.data
+                    Column {
+                        if (walletState is Resource.Error) {
+                            Text(
+                                text = walletState.message,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        CheckoutSummary(
+                            title = "Detail Pelanggan",
+                            items = listOf(
+                                SummaryItem("Nama Pelanggan", inquiryData?.customerName ?: "-"),
+                                SummaryItem("ID Pelanggan", customerId),
+                                SummaryItem("Tagihan", currencyFormat.format(inquiryData?.billAmount ?: 0.0)),
+                                SummaryItem("Admin Fee", currencyFormat.format(inquiryData?.adminFee ?: 0.0))
+                            ),
+                            totalValue = currencyFormat.format(inquiryData?.totalAmount ?: selectedProduct.price),
+                            buttonLabel = "KONFIRMASI & BAYAR",
+                            isLoading = walletState is Resource.Loading,
+                            onButtonClick = { onLanjutPembayaran(selectedProduct) }
+                        )
+                    }
+                }
                 CheckoutStep.SUMMARY -> {
                     // Pricing breakdown (simulated for UI)
                     val basePrice = selectedProduct.price + 1500.0
@@ -310,24 +361,67 @@ fun GenericProductContent(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            // Input Card
-            Surface(
+            if ((categoryCode == "pln" || categoryCode == "e-money") && selectedBrand == null) {
+                Text(
+                    text = "PILIH SUB-KATEGORI",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                val brands = if (categoryCode == "pln") {
+                    listOf("PLN Token", "PLN Pasca", "PLN Non-Taglis")
+                } else {
+                    listOf("DANA", "GO PAY", "OVO", "SHOPEE PAY", "LinkAja")
+                }
+                
+                brands.chunked(2).forEach { rowBrands ->
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        rowBrands.forEach { brand ->
+                            Card(
+                                onClick = { onBrandSelect(brand) },
+                                modifier = Modifier.weight(1f).padding(bottom = 12.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White)
+                            ) {
+                                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                    Text(text = brand, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                        if (rowBrands.size < 2) Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            } else {
+                // Input Card
+                Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
                 color = Color.White,
                 shadowElevation = 1.dp
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        inputLabel.uppercase(),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Gray,
-                        letterSpacing = 0.5.sp
-                    )
-                    
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                        TextField(
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                      Text(
+                          inputLabel.uppercase(),
+                          fontSize = 12.sp,
+                          fontWeight = FontWeight.Bold,
+                          color = Color.Gray,
+                          letterSpacing = 0.5.sp
+                      )
+
+                      if (selectedBrand != null) {
+                          Text(
+                              text = "GANTI ($selectedBrand)",
+                              fontSize = 10.sp,
+                              color = MaterialTheme.colorScheme.primary,
+                              fontWeight = FontWeight.Bold,
+                              modifier = Modifier.clickable { onBrandSelect("") } // Reset brand
+                          )
+                      }
+                    }
+
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {                        TextField(
                             value = customerId,
                             onValueChange = { onCustomerIdChange(it) },
                             placeholder = { Text(inputPlaceholder, color = Color.LightGray) },

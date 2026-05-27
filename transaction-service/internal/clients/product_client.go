@@ -36,6 +36,14 @@ func (c *ProductClient) GetProductByCode(ctx context.Context, skuCode string) (*
 	})
 }
 
+func (c *ProductClient) GetInquiryProduct(ctx context.Context, categoryID uint, brand string) (*product.GetProductResponse, error) {
+	// Temporarily returning mock while waiting for gRPC regeneration
+	return &product.GetProductResponse{
+		SkuCode:  "danacek",
+		IsActive: true,
+	}, nil
+}
+
 func (c *ProductClient) ValidateProduct(ctx context.Context, productID uint, expectedPrice float64) (*product.ValidateProductResponse, error) {
 	return c.client.ValidateProduct(ctx, &product.ValidateProductRequest{
 		ProductId:     uint32(productID),
