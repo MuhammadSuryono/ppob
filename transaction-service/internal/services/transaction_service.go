@@ -221,6 +221,7 @@ func (s *TransactionService) Inquiry(ctx context.Context, userID uint, req *dto.
 			BillAmount:     0,             // Needs mapping from Digiflazz
 			TotalAmount:    0,
 			IsPostpaid:     true,
+			ProductCode:    req.ProductCode,
 		}, nil
 	}
 
