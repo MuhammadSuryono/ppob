@@ -31,6 +31,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.yonotech.ppob.mobile.data.remote.dto.ProductCollection
 import com.yonotech.ppob.mobile.data.remote.dto.ProductDto
 import com.yonotech.ppob.mobile.data.remote.dto.WalletResponse
+import com.yonotech.ppob.mobile.data.remote.dto.transaction.InquiryResponse
 import com.yonotech.ppob.mobile.data.remote.dto.transaction.TransactionResponse
 import com.yonotech.ppob.mobile.ui.components.*
 import com.yonotech.ppob.mobile.ui.theme.PpoMobileTheme
@@ -369,22 +370,28 @@ fun GenericProductContent(
                     color = Color.Gray,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
-                
+
                 val brands = if (categoryCode == "pln") {
                     listOf("PLN Token", "PLN Pasca", "PLN Non-Taglis")
                 } else {
                     listOf("DANA", "GO PAY", "OVO", "SHOPEE PAY", "LinkAja")
                 }
-                
+
                 brands.chunked(2).forEach { rowBrands ->
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
                         rowBrands.forEach { brand ->
                             Card(
                                 onClick = { onBrandSelect(brand) },
                                 modifier = Modifier.weight(1f).padding(bottom = 12.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White)
                             ) {
-                                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
                                     Text(text = brand, fontWeight = FontWeight.Bold)
                                 }
                             }
@@ -395,129 +402,150 @@ fun GenericProductContent(
             } else {
                 // Input Card
                 Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                color = Color.White,
-                shadowElevation = 1.dp
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                      Text(
-                          inputLabel.uppercase(),
-                          fontSize = 12.sp,
-                          fontWeight = FontWeight.Bold,
-                          color = Color.Gray,
-                          letterSpacing = 0.5.sp
-                      )
-
-                      if (selectedBrand != null) {
-                          Text(
-                              text = "GANTI ($selectedBrand)",
-                              fontSize = 10.sp,
-                              color = MaterialTheme.colorScheme.primary,
-                              fontWeight = FontWeight.Bold,
-                              modifier = Modifier.clickable { onBrandSelect("") } // Reset brand
-                          )
-                      }
-                    }
-
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {                        TextField(
-                            value = customerId,
-                            onValueChange = { onCustomerIdChange(it) },
-                            placeholder = { Text(inputPlaceholder, color = Color.LightGray) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color.White,
+                    shadowElevation = 1.dp
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                disabledContainerColor = Color.Transparent,
-                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                unfocusedIndicatorColor = Color(0xFFF5F5F5)
-                            ),
-                            textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-                            singleLine = true
-                        )
-                        
-                        if (showOperator) {
-                            operatorInfo?.let { (name, color) ->
-                                Surface(
-                                    color = color.copy(alpha = 0.1f),
-                                    shape = RoundedCornerShape(8.dp),
-                                    modifier = Modifier.padding(bottom = 8.dp),
-                                    border = BorderStroke(1.dp, color.copy(alpha = 0.2f))
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                inputLabel.uppercase(),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Gray,
+                                letterSpacing = 0.5.sp
+                            )
+
+                            if (selectedBrand != null) {
+                                Text(
+                                    text = "GANTI ($selectedBrand)",
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.clickable { onBrandSelect("") } // Reset brand
+                                )
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            TextField(
+                                value = customerId,
+                                onValueChange = { onCustomerIdChange(it) },
+                                placeholder = { Text(inputPlaceholder, color = Color.LightGray) },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    disabledContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedIndicatorColor = Color(0xFFF5F5F5)
+                                ),
+                                textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                                keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+                                singleLine = true
+                            )
+
+                            if (showOperator) {
+                                operatorInfo?.let { (name, color) ->
+                                    Surface(
+                                        color = color.copy(alpha = 0.1f),
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier.padding(bottom = 8.dp),
+                                        border = BorderStroke(1.dp, color.copy(alpha = 0.2f))
                                     ) {
-                                        Text(
-                                            text = name,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.ExtraBold,
-                                            color = color
-                                        )
+                                        Row(
+                                            modifier = Modifier.padding(
+                                                horizontal = 10.dp,
+                                                vertical = 6.dp
+                                            ),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = name,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = color
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    
-                    if (showOperator) {
-                        Text(
-                            "Masukkan nomor tujuan untuk mendeteksi operator otomatis.",
-                            fontSize = 10.sp,
-                            color = Color.LightGray,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
-                }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                "PILIH PRODUK",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = Color(0xFF424242),
-                letterSpacing = 1.5.sp,
-                modifier = Modifier.padding(start = 4.dp, bottom = 16.dp)
-            )
-
-            when (productsState) {
-                is Resource.Loading -> {
-                    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-                is Resource.Success -> {
-                    val productCollection = productsState.data
-                    if (productCollection.products.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
-                            Text("Tidak ada produk tersedia", color = Color.Gray)
+                        if (showOperator) {
+                            Text(
+                                "Masukkan nomor tujuan untuk mendeteksi operator otomatis.",
+                                fontSize = 10.sp,
+                                color = Color.LightGray,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
                         }
-                    } else {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(2),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.fillMaxSize()
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    "PILIH PRODUK",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF424242),
+                    letterSpacing = 1.5.sp,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 16.dp)
+                )
+
+                when (productsState) {
+                    is Resource.Loading -> {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(200.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            items(productCollection.products) { product ->
-                                DenomCard(
-                                    product = product,
-                                    categoryName = categoryName,
-                                    isSelected = selectedProduct?.id == product.id,
-                                    onClick = { onProductSelect(product) }
-                                )
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+
+                    is Resource.Success -> {
+                        val productCollection = productsState.data
+                        if (productCollection.products.isEmpty()) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().height(100.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("Tidak ada produk tersedia", color = Color.Gray)
+                            }
+                        } else {
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(2),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                items(productCollection.products) { product ->
+                                    DenomCard(
+                                        product = product,
+                                        categoryName = categoryName,
+                                        isSelected = selectedProduct?.id == product.id,
+                                        onClick = { onProductSelect(product) }
+                                    )
+                                }
                             }
                         }
                     }
+
+                    is Resource.Error -> {
+                        Text(text = productsState.message, color = MaterialTheme.colorScheme.error)
+                    }
+
+                    else -> {}
                 }
-                is Resource.Error -> {
-                    Text(text = productsState.message, color = MaterialTheme.colorScheme.error)
-                }
-                else -> {}
             }
         }
     }
@@ -605,7 +633,7 @@ fun DenomCard(
     }
 }
 
-private fun detectOperator(phone: String): Pair<String, Color>? {
+fun detectOperator(phone: String): Pair<String, Color>? {
     if (phone.length < 4) return null
     val prefix = phone.take(4)
     return when {
@@ -629,8 +657,8 @@ private fun detectOperator(phone: String): Pair<String, Color>? {
 @Composable
 fun GenericProductScreenPreview() {
     val sampleProducts = listOf(
-        ProductDto("1", "PULSA 5.000", "p5", "1", "Telkomsel", 5500.0, "Pulsa 5rb", "active"),
-        ProductDto("2", "PULSA 10.000", "p10", "1", "Telkomsel", 10500.0, "Pulsa 10rb", "active")
+        ProductDto("1", "PULSA 5.000", "p5", "1", "Telkomsel", 5500.0, false, "Pulsa 5rb", "active"),
+        ProductDto("2", "PULSA 10.000", "p10", "1", "Telkomsel", 10500.0, false, "Pulsa 10rb", "active")
     )
     PpoMobileTheme {
         GenericProductContent(

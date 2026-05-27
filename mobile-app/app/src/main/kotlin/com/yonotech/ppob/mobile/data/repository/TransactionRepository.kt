@@ -2,6 +2,8 @@ package com.yonotech.ppob.mobile.data.repository
 
 import com.yonotech.ppob.mobile.data.remote.TransactionService
 import com.yonotech.ppob.mobile.data.remote.dto.transaction.InitiateTransactionRequest
+import com.yonotech.ppob.mobile.data.remote.dto.transaction.InquiryRequest
+import com.yonotech.ppob.mobile.data.remote.dto.transaction.InquiryResponse
 import com.yonotech.ppob.mobile.data.remote.dto.transaction.TransactionResponse
 import retrofit2.Response
 import java.util.UUID

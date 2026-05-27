@@ -6,6 +6,8 @@ import com.yonotech.ppob.mobile.data.local.TokenManager
 import com.yonotech.ppob.mobile.data.remote.dto.AuthorizeRequest
 import com.yonotech.ppob.mobile.data.remote.dto.WalletResponse
 import com.yonotech.ppob.mobile.data.remote.dto.transaction.InitiateTransactionRequest
+import com.yonotech.ppob.mobile.data.remote.dto.transaction.InquiryRequest
+import com.yonotech.ppob.mobile.data.remote.dto.transaction.InquiryResponse
 import com.yonotech.ppob.mobile.data.remote.dto.transaction.TransactionResponse
 import com.yonotech.ppob.mobile.data.repository.AuthRepository
 import com.yonotech.ppob.mobile.data.repository.TransactionRepository
@@ -68,7 +70,13 @@ class TransactionViewModel @Inject constructor(
         viewModelScope.launch {
             _inquiryState.value = Resource.Loading
             try {
-                val response = transactionRepository.inquiry(InquiryRequest(categoryId, brand, customerNo))
+                val response = transactionRepository.inquiry(
+                    InquiryRequest(
+                        categoryId,
+                        brand,
+                        customerNo
+                    )
+                )
                 if (response.isSuccessful && response.body() != null) {
                     _inquiryState.value = Resource.Success(response.body()!!)
                 } else {

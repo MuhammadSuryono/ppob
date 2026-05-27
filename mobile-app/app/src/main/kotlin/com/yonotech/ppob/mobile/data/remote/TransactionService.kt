@@ -1,6 +1,8 @@
 package com.yonotech.ppob.mobile.data.remote
 
 import com.yonotech.ppob.mobile.data.remote.dto.transaction.InitiateTransactionRequest
+import com.yonotech.ppob.mobile.data.remote.dto.transaction.InquiryRequest
+import com.yonotech.ppob.mobile.data.remote.dto.transaction.InquiryResponse
 import com.yonotech.ppob.mobile.data.remote.dto.transaction.TransactionResponse
 import retrofit2.Response
 import retrofit2.http.Body
