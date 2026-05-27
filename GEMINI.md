@@ -34,6 +34,11 @@ For every task that involves modifying code, follow this strict lifecycle:
 
 To maintain schema consistency across environments, you **MUST** follow these rules for any database changes:
 - **Migration Files:** Every schema change (ADD/ALTER/DROP) must be defined in a new SQL migration file within the `migrations/` directory using the naming convention `0XX_description.sql`.
+- **Execution:** To apply migrations to the database, use the following command:
+  \`docker compose -f deployment/infrastructure.yml run --rm db-migration\`
+- **Goose Synchronization:** You **MUST** run migrations officially using the \`goose\` tool via the command above to ensure the \`goose_db_version\` table is updated.
+- **Model Sync:** When a database column is added or modified, you **MUST** immediately update the corresponding Go models in all relevant microservices (e.g., adding \`DeletedAt\` for soft delete support, or using pointers for nullable fields).
+- **No Manual SQL Only:** Never perform "SQL only" updates to the database without a corresponding migration file and official execution.
 
 ## 7. Environment Specific Configuration
 
