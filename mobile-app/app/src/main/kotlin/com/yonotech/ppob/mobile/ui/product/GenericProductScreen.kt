@@ -132,14 +132,11 @@ fun GenericProductScreen(
         categoryCode = categoryCode,
         customerId = customerId,
         onCustomerIdChange = { newValue -> 
-            // Apply validation regex if provided
-            val regex = currentCategory?.validationRegex
-            if (regex == null || newValue.isEmpty() || Regex(regex).matches(newValue) || newValue.length < customerId.length) {
-                if (newValue.length <= 20) {
-                    customerId = newValue
-                    // Reset inquiry if customer ID changes
-                    inquiryDone = false
-                }
+            // Allow typing freely up to 20 characters
+            // We'll reset inquiry state whenever the ID changes
+            if (newValue.length <= 20) {
+                customerId = newValue
+                inquiryDone = false
             }
         },
         inputLabel = label,
